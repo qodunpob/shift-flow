@@ -8,7 +8,7 @@ import {
   ScheduleActor,
 } from '../schedule-lifecycle';
 
-describe('schedule/schedule-lifecycle', () => {
+describe('schedules/schedule-lifecycle', () => {
   describe('getTransition', () => {
     const cases: Array<{
       from: ScheduleStatus;
@@ -68,8 +68,9 @@ describe('schedule/schedule-lifecycle', () => {
     );
 
     it('should not allow an action that is invalid for the current status', () => {
-      expect(getTransition(ScheduleStatus.DRAFT, ScheduleAction.Approve)).
-        toBeUndefined();
+      expect(
+        getTransition(ScheduleStatus.DRAFT, ScheduleAction.Approve),
+      ).toBeUndefined();
       expect(
         getTransition(ScheduleStatus.APPROVED, ScheduleAction.Unpublish),
       ).toBeUndefined();
@@ -82,14 +83,15 @@ describe('schedule/schedule-lifecycle', () => {
 
   describe('getAvailableActions', () => {
     it('should list every action allowed from a status', () => {
-      expect(getAvailableActions(ScheduleStatus.AWAITING_APPROVAL).sort()).
-        toEqual(
-          [
-            ScheduleAction.Approve,
-            ScheduleAction.Reject,
-            ScheduleAction.Withdraw,
-          ].sort(),
-        );
+      expect(
+        getAvailableActions(ScheduleStatus.AWAITING_APPROVAL).sort(),
+      ).toEqual(
+        [
+          ScheduleAction.Approve,
+          ScheduleAction.Reject,
+          ScheduleAction.Withdraw,
+        ].sort(),
+      );
     });
   });
 

@@ -12,7 +12,7 @@ import { Schedule, ScheduleStatus, UserRole } from '@/entities';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
 import { CreateScheduleDto } from '@/schedules/schedules.dto';
 
-describe('schedule/SchedulesService', () => {
+describe('schedules/SchedulesService', () => {
   let service: SchedulesService;
   let queryBuilder: {
     where: jest.Mock;
@@ -290,18 +290,18 @@ describe('schedule/SchedulesService', () => {
     it('should hide draft schedules from non-managers', async () => {
       await service.findAll(user, pagination);
 
-      expect(queryBuilder.where).toHaveBeenCalledWith(
-        'schedule.status != :draftStatus',
-        { draftStatus: ScheduleStatus.DRAFT },
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'schedule.status != :visibilityDraft',
+        { visibilityDraft: ScheduleStatus.DRAFT },
       );
     });
 
     it('should show managers published schedules together with their own drafts', async () => {
       await service.findAll(manager, pagination);
 
-      expect(queryBuilder.where).toHaveBeenCalledWith(
-        '(schedule.status != :draftStatus OR schedule.createdBy = :userId)',
-        { draftStatus: ScheduleStatus.DRAFT, userId: manager.id },
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        '(schedule.status != :visibilityDraft OR schedule.createdBy = :visibilityUserId)',
+        { visibilityDraft: ScheduleStatus.DRAFT, visibilityUserId: manager.id },
       );
     });
 
@@ -326,7 +326,7 @@ describe('schedule/SchedulesService', () => {
       );
     });
 
-    it('should return only the current user\'s schedules when mine is true', async () => {
+    it("should return only the current user's schedules when mine is true", async () => {
       await service.findAll(manager, { ...pagination, mine: true });
 
       expect(queryBuilder.andWhere).toHaveBeenCalledWith(
@@ -373,112 +373,51 @@ describe('schedule/SchedulesService', () => {
     });
   });
 
-  describe('lifecycle transitions', () => {
-    const approver: AuthenticatedUser = {
-      id: 'approver-1',
-      roles: [UserRole.APPROVER],
-    };
+  describe('findVisible', () => {
+    it('should return a published schedule to any user', async () => {
+      const schedule = {
+        id: 'schedule-1',
+        createdBy: 'someone-else',
+        status: ScheduleStatus.APPROVED,
+      } as Schedule;
+      repository.findOneBy.mockResolvedValue(schedule);
 
-    // A schedule owned by `manager`, so owner-manager actions are authorized.
-    const scheduleIn = (status: ScheduleStatus) =>
-      ({
+      await expect(service.findVisible('schedule-1', user)).resolves.toBe(
+        schedule,
+      );
+    });
+
+    it('should return a draft to the manager who owns it', async () => {
+      const draft = {
         id: 'schedule-1',
         createdBy: manager.id,
-        status,
-      }) as Schedule;
+        status: ScheduleStatus.DRAFT,
+      } as Schedule;
+      repository.findOneBy.mockResolvedValue(draft);
 
-    it('should let the owning manager publish a draft, moving it to review', async () => {
-      repository.findOneBy.mockResolvedValue(scheduleIn(ScheduleStatus.DRAFT));
-
-      const result = await service.publish('schedule-1', manager);
-
-      expect(result).toMatchObject({
-        status: ScheduleStatus.IN_REVIEW,
-        updatedBy: manager.id,
-      });
-      expect(repository.save).toHaveBeenCalledTimes(1);
-    });
-
-    it('should not let a user who is not the owning manager publish a schedule', async () => {
-      // `user` owns nothing here and lacks the manager role.
-      repository.findOneBy.mockResolvedValue(scheduleIn(ScheduleStatus.DRAFT));
-
-      await expect(service.publish('schedule-1', user)).rejects.toBeInstanceOf(
-        ForbiddenException,
+      await expect(service.findVisible('schedule-1', manager)).resolves.toBe(
+        draft,
       );
-      expect(repository.save).not.toHaveBeenCalled();
     });
 
-    it('should reject an action that is invalid for the current status', async () => {
-      repository.findOneBy.mockResolvedValue(scheduleIn(ScheduleStatus.DRAFT));
-
-      // Approve is only valid from AWAITING_APPROVAL.
-      await expect(
-        service.approve('schedule-1', approver),
-      ).rejects.toBeInstanceOf(ConflictException);
-      expect(repository.save).not.toHaveBeenCalled();
-    });
-
-    it('should fail the transition when the schedule does not exist', async () => {
-      repository.findOneBy.mockResolvedValue(null);
+    it('should report a draft owned by someone else as not found', async () => {
+      repository.findOneBy.mockResolvedValue({
+        id: 'schedule-1',
+        createdBy: 'another-manager',
+        status: ScheduleStatus.DRAFT,
+      });
 
       await expect(
-        service.publish('missing', manager),
+        service.findVisible('schedule-1', manager),
       ).rejects.toBeInstanceOf(NotFoundException);
     });
 
-    it('should let an approver approve a schedule awaiting approval', async () => {
-      repository.findOneBy.mockResolvedValue(
-        scheduleIn(ScheduleStatus.AWAITING_APPROVAL),
-      );
-
-      const result = await service.approve('schedule-1', approver);
-
-      expect(result).toMatchObject({
-        status: ScheduleStatus.APPROVED,
-        updatedBy: approver.id,
-      });
-    });
-
-    it('should not let a non-approver approve a schedule', async () => {
-      repository.findOneBy.mockResolvedValue(
-        scheduleIn(ScheduleStatus.AWAITING_APPROVAL),
-      );
+    it('should throw NotFound when the schedule does not exist', async () => {
+      repository.findOneBy.mockResolvedValue(null);
 
       await expect(
-        service.approve('schedule-1', manager),
-      ).rejects.toBeInstanceOf(ForbiddenException);
-      expect(repository.save).not.toHaveBeenCalled();
-    });
-
-    it('should record the reason when an approver rejects a schedule', async () => {
-      repository.findOneBy.mockResolvedValue(
-        scheduleIn(ScheduleStatus.AWAITING_APPROVAL),
-      );
-
-      const result = await service.reject('schedule-1', approver, {
-        rejectionReason: 'Understaffed on the weekend',
-      });
-
-      expect(result).toMatchObject({
-        status: ScheduleStatus.REJECTED,
-        rejectionReason: 'Understaffed on the weekend',
-        updatedBy: approver.id,
-      });
-    });
-
-    it('should clear a stale rejection reason when a rejected schedule is resubmitted', async () => {
-      repository.findOneBy.mockResolvedValue({
-        ...scheduleIn(ScheduleStatus.REJECTED),
-        rejectionReason: 'Previously rejected',
-      });
-
-      const result = await service.submitForApproval('schedule-1', manager);
-
-      expect(result).toMatchObject({
-        status: ScheduleStatus.AWAITING_APPROVAL,
-        rejectionReason: null,
-      });
+        service.findVisible('missing', manager),
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 });

@@ -7,22 +7,19 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
-import { Schedule, ScheduleStatus, UserRole } from '@/entities';
+import { Schedule } from '@/entities';
 import {
   CreateScheduleDto,
   FindSchedulesQueryDto,
-  RejectScheduleDto,
   UpdateScheduleDto,
 } from '@/schedules/schedules.dto';
 import { endOfDay, startOfDay } from 'date-fns';
 import { paginate, Paginated } from '@/common/pagination/paginate';
+import { isDeletable, isEditable } from '@/schedules/schedule-lifecycle';
 import {
-  getTransition,
-  isDeletable,
-  isEditable,
-  ScheduleAction,
-  ScheduleActor,
-} from '@/schedules/schedule-lifecycle';
+  applyScheduleVisibility,
+  isScheduleVisibleTo,
+} from '@/schedules/schedule-visibility';
 
 @Injectable()
 export class SchedulesService {
@@ -60,19 +57,7 @@ export class SchedulesService {
       .createQueryBuilder('schedule')
       .orderBy('schedule.startsAt', 'ASC');
 
-    // Visibility: everyone sees published schedules; managers also see their
-    // own drafts. Wrapped in parentheses so the OR is not broken by the AND
-    // filters appended below.
-    if (user.roles.includes(UserRole.MANAGER)) {
-      query.where(
-        '(schedule.status != :draftStatus OR schedule.createdBy = :userId)',
-        { draftStatus: ScheduleStatus.DRAFT, userId: user.id },
-      );
-    } else {
-      query.where('schedule.status != :draftStatus', {
-        draftStatus: ScheduleStatus.DRAFT,
-      });
-    }
+    applyScheduleVisibility(query, user);
 
     if (filter.status) {
       query.andWhere('schedule.status = :status', { status: filter.status });
@@ -88,6 +73,21 @@ export class SchedulesService {
   async findOne(id: string): Promise<Schedule> {
     const schedule = await this.schedules.findOneBy({ id });
     if (!schedule) {
+      throw new NotFoundException('Schedule not found.');
+    }
+
+    return schedule;
+  }
+
+  /**
+   * Loads a schedule the user is allowed to see, or throws NotFound. A draft
+   * that is invisible to the user is reported as not found rather than
+   * forbidden, so its existence is not leaked. Reuse this from other features
+   * (e.g. shifts) that need to enforce schedule visibility.
+   */
+  async findVisible(id: string, user: AuthenticatedUser): Promise<Schedule> {
+    const schedule = await this.schedules.findOneBy({ id });
+    if (!schedule || !isScheduleVisibleTo(schedule, user)) {
       throw new NotFoundException('Schedule not found.');
     }
 
@@ -148,98 +148,6 @@ export class SchedulesService {
       await entityManager.save(Schedule, schedule);
       await entityManager.softDelete(Schedule, id);
     });
-  }
-
-  publish(id: string, user: AuthenticatedUser): Promise<Schedule> {
-    return this.applyTransition(id, user, ScheduleAction.Publish);
-  }
-
-  submitForApproval(id: string, user: AuthenticatedUser): Promise<Schedule> {
-    return this.applyTransition(id, user, ScheduleAction.SubmitForApproval);
-  }
-
-  unpublish(id: string, user: AuthenticatedUser): Promise<Schedule> {
-    return this.applyTransition(id, user, ScheduleAction.Unpublish);
-  }
-
-  approve(id: string, user: AuthenticatedUser): Promise<Schedule> {
-    return this.applyTransition(id, user, ScheduleAction.Approve);
-  }
-
-  reject(
-    id: string,
-    user: AuthenticatedUser,
-    dto: RejectScheduleDto,
-  ): Promise<Schedule> {
-    return this.applyTransition(id, user, ScheduleAction.Reject, (schedule) => {
-      schedule.rejectionReason = dto.rejectionReason;
-    });
-  }
-
-  withdraw(id: string, user: AuthenticatedUser): Promise<Schedule> {
-    return this.applyTransition(id, user, ScheduleAction.Withdraw);
-  }
-
-  /**
-   * Loads a schedule, validates the requested lifecycle action against the
-   * state machine, enforces the actor allowed to perform it, applies the new
-   * status, and persists. `mutate` sets any action-specific fields (e.g. the
-   * rejection reason) before saving.
-   */
-  private async applyTransition(
-    id: string,
-    user: AuthenticatedUser,
-    action: ScheduleAction,
-    mutate?: (schedule: Schedule) => void,
-  ): Promise<Schedule> {
-    const schedule = await this.schedules.findOneBy({ id });
-    if (!schedule) {
-      throw new NotFoundException('Schedule not found.');
-    }
-
-    const transition = getTransition(schedule.status, action);
-    if (!transition) {
-      throw new ConflictException(
-        `Cannot ${action} a schedule in status ${schedule.status}.`,
-      );
-    }
-
-    this.assertActor(transition.actor, user, schedule);
-
-    schedule.status = transition.to;
-    schedule.updatedBy = user.id;
-    // Clear any stale rejection reason; `mutate` re-sets it for a reject.
-    schedule.rejectionReason = null;
-    mutate?.(schedule);
-
-    return this.schedules.save(schedule);
-  }
-
-  /** Enforces that `user` is allowed to act as `actor` on `schedule`. */
-  private assertActor(
-    actor: ScheduleActor,
-    user: AuthenticatedUser,
-    schedule: Schedule,
-  ): void {
-    if (actor === ScheduleActor.OwnerManager) {
-      const isOwnerManager =
-        user.roles.includes(UserRole.MANAGER) &&
-        schedule.createdBy === user.id;
-      if (!isOwnerManager) {
-        throw new ForbiddenException(
-          'Only the owning manager can perform this action.',
-        );
-      }
-      return;
-    }
-
-    if (actor === ScheduleActor.Approver) {
-      if (!user.roles.includes(UserRole.APPROVER)) {
-        throw new ForbiddenException(
-          'Only an approver can perform this action.',
-        );
-      }
-    }
   }
 
   /**

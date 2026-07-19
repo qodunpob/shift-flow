@@ -22,10 +22,14 @@ import {
   UpdateScheduleDto,
 } from '@/schedules/schedules.dto';
 import { Paginated } from '@/common/pagination/paginate';
+import { SchedulesTransitionService } from '@/schedules/schedules-transition.service';
 
 @Controller('schedules')
 export class SchedulesController {
-  constructor(private readonly schedules: SchedulesService) {}
+  constructor(
+    private readonly schedules: SchedulesService,
+    private readonly transitions: SchedulesTransitionService,
+  ) {}
 
   @Roles([UserRole.MANAGER])
   @Post()
@@ -76,7 +80,7 @@ export class SchedulesController {
     @Param('id') id: string,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<Schedule> {
-    return this.schedules.publish(id, user);
+    return this.transitions.publish(id, user);
   }
 
   @Roles([UserRole.MANAGER])
@@ -86,7 +90,7 @@ export class SchedulesController {
     @Param('id') id: string,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<Schedule> {
-    return this.schedules.submitForApproval(id, user);
+    return this.transitions.submitForApproval(id, user);
   }
 
   @Roles([UserRole.MANAGER])
@@ -96,7 +100,7 @@ export class SchedulesController {
     @Param('id') id: string,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<Schedule> {
-    return this.schedules.unpublish(id, user);
+    return this.transitions.unpublish(id, user);
   }
 
   @Roles([UserRole.MANAGER])
@@ -106,7 +110,7 @@ export class SchedulesController {
     @Param('id') id: string,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<Schedule> {
-    return this.schedules.withdraw(id, user);
+    return this.transitions.withdraw(id, user);
   }
 
   @Roles([UserRole.APPROVER])
@@ -116,7 +120,7 @@ export class SchedulesController {
     @Param('id') id: string,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<Schedule> {
-    return this.schedules.approve(id, user);
+    return this.transitions.approve(id, user);
   }
 
   @Roles([UserRole.APPROVER])
@@ -127,6 +131,6 @@ export class SchedulesController {
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: RejectScheduleDto,
   ): Promise<Schedule> {
-    return this.schedules.reject(id, user, dto);
+    return this.transitions.reject(id, user, dto);
   }
 }
