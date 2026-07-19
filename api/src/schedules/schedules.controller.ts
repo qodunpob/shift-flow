@@ -8,6 +8,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
 } from '@nestjs/common';
 import { CurrentUser } from '@/auth/current-user.decorator';
 import { Schedule, UserRole } from '@/entities';
@@ -18,6 +19,8 @@ import {
   CreateScheduleDto,
   UpdateScheduleDto,
 } from '@/schedules/schedules.dto';
+import { PaginationQueryDto } from '@/common/pagination/pagination-query.dto';
+import { Paginated } from '@/common/pagination/paginate';
 
 @Controller('schedules')
 export class SchedulesController {
@@ -33,8 +36,11 @@ export class SchedulesController {
   }
 
   @Get()
-  findAll(@CurrentUser() user: AuthenticatedUser): Promise<Schedule[]> {
-    return this.schedules.findAll(user);
+  findAll(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() pagination: PaginationQueryDto,
+  ): Promise<Paginated<Schedule>> {
+    return this.schedules.findAll(user, pagination);
   }
 
   @Get(':id')

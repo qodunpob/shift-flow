@@ -13,6 +13,8 @@ import {
   UpdateScheduleDto,
 } from '@/schedules/schedules.dto';
 import { endOfDay, startOfDay } from 'date-fns';
+import { PaginationQueryDto } from '@/common/pagination/pagination-query.dto';
+import { paginate, Paginated } from '@/common/pagination/paginate';
 
 @Injectable()
 export class SchedulesService {
@@ -42,7 +44,10 @@ export class SchedulesService {
     return this.schedules.save(schedule);
   }
 
-  async findAll(user: AuthenticatedUser): Promise<Schedule[]> {
+  async findAll(
+    user: AuthenticatedUser,
+    pagination: PaginationQueryDto,
+  ): Promise<Paginated<Schedule>> {
     const query = this.schedules
       .createQueryBuilder('schedule')
       .orderBy('schedule.startsAt', 'ASC');
@@ -58,7 +63,7 @@ export class SchedulesService {
       });
     }
 
-    return query.getMany();
+    return paginate(query, pagination);
   }
 
   async findOne(id: string): Promise<Schedule> {

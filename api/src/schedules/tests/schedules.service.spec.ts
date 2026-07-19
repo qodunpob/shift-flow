@@ -18,8 +18,10 @@ describe('schedule/SchedulesService', () => {
     where: jest.Mock;
     andWhere: jest.Mock;
     orderBy: jest.Mock;
+    skip: jest.Mock;
+    take: jest.Mock;
     getExists: jest.Mock;
-    getMany: jest.Mock;
+    getManyAndCount: jest.Mock;
   };
   let repository: {
     create: jest.Mock;
@@ -41,8 +43,10 @@ describe('schedule/SchedulesService', () => {
       where: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
       getExists: jest.fn().mockResolvedValue(false),
-      getMany: jest.fn().mockResolvedValue([]),
+      getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
     };
     repository = {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-return
@@ -253,8 +257,10 @@ describe('schedule/SchedulesService', () => {
   });
 
   describe('findAll', () => {
+    const pagination = { page: 1, limit: 20 };
+
     it('should hide draft schedules from non-managers', async () => {
-      await service.findAll(user);
+      await service.findAll(user, pagination);
 
       expect(queryBuilder.where).toHaveBeenCalledWith(
         'schedule.status != :draftStatus',
@@ -263,7 +269,7 @@ describe('schedule/SchedulesService', () => {
     });
 
     it('should show managers published schedules together with their own drafts', async () => {
-      await service.findAll(manager);
+      await service.findAll(manager, pagination);
 
       expect(queryBuilder.where).toHaveBeenCalledWith(
         'schedule.status != :draftStatus OR schedule.createdBy = :userId',
@@ -273,15 +279,30 @@ describe('schedule/SchedulesService', () => {
 
     it('should return the schedules ordered by their start date', async () => {
       const schedules = [{ id: 'schedule-1' }] as Schedule[];
-      queryBuilder.getMany.mockResolvedValue(schedules);
+      queryBuilder.getManyAndCount.mockResolvedValue([schedules, 1]);
 
-      const result = await service.findAll(manager);
+      const result = await service.findAll(manager, pagination);
 
       expect(queryBuilder.orderBy).toHaveBeenCalledWith(
         'schedule.startsAt',
         'ASC',
       );
-      expect(result).toBe(schedules);
+      expect(result.items).toBe(schedules);
+    });
+
+    it('should return the requested page together with pagination metadata', async () => {
+      const schedules = [{ id: 'schedule-3' }] as Schedule[];
+      queryBuilder.getManyAndCount.mockResolvedValue([schedules, 42]);
+
+      const result = await service.findAll(manager, { page: 2, limit: 20 });
+
+      // page 2 of size 20 skips the first 20 rows.
+      expect(queryBuilder.skip).toHaveBeenCalledWith(20);
+      expect(queryBuilder.take).toHaveBeenCalledWith(20);
+      expect(result).toEqual({
+        items: schedules,
+        meta: { total: 42, page: 2, limit: 20, totalPages: 3 },
+      });
     });
   });
 });
