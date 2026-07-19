@@ -1,4 +1,4 @@
-import { IsDate, IsOptional, IsString } from 'class-validator';
+import { IsDate, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateScheduleDto {
@@ -13,6 +13,12 @@ export class CreateScheduleDto {
   @Type(() => Date)
   @IsDate()
   endsAt: Date;
+}
+
+export class RejectScheduleDto {
+  @IsString()
+  @IsNotEmpty()
+  rejectionReason: string;
 }
 
 export class UpdateScheduleDto {

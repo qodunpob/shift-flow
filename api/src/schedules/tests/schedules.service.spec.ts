@@ -131,6 +131,7 @@ describe('schedule/SchedulesService', () => {
     const existing = {
       id: 'schedule-1',
       createdBy: user.id,
+      status: ScheduleStatus.DRAFT,
       startsAt: startOfDay(new Date('2026-01-01T00:00:00.000Z')),
       endsAt: endOfDay(new Date('2026-01-07T00:00:00.000Z')),
     } as Schedule;
@@ -153,6 +154,19 @@ describe('schedule/SchedulesService', () => {
       await expect(
         service.update(existing.id, user, { label: 'Hijacked' }),
       ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(queryBuilder.getExists).not.toHaveBeenCalled();
+      expect(repository.save).not.toHaveBeenCalled();
+    });
+
+    it('should not update a schedule whose status is not editable', async () => {
+      repository.findOneBy.mockResolvedValue({
+        ...existing,
+        status: ScheduleStatus.AWAITING_APPROVAL,
+      });
+
+      await expect(
+        service.update(existing.id, user, { label: 'Too late' }),
+      ).rejects.toBeInstanceOf(ConflictException);
       expect(queryBuilder.getExists).not.toHaveBeenCalled();
       expect(repository.save).not.toHaveBeenCalled();
     });
@@ -214,6 +228,7 @@ describe('schedule/SchedulesService', () => {
     const existing = {
       id: 'schedule-1',
       createdBy: user.id,
+      status: ScheduleStatus.DRAFT,
       startsAt: startOfDay(new Date('2026-01-01T00:00:00.000Z')),
       endsAt: endOfDay(new Date('2026-01-07T00:00:00.000Z')),
     } as Schedule;
@@ -235,6 +250,19 @@ describe('schedule/SchedulesService', () => {
 
       await expect(service.remove(existing.id, user)).rejects.toBeInstanceOf(
         ForbiddenException,
+      );
+      expect(dataSource.transaction).not.toHaveBeenCalled();
+      expect(entityManager.softDelete).not.toHaveBeenCalled();
+    });
+
+    it('should not delete a schedule whose status is not deletable', async () => {
+      repository.findOneBy.mockResolvedValue({
+        ...existing,
+        status: ScheduleStatus.APPROVED,
+      });
+
+      await expect(service.remove(existing.id, user)).rejects.toBeInstanceOf(
+        ConflictException,
       );
       expect(dataSource.transaction).not.toHaveBeenCalled();
       expect(entityManager.softDelete).not.toHaveBeenCalled();
@@ -302,6 +330,115 @@ describe('schedule/SchedulesService', () => {
       expect(result).toEqual({
         items: schedules,
         meta: { total: 42, page: 2, limit: 20, totalPages: 3 },
+      });
+    });
+  });
+
+  describe('lifecycle transitions', () => {
+    const approver: AuthenticatedUser = {
+      id: 'approver-1',
+      roles: [UserRole.APPROVER],
+    };
+
+    // A schedule owned by `manager`, so owner-manager actions are authorized.
+    const scheduleIn = (status: ScheduleStatus) =>
+      ({
+        id: 'schedule-1',
+        createdBy: manager.id,
+        status,
+      }) as Schedule;
+
+    it('should let the owning manager publish a draft, moving it to review', async () => {
+      repository.findOneBy.mockResolvedValue(scheduleIn(ScheduleStatus.DRAFT));
+
+      const result = await service.publish('schedule-1', manager);
+
+      expect(result).toMatchObject({
+        status: ScheduleStatus.IN_REVIEW,
+        updatedBy: manager.id,
+      });
+      expect(repository.save).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not let a user who is not the owning manager publish a schedule', async () => {
+      // `user` owns nothing here and lacks the manager role.
+      repository.findOneBy.mockResolvedValue(scheduleIn(ScheduleStatus.DRAFT));
+
+      await expect(service.publish('schedule-1', user)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+      expect(repository.save).not.toHaveBeenCalled();
+    });
+
+    it('should reject an action that is invalid for the current status', async () => {
+      repository.findOneBy.mockResolvedValue(scheduleIn(ScheduleStatus.DRAFT));
+
+      // Approve is only valid from AWAITING_APPROVAL.
+      await expect(
+        service.approve('schedule-1', approver),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(repository.save).not.toHaveBeenCalled();
+    });
+
+    it('should fail the transition when the schedule does not exist', async () => {
+      repository.findOneBy.mockResolvedValue(null);
+
+      await expect(
+        service.publish('missing', manager),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('should let an approver approve a schedule awaiting approval', async () => {
+      repository.findOneBy.mockResolvedValue(
+        scheduleIn(ScheduleStatus.AWAITING_APPROVAL),
+      );
+
+      const result = await service.approve('schedule-1', approver);
+
+      expect(result).toMatchObject({
+        status: ScheduleStatus.APPROVED,
+        updatedBy: approver.id,
+      });
+    });
+
+    it('should not let a non-approver approve a schedule', async () => {
+      repository.findOneBy.mockResolvedValue(
+        scheduleIn(ScheduleStatus.AWAITING_APPROVAL),
+      );
+
+      await expect(
+        service.approve('schedule-1', manager),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(repository.save).not.toHaveBeenCalled();
+    });
+
+    it('should record the reason when an approver rejects a schedule', async () => {
+      repository.findOneBy.mockResolvedValue(
+        scheduleIn(ScheduleStatus.AWAITING_APPROVAL),
+      );
+
+      const result = await service.reject('schedule-1', approver, {
+        rejectionReason: 'Understaffed on the weekend',
+      });
+
+      expect(result).toMatchObject({
+        status: ScheduleStatus.REJECTED,
+        rejectionReason: 'Understaffed on the weekend',
+        updatedBy: approver.id,
+      });
+    });
+
+    it('should clear a stale rejection reason when a rejected schedule is resubmitted', async () => {
+      repository.findOneBy.mockResolvedValue({
+        ...scheduleIn(ScheduleStatus.REJECTED),
+        rejectionReason: 'Previously rejected',
+      });
+
+      const result = await service.submitForApproval('schedule-1', manager);
+
+      expect(result).toMatchObject({
+        status: ScheduleStatus.AWAITING_APPROVAL,
+        rejectionReason: null,
       });
     });
   });

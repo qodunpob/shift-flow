@@ -17,6 +17,7 @@ import { SchedulesService } from './schedules.service';
 import { Roles } from '@/auth/roles.decorator';
 import {
   CreateScheduleDto,
+  RejectScheduleDto,
   UpdateScheduleDto,
 } from '@/schedules/schedules.dto';
 import { PaginationQueryDto } from '@/common/pagination/pagination-query.dto';
@@ -66,5 +67,66 @@ export class SchedulesController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<void> {
     await this.schedules.remove(id, user);
+  }
+
+  @Roles([UserRole.MANAGER])
+  @Post(':id/publish')
+  @HttpCode(HttpStatus.OK)
+  publish(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<Schedule> {
+    return this.schedules.publish(id, user);
+  }
+
+  @Roles([UserRole.MANAGER])
+  @Post(':id/submit-for-approval')
+  @HttpCode(HttpStatus.OK)
+  submitForApproval(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<Schedule> {
+    return this.schedules.submitForApproval(id, user);
+  }
+
+  @Roles([UserRole.MANAGER])
+  @Post(':id/unpublish')
+  @HttpCode(HttpStatus.OK)
+  unpublish(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<Schedule> {
+    return this.schedules.unpublish(id, user);
+  }
+
+  @Roles([UserRole.MANAGER])
+  @Post(':id/withdraw')
+  @HttpCode(HttpStatus.OK)
+  withdraw(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<Schedule> {
+    return this.schedules.withdraw(id, user);
+  }
+
+  @Roles([UserRole.APPROVER])
+  @Post(':id/approve')
+  @HttpCode(HttpStatus.OK)
+  approve(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<Schedule> {
+    return this.schedules.approve(id, user);
+  }
+
+  @Roles([UserRole.APPROVER])
+  @Post(':id/reject')
+  @HttpCode(HttpStatus.OK)
+  reject(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: RejectScheduleDto,
+  ): Promise<Schedule> {
+    return this.schedules.reject(id, user, dto);
   }
 }
