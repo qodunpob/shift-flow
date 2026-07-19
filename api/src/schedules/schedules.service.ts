@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
@@ -69,6 +73,9 @@ export class SchedulesService {
     if (!schedule) {
       throw new NotFoundException('Schedule not found.');
     }
+    if (schedule.createdBy !== user.id) {
+      throw new ForbiddenException('You can only modify your own schedules.');
+    }
 
     Object.assign(schedule, {
       ...dto,
@@ -84,6 +91,9 @@ export class SchedulesService {
     const schedule = await this.schedules.findOneBy({ id });
     if (!schedule) {
       throw new NotFoundException('Schedule not found.');
+    }
+    if (schedule.createdBy !== user.id) {
+      throw new ForbiddenException('You can only delete your own schedules.');
     }
 
     return this.dataSource.transaction(async (entityManager) => {
