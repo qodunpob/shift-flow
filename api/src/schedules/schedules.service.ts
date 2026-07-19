@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -25,10 +26,15 @@ export class SchedulesService {
     user: AuthenticatedUser,
     dto: CreateScheduleDto,
   ): Promise<Schedule> {
+    const startsAt = startOfDay(dto.startsAt);
+    const endsAt = endOfDay(dto.endsAt);
+
+    await this.assertNoOverlap(startsAt, endsAt);
+
     const schedule = this.schedules.create({
       ...dto,
-      startsAt: startOfDay(dto.startsAt),
-      endsAt: endOfDay(dto.endsAt),
+      startsAt,
+      endsAt,
       createdBy: user.id,
       updatedBy: user.id,
     });
@@ -77,10 +83,17 @@ export class SchedulesService {
       throw new ForbiddenException('You can only modify your own schedules.');
     }
 
+    const startsAt = dto.startsAt
+      ? startOfDay(dto.startsAt)
+      : schedule.startsAt;
+    const endsAt = dto.endsAt ? endOfDay(dto.endsAt) : schedule.endsAt;
+
+    await this.assertNoOverlap(startsAt, endsAt, id);
+
     Object.assign(schedule, {
       ...dto,
-      ...(dto.startsAt ? { startsAt: startOfDay(dto.startsAt) } : {}),
-      ...(dto.endsAt ? { endsAt: endOfDay(dto.endsAt) } : {}),
+      startsAt,
+      endsAt,
       updatedBy: user.id,
     });
 
@@ -101,5 +114,32 @@ export class SchedulesService {
       await entityManager.save(Schedule, schedule);
       await entityManager.softDelete(Schedule, id);
     });
+  }
+
+  /**
+   * Ensures the [startsAt, endsAt] range does not overlap any existing (non
+   * soft-deleted) schedule. Two ranges overlap when each starts on or before
+   * the other ends. On update, pass `excludeId` so the schedule being changed
+   * is not compared against itself.
+   */
+  private async assertNoOverlap(
+    startsAt: Date,
+    endsAt: Date,
+    excludeId?: string,
+  ): Promise<void> {
+    const query = this.schedules
+      .createQueryBuilder('schedule')
+      .where('schedule.startsAt <= :endsAt', { endsAt })
+      .andWhere('schedule.endsAt >= :startsAt', { startsAt });
+
+    if (excludeId) {
+      query.andWhere('schedule.id != :excludeId', { excludeId });
+    }
+
+    if (await query.getExists()) {
+      throw new ConflictException(
+        'Schedule overlaps with an existing schedule.',
+      );
+    }
   }
 }
