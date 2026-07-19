@@ -18,7 +18,8 @@ export class RolesGuard implements CanActivate {
       return true;
     }
     const user = currentUser(context);
-    if (!matchRoles(roles, user.roles)) {
+    console.log(user);
+    if (!matchRoles(roles, user?.roles ?? [])) {
       throw new UnauthorizedException(
         `Access denied. Required roles: ${roles.toString()}`,
       );
