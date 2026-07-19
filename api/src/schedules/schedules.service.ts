@@ -32,15 +32,15 @@ export class SchedulesService {
     return this.schedules.save(schedule);
   }
 
-  async findAll(actor: AuthenticatedUser): Promise<Schedule[]> {
+  async findAll(user: AuthenticatedUser): Promise<Schedule[]> {
     const query = this.schedules
       .createQueryBuilder('schedule')
       .orderBy('schedule.startsAt', 'ASC');
 
-    if (actor.roles.includes(UserRole.MANAGER)) {
+    if (user.roles.includes(UserRole.MANAGER)) {
       query.where(
-        'schedule.status != :draftStatus OR schedule.createdBy = :actorId',
-        { draftStatus: ScheduleStatus.DRAFT, actorId: actor.id },
+        'schedule.status != :draftStatus OR schedule.createdBy = :userId',
+        { draftStatus: ScheduleStatus.DRAFT, userId: user.id },
       );
     } else {
       query.where('schedule.status != :draftStatus', {
