@@ -10,11 +10,11 @@ import { AuthenticatedUser } from '@/auth/authenticated-request';
 import { Schedule, ScheduleStatus, UserRole } from '@/entities';
 import {
   CreateScheduleDto,
+  FindSchedulesQueryDto,
   RejectScheduleDto,
   UpdateScheduleDto,
 } from '@/schedules/schedules.dto';
 import { endOfDay, startOfDay } from 'date-fns';
-import { PaginationQueryDto } from '@/common/pagination/pagination-query.dto';
 import { paginate, Paginated } from '@/common/pagination/paginate';
 import {
   getTransition,
@@ -54,15 +54,18 @@ export class SchedulesService {
 
   async findAll(
     user: AuthenticatedUser,
-    pagination: PaginationQueryDto,
+    filter: FindSchedulesQueryDto,
   ): Promise<Paginated<Schedule>> {
     const query = this.schedules
       .createQueryBuilder('schedule')
       .orderBy('schedule.startsAt', 'ASC');
 
+    // Visibility: everyone sees published schedules; managers also see their
+    // own drafts. Wrapped in parentheses so the OR is not broken by the AND
+    // filters appended below.
     if (user.roles.includes(UserRole.MANAGER)) {
       query.where(
-        'schedule.status != :draftStatus OR schedule.createdBy = :userId',
+        '(schedule.status != :draftStatus OR schedule.createdBy = :userId)',
         { draftStatus: ScheduleStatus.DRAFT, userId: user.id },
       );
     } else {
@@ -71,7 +74,15 @@ export class SchedulesService {
       });
     }
 
-    return paginate(query, pagination);
+    if (filter.status) {
+      query.andWhere('schedule.status = :status', { status: filter.status });
+    }
+
+    if (filter.mine) {
+      query.andWhere('schedule.createdBy = :ownerId', { ownerId: user.id });
+    }
+
+    return paginate(query, filter);
   }
 
   async findOne(id: string): Promise<Schedule> {

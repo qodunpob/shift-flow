@@ -300,8 +300,47 @@ describe('schedule/SchedulesService', () => {
       await service.findAll(manager, pagination);
 
       expect(queryBuilder.where).toHaveBeenCalledWith(
-        'schedule.status != :draftStatus OR schedule.createdBy = :userId',
+        '(schedule.status != :draftStatus OR schedule.createdBy = :userId)',
         { draftStatus: ScheduleStatus.DRAFT, userId: manager.id },
+      );
+    });
+
+    it('should filter by status when a status is given', async () => {
+      await service.findAll(manager, {
+        ...pagination,
+        status: ScheduleStatus.APPROVED,
+      });
+
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'schedule.status = :status',
+        { status: ScheduleStatus.APPROVED },
+      );
+    });
+
+    it('should not filter by status when none is given', async () => {
+      await service.findAll(manager, pagination);
+
+      expect(queryBuilder.andWhere).not.toHaveBeenCalledWith(
+        'schedule.status = :status',
+        expect.anything(),
+      );
+    });
+
+    it('should return only the current user\'s schedules when mine is true', async () => {
+      await service.findAll(manager, { ...pagination, mine: true });
+
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'schedule.createdBy = :ownerId',
+        { ownerId: manager.id },
+      );
+    });
+
+    it('should not restrict by ownership when mine is not set', async () => {
+      await service.findAll(manager, pagination);
+
+      expect(queryBuilder.andWhere).not.toHaveBeenCalledWith(
+        'schedule.createdBy = :ownerId',
+        expect.anything(),
       );
     });
 

@@ -1,5 +1,14 @@
-import { IsDate, IsNotEmpty, IsOptional, IsString } from 'class-validator';
-import { Type } from 'class-transformer';
+import {
+  IsBoolean,
+  IsDate,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { ScheduleStatus } from '@/entities';
+import { PaginationQueryDto } from '@/common/pagination/pagination-query.dto';
 
 export class CreateScheduleDto {
   @IsOptional()
@@ -13,6 +22,21 @@ export class CreateScheduleDto {
   @Type(() => Date)
   @IsDate()
   endsAt: Date;
+}
+
+export class FindSchedulesQueryDto extends PaginationQueryDto {
+  /** Restrict results to a single lifecycle status. */
+  @IsOptional()
+  @IsEnum(ScheduleStatus)
+  status?: ScheduleStatus;
+
+  /** When true, return only schedules owned (created) by the current user. */
+  @IsOptional()
+  @Transform(({ value }) =>
+    value === undefined ? undefined : value === 'true' || value === true,
+  )
+  @IsBoolean()
+  mine?: boolean;
 }
 
 export class RejectScheduleDto {

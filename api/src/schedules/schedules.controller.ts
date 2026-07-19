@@ -17,10 +17,10 @@ import { SchedulesService } from './schedules.service';
 import { Roles } from '@/auth/roles.decorator';
 import {
   CreateScheduleDto,
+  FindSchedulesQueryDto,
   RejectScheduleDto,
   UpdateScheduleDto,
 } from '@/schedules/schedules.dto';
-import { PaginationQueryDto } from '@/common/pagination/pagination-query.dto';
 import { Paginated } from '@/common/pagination/paginate';
 
 @Controller('schedules')
@@ -39,9 +39,9 @@ export class SchedulesController {
   @Get()
   findAll(
     @CurrentUser() user: AuthenticatedUser,
-    @Query() pagination: PaginationQueryDto,
+    @Query() query: FindSchedulesQueryDto,
   ): Promise<Paginated<Schedule>> {
-    return this.schedules.findAll(user, pagination);
+    return this.schedules.findAll(user, query);
   }
 
   @Get(':id')
