@@ -1,4 +1,53 @@
-import { Controller } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Put,
+} from '@nestjs/common';
+import {
+  CreateAssignmentProposalDto,
+  UpdateAssignmentProposalDto,
+} from '@/assignment-proposals/assignment-proposal.dto';
+import { Roles } from '@/auth/roles.decorator';
+import { UserRole } from '@/entities';
+import { CurrentUser } from '@/auth/current-user.decorator';
+import type { AuthenticatedUser } from '@/auth/authenticated-request';
+
+@Controller('shifts/:shiftId/assignment-proposals')
+export class ShiftAssignmentProposalsController {
+  @Post()
+  create(
+    @Param('shiftId', ParseUUIDPipe) shiftId: string,
+    @Body() dto: CreateAssignmentProposalDto,
+  ) {}
+
+  @Get()
+  @Roles([UserRole.MANAGER])
+  indAll(
+    @Param('shiftId', ParseUUIDPipe) shiftId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {}
+}
 
 @Controller('assignment-proposals')
-export class AssignmentProposalsController {}
+export class AssignmentProposalsController {
+  @Put(':id')
+  update(
+    @Param('id', ParseUUIDPipe) shiftId: string,
+    @Body() dto: UpdateAssignmentProposalDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {}
+
+  @Delete(':id')
+  delete(
+    @Param('id', ParseUUIDPipe) shiftId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {}
+
+  @Post(':id/accept')
+  accept() {}
+}

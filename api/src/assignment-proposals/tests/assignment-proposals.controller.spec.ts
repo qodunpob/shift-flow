@@ -1,16 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AssignmentProposalsController } from '../assignment-proposals.controller';
+import { ShiftAssignmentProposalsController } from '../assignment-proposals.controller';
 
 describe('assignment-proposals/AssignmentProposalsController', () => {
-  let controller: AssignmentProposalsController;
+  let controller: ShiftAssignmentProposalsController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [AssignmentProposalsController],
+      controllers: [ShiftAssignmentProposalsController],
     }).compile();
 
-    controller = module.get<AssignmentProposalsController>(
-      AssignmentProposalsController,
+    controller = module.get<ShiftAssignmentProposalsController>(
+      ShiftAssignmentProposalsController,
     );
   });
 
