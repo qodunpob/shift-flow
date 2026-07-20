@@ -94,6 +94,23 @@ export class SchedulesService {
     return schedule;
   }
 
+  /**
+   * Loads a schedule the user may see and asserts it is still editable, or
+   * throws. Sub-resources of a schedule (shifts, assignments) may only be
+   * created, updated or removed while the schedule itself is editable, so
+   * they should gate their mutations through this.
+   */
+  async findEditable(id: string, user: AuthenticatedUser): Promise<Schedule> {
+    const schedule = await this.findVisible(id, user);
+    if (!isEditable(schedule.status)) {
+      throw new ConflictException(
+        `A schedule in status ${schedule.status} cannot be edited.`,
+      );
+    }
+
+    return schedule;
+  }
+
   async update(
     id: string,
     dto: UpdateScheduleDto,

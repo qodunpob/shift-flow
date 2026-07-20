@@ -27,7 +27,7 @@ export class ShiftsService {
     dto: CreateShiftDto,
     user: AuthenticatedUser,
   ) {
-    const schedule = await this.schedulesService.findVisible(scheduleId, user);
+    const schedule = await this.schedulesService.findEditable(scheduleId, user);
     const startsAt = startOfMinute(dto.startsAt);
     const endsAt = startOfMinute(dto.endsAt);
 
@@ -68,7 +68,7 @@ export class ShiftsService {
     dto: UpdateShiftDto,
     user: AuthenticatedUser,
   ) {
-    const schedule = await this.schedulesService.findVisible(scheduleId, user);
+    const schedule = await this.schedulesService.findEditable(scheduleId, user);
     const shift = await this.shifts.findOneBy({
       id,
       scheduleId: schedule.id,
@@ -105,7 +105,7 @@ export class ShiftsService {
   }
 
   async remove(scheduleId: string, id: string, user: AuthenticatedUser) {
-    const schedule = await this.schedulesService.findVisible(scheduleId, user);
+    const schedule = await this.schedulesService.findEditable(scheduleId, user);
     const shift = await this.shifts.findOneBy({
       id,
       scheduleId: schedule.id,
