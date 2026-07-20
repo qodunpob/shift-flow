@@ -3,7 +3,6 @@ import { AuditableEntity } from './auditable.entity';
 
 export enum UserRole {
   MANAGER = 'MANAGER',
-  EMPLOYEE = 'EMPLOYEE',
   APPROVER = 'APPROVER',
 }
 

@@ -9,7 +9,7 @@ import {
 describe('schedules/schedule-visibility', () => {
   const employee: AuthenticatedUser = {
     id: 'user-1',
-    roles: [UserRole.EMPLOYEE],
+    roles: [],
   };
   const manager: AuthenticatedUser = {
     id: 'manager-1',

@@ -11,7 +11,7 @@ export class UsersService {
       lastName: 'Test',
       emailAddress: 'test-employee@example.com',
       password: 'test-employee@example.com',
-      roles: [UserRole.EMPLOYEE],
+      roles: [],
     },
     {
       id: 'cde9a7fe-d70a-4af7-bdb1-0444ef03231b',
