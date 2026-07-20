@@ -34,18 +34,18 @@ export class SchedulesController {
   @Roles([UserRole.MANAGER])
   @Post()
   create(
-    @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateScheduleDto,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<Schedule> {
-    return this.schedules.create(user, dto);
+    return this.schedules.create(dto, user);
   }
 
   @Get()
   findAll(
-    @CurrentUser() user: AuthenticatedUser,
     @Query() query: FindSchedulesQueryDto,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<Paginated<Schedule>> {
-    return this.schedules.findAll(user, query);
+    return this.schedules.findAll(query, user);
   }
 
   @Get(':id')
@@ -57,10 +57,10 @@ export class SchedulesController {
   @Put(':id')
   update(
     @Param('id') id: string,
-    @CurrentUser() user: AuthenticatedUser,
     @Body() dto: UpdateScheduleDto,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<Schedule> {
-    return this.schedules.update(id, user, dto);
+    return this.schedules.update(id, dto, user);
   }
 
   @Roles([UserRole.MANAGER])

@@ -30,8 +30,8 @@ export class SchedulesService {
   ) {}
 
   async create(
-    user: AuthenticatedUser,
     dto: CreateScheduleDto,
+    user: AuthenticatedUser,
   ): Promise<Schedule> {
     const startsAt = startOfDay(dto.startsAt);
     const endsAt = endOfDay(dto.endsAt);
@@ -50,8 +50,8 @@ export class SchedulesService {
   }
 
   async findAll(
-    user: AuthenticatedUser,
     filter: FindSchedulesQueryDto,
+    user: AuthenticatedUser,
   ): Promise<Paginated<Schedule>> {
     const query = this.schedules
       .createQueryBuilder('schedule')
@@ -96,8 +96,8 @@ export class SchedulesService {
 
   async update(
     id: string,
-    user: AuthenticatedUser,
     dto: UpdateScheduleDto,
+    user: AuthenticatedUser,
   ): Promise<Schedule> {
     const schedule = await this.schedules.findOneBy({ id });
     if (!schedule || !isScheduleVisibleTo(schedule, user)) {

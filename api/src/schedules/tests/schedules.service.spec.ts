@@ -1,10 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import {
-  ConflictException,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { endOfDay, startOfDay } from 'date-fns';
 import { SchedulesService } from '../schedules.service';
@@ -91,16 +87,19 @@ describe('schedules/SchedulesService', () => {
     it('should create the schedule when it does not overlap an existing one', async () => {
       queryBuilder.getExists.mockResolvedValue(false);
 
-      const result = await service.create(user, dto);
+      const result = await service.create(dto, manager);
 
       expect(repository.save).toHaveBeenCalledTimes(1);
-      expect(result).toMatchObject({ createdBy: user.id, updatedBy: user.id });
+      expect(result).toMatchObject({
+        createdBy: manager.id,
+        updatedBy: manager.id,
+      });
     });
 
     it('should treat schedules as whole days, ignoring the time of day when checking for overlaps', async () => {
       // dto carries a 10:00 time; a schedule occupies the entire calendar day,
       // so the overlap check must widen it to [start of day, end of day].
-      await service.create(user, dto);
+      await service.create(dto, manager);
 
       expect(queryBuilder.where).toHaveBeenCalledWith(
         'schedule.startsAt <= :endsAt',
@@ -120,7 +119,7 @@ describe('schedules/SchedulesService', () => {
     it('should not create a schedule that overlaps an existing one', async () => {
       queryBuilder.getExists.mockResolvedValue(true);
 
-      await expect(service.create(user, dto)).rejects.toBeInstanceOf(
+      await expect(service.create(dto, manager)).rejects.toBeInstanceOf(
         ConflictException,
       );
       expect(repository.save).not.toHaveBeenCalled();
@@ -130,7 +129,7 @@ describe('schedules/SchedulesService', () => {
   describe('update', () => {
     const existing = {
       id: 'schedule-1',
-      createdBy: user.id,
+      createdBy: manager.id,
       status: ScheduleStatus.DRAFT,
       startsAt: startOfDay(new Date('2026-01-01T00:00:00.000Z')),
       endsAt: endOfDay(new Date('2026-01-07T00:00:00.000Z')),
@@ -139,9 +138,9 @@ describe('schedules/SchedulesService', () => {
     it('should not update a schedule that does not exist', async () => {
       repository.findOneBy.mockResolvedValue(null);
 
-      await expect(service.update('missing', user, {})).rejects.toBeInstanceOf(
-        NotFoundException,
-      );
+      await expect(
+        service.update('missing', {}, manager),
+      ).rejects.toBeInstanceOf(NotFoundException);
       expect(queryBuilder.getExists).not.toHaveBeenCalled();
     });
 
@@ -152,8 +151,8 @@ describe('schedules/SchedulesService', () => {
       });
 
       await expect(
-        service.update(existing.id, user, { label: 'Hijacked' }),
-      ).rejects.toBeInstanceOf(ForbiddenException);
+        service.update(existing.id, { label: 'Hijacked' }, manager),
+      ).rejects.toBeInstanceOf(NotFoundException);
       expect(queryBuilder.getExists).not.toHaveBeenCalled();
       expect(repository.save).not.toHaveBeenCalled();
     });
@@ -165,7 +164,7 @@ describe('schedules/SchedulesService', () => {
       });
 
       await expect(
-        service.update(existing.id, user, { label: 'Too late' }),
+        service.update(existing.id, { label: 'Too late' }, manager),
       ).rejects.toBeInstanceOf(ConflictException);
       expect(queryBuilder.getExists).not.toHaveBeenCalled();
       expect(repository.save).not.toHaveBeenCalled();
@@ -174,9 +173,13 @@ describe('schedules/SchedulesService', () => {
     it('should not treat the schedule being updated as overlapping itself', async () => {
       repository.findOneBy.mockResolvedValue({ ...existing });
 
-      await service.update(existing.id, user, {
-        startsAt: new Date('2026-01-02T00:00:00.000Z'),
-      });
+      await service.update(
+        existing.id,
+        {
+          startsAt: new Date('2026-01-02T00:00:00.000Z'),
+        },
+        manager,
+      );
 
       expect(queryBuilder.andWhere).toHaveBeenCalledWith(
         'schedule.id != :excludeId',
@@ -187,7 +190,7 @@ describe('schedules/SchedulesService', () => {
     it('should keep the current dates when the update leaves them unchanged', async () => {
       repository.findOneBy.mockResolvedValue({ ...existing });
 
-      await service.update(existing.id, user, { label: 'Renamed' });
+      await service.update(existing.id, { label: 'Renamed' }, manager);
 
       expect(queryBuilder.where).toHaveBeenCalledWith(
         'schedule.startsAt <= :endsAt',
@@ -204,9 +207,13 @@ describe('schedules/SchedulesService', () => {
       queryBuilder.getExists.mockResolvedValue(true);
 
       await expect(
-        service.update(existing.id, user, {
-          endsAt: new Date('2026-01-20T00:00:00.000Z'),
-        }),
+        service.update(
+          existing.id,
+          {
+            endsAt: new Date('2026-01-20T00:00:00.000Z'),
+          },
+          manager,
+        ),
       ).rejects.toBeInstanceOf(ConflictException);
       expect(repository.save).not.toHaveBeenCalled();
     });
@@ -215,19 +222,23 @@ describe('schedules/SchedulesService', () => {
       repository.findOneBy.mockResolvedValue({ ...existing });
       queryBuilder.getExists.mockResolvedValue(false);
 
-      const result = await service.update(existing.id, user, {
-        endsAt: new Date('2026-01-10T00:00:00.000Z'),
-      });
+      const result = await service.update(
+        existing.id,
+        {
+          endsAt: new Date('2026-01-10T00:00:00.000Z'),
+        },
+        manager,
+      );
 
       expect(repository.save).toHaveBeenCalledTimes(1);
-      expect(result).toMatchObject({ updatedBy: user.id });
+      expect(result).toMatchObject({ updatedBy: manager.id });
     });
   });
 
   describe('remove', () => {
     const existing = {
       id: 'schedule-1',
-      createdBy: user.id,
+      createdBy: manager.id,
       status: ScheduleStatus.DRAFT,
       startsAt: startOfDay(new Date('2026-01-01T00:00:00.000Z')),
       endsAt: endOfDay(new Date('2026-01-07T00:00:00.000Z')),
@@ -236,7 +247,7 @@ describe('schedules/SchedulesService', () => {
     it('should not delete a schedule that does not exist', async () => {
       repository.findOneBy.mockResolvedValue(null);
 
-      await expect(service.remove('missing', user)).rejects.toBeInstanceOf(
+      await expect(service.remove('missing', manager)).rejects.toBeInstanceOf(
         NotFoundException,
       );
       expect(dataSource.transaction).not.toHaveBeenCalled();
@@ -248,8 +259,8 @@ describe('schedules/SchedulesService', () => {
         createdBy: 'another-user',
       });
 
-      await expect(service.remove(existing.id, user)).rejects.toBeInstanceOf(
-        ForbiddenException,
+      await expect(service.remove(existing.id, manager)).rejects.toBeInstanceOf(
+        NotFoundException,
       );
       expect(dataSource.transaction).not.toHaveBeenCalled();
       expect(entityManager.softDelete).not.toHaveBeenCalled();
@@ -261,7 +272,7 @@ describe('schedules/SchedulesService', () => {
         status: ScheduleStatus.APPROVED,
       });
 
-      await expect(service.remove(existing.id, user)).rejects.toBeInstanceOf(
+      await expect(service.remove(existing.id, manager)).rejects.toBeInstanceOf(
         ConflictException,
       );
       expect(dataSource.transaction).not.toHaveBeenCalled();
@@ -271,11 +282,11 @@ describe('schedules/SchedulesService', () => {
     it('should soft-delete the schedule and record who removed it when the owner deletes it', async () => {
       repository.findOneBy.mockResolvedValue({ ...existing });
 
-      await service.remove(existing.id, user);
+      await service.remove(existing.id, manager);
 
       expect(entityManager.save).toHaveBeenCalledWith(
         Schedule,
-        expect.objectContaining({ id: existing.id, updatedBy: user.id }),
+        expect.objectContaining({ id: existing.id, updatedBy: manager.id }),
       );
       expect(entityManager.softDelete).toHaveBeenCalledWith(
         Schedule,
@@ -288,7 +299,7 @@ describe('schedules/SchedulesService', () => {
     const pagination = { page: 1, limit: 20 };
 
     it('should hide draft schedules from non-managers', async () => {
-      await service.findAll(user, pagination);
+      await service.findAll(pagination, user);
 
       expect(queryBuilder.andWhere).toHaveBeenCalledWith(
         'schedule.status != :visibilityDraft',
@@ -297,7 +308,7 @@ describe('schedules/SchedulesService', () => {
     });
 
     it('should show managers published schedules together with their own drafts', async () => {
-      await service.findAll(manager, pagination);
+      await service.findAll(pagination, manager);
 
       expect(queryBuilder.andWhere).toHaveBeenCalledWith(
         '(schedule.status != :visibilityDraft OR schedule.createdBy = :visibilityUserId)',
@@ -306,10 +317,13 @@ describe('schedules/SchedulesService', () => {
     });
 
     it('should filter by status when a status is given', async () => {
-      await service.findAll(manager, {
-        ...pagination,
-        status: ScheduleStatus.APPROVED,
-      });
+      await service.findAll(
+        {
+          ...pagination,
+          status: ScheduleStatus.APPROVED,
+        },
+        manager,
+      );
 
       expect(queryBuilder.andWhere).toHaveBeenCalledWith(
         'schedule.status = :status',
@@ -318,7 +332,7 @@ describe('schedules/SchedulesService', () => {
     });
 
     it('should not filter by status when none is given', async () => {
-      await service.findAll(manager, pagination);
+      await service.findAll(pagination, manager);
 
       expect(queryBuilder.andWhere).not.toHaveBeenCalledWith(
         'schedule.status = :status',
@@ -327,7 +341,7 @@ describe('schedules/SchedulesService', () => {
     });
 
     it("should return only the current user's schedules when mine is true", async () => {
-      await service.findAll(manager, { ...pagination, mine: true });
+      await service.findAll({ ...pagination, mine: true }, manager);
 
       expect(queryBuilder.andWhere).toHaveBeenCalledWith(
         'schedule.createdBy = :ownerId',
@@ -336,7 +350,7 @@ describe('schedules/SchedulesService', () => {
     });
 
     it('should not restrict by ownership when mine is not set', async () => {
-      await service.findAll(manager, pagination);
+      await service.findAll(pagination, manager);
 
       expect(queryBuilder.andWhere).not.toHaveBeenCalledWith(
         'schedule.createdBy = :ownerId',
@@ -348,7 +362,7 @@ describe('schedules/SchedulesService', () => {
       const schedules = [{ id: 'schedule-1' }] as Schedule[];
       queryBuilder.getManyAndCount.mockResolvedValue([schedules, 1]);
 
-      const result = await service.findAll(manager, pagination);
+      const result = await service.findAll(pagination, manager);
 
       expect(queryBuilder.orderBy).toHaveBeenCalledWith(
         'schedule.startsAt',
@@ -361,7 +375,7 @@ describe('schedules/SchedulesService', () => {
       const schedules = [{ id: 'schedule-3' }] as Schedule[];
       queryBuilder.getManyAndCount.mockResolvedValue([schedules, 42]);
 
-      const result = await service.findAll(manager, { page: 2, limit: 20 });
+      const result = await service.findAll({ page: 2, limit: 20 }, manager);
 
       // page 2 of size 20 skips the first 20 rows.
       expect(queryBuilder.skip).toHaveBeenCalledWith(20);
