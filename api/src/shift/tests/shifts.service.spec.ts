@@ -153,51 +153,6 @@ describe('shifts/ShiftsService', () => {
     });
   });
 
-  describe('findAll', () => {
-    it('should return the shifts of a schedule the user may see', async () => {
-      const found = [{ id: 'shift-1' }] as Shift[];
-      shifts.find.mockResolvedValueOnce(found);
-
-      const result = await service.findAll(scheduleId, manager);
-
-      expect(schedulesHelpers.findVisible).toHaveBeenCalledWith(
-        scheduleId,
-        manager,
-      );
-      expect(shifts.find).toHaveBeenCalledWith({ where: { scheduleId } });
-      expect(result).toStrictEqual(found);
-    });
-
-    it('should not return the shifts if a schedule is not visible', async () => {
-      schedulesHelpers.findVisible.mockRejectedValueOnce(
-        new NotFoundException(),
-      );
-
-      await expect(service.findAll(scheduleId, manager)).rejects.toBeInstanceOf(
-        NotFoundException,
-      );
-      expect(shifts.find).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('findOne', () => {
-    it('should return the visible shift', async () => {
-      const found = { id: 'shift-1', scheduleId } as Shift;
-      helpers.findVisible.mockResolvedValueOnce(found);
-
-      const result = await service.findOne('shift-1', manager);
-      expect(result).toStrictEqual(found);
-    });
-
-    it('should not return a shift that is not visible', async () => {
-      helpers.findVisible.mockRejectedValueOnce(new NotFoundException());
-
-      await expect(service.findOne('missing', manager)).rejects.toBeInstanceOf(
-        NotFoundException,
-      );
-    });
-  });
-
   describe('update', () => {
     const existing = {
       id: 'shift-1',

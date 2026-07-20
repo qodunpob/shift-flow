@@ -13,13 +13,17 @@ import {
 import { Roles } from '@/auth/roles.decorator';
 import { UserRole } from '@/entities';
 import { ShiftsService } from '@/shift/shifts.service';
+import { ShiftsBoardService } from '@/shift/shifts-board.service';
 import { CreateShiftDto, UpdateShiftDto } from '@/shift/shifts.dto';
 import type { AuthenticatedUser } from '@/auth/authenticated-request';
 import { CurrentUser } from '@/auth/current-user.decorator';
 
 @Controller('schedules/:scheduleId/shifts')
 export class ScheduleShiftsController {
-  constructor(private readonly shifts: ShiftsService) {}
+  constructor(
+    private readonly shifts: ShiftsService,
+    private readonly board: ShiftsBoardService,
+  ) {}
 
   @Roles([UserRole.MANAGER])
   @Post()
@@ -36,20 +40,23 @@ export class ScheduleShiftsController {
     @Param('scheduleId', ParseUUIDPipe) scheduleId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.shifts.findAll(scheduleId, user);
+    return this.board.getScheduleBoard(scheduleId, user);
   }
 }
 
 @Controller('shifts/:id')
 export class ShiftsController {
-  constructor(private readonly shifts: ShiftsService) {}
+  constructor(
+    private readonly shifts: ShiftsService,
+    private readonly board: ShiftsBoardService,
+  ) {}
 
   @Get()
   findOne(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.shifts.findOne(id, user);
+    return this.board.getShift(id, user);
   }
 
   @Roles([UserRole.MANAGER])

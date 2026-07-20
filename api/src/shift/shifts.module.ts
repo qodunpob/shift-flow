@@ -4,6 +4,7 @@ import {
   ShiftsController,
 } from './shifts.controller';
 import { ShiftsService } from './shifts.service';
+import { ShiftsBoardService } from './shifts-board.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Assignment, Shift } from '@/entities';
 import { ShiftsHelpersService } from '@/shift/shifts-helpers.service';
@@ -18,6 +19,6 @@ import { ShiftsHelpersModule } from '@/shift/shifts-helpers.module';
     ShiftsHelpersModule,
   ],
   controllers: [ScheduleShiftsController, ShiftsController],
-  providers: [ShiftsService, ShiftsHelpersService],
+  providers: [ShiftsService, ShiftsBoardService, ShiftsHelpersService],
 })
 export class ShiftsModule {}

@@ -7,6 +7,7 @@ import {
   ShiftsController,
 } from '../shifts.controller';
 import { ShiftsService } from '../shifts.service';
+import { ShiftBoardView, ShiftsBoardService } from '../shifts-board.service';
 import { CreateShiftDto, UpdateShiftDto } from '../shifts.dto';
 import { RolesGuard } from '@/auth/roles.guard';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
@@ -117,10 +118,10 @@ describe('shifts controllers', () => {
     let scheduleShifts: ScheduleShiftsController;
     let shiftsController: ShiftsController;
     let shifts: jest.Mocked<
-      Pick<
-        ShiftsService,
-        'create' | 'findAll' | 'findOne' | 'update' | 'remove'
-      >
+      Pick<ShiftsService, 'create' | 'update' | 'remove'>
+    >;
+    let board: jest.Mocked<
+      Pick<ShiftsBoardService, 'getScheduleBoard' | 'getShift'>
     >;
 
     const user: AuthenticatedUser = {
@@ -129,21 +130,27 @@ describe('shifts controllers', () => {
     };
     const scheduleId = 'schedule-1';
     const shiftId = 'shift-1';
-    // A stand-in returned by the mocked service; identity is what we assert on.
+    // Stand-ins returned by the mocked services; identity is what we assert on.
     const shift = { id: shiftId } as Shift;
+    const boardView = { id: shiftId } as unknown as ShiftBoardView;
 
     beforeEach(async () => {
       shifts = {
         create: jest.fn().mockResolvedValueOnce(shift),
-        findAll: jest.fn().mockResolvedValueOnce([shift]),
-        findOne: jest.fn().mockResolvedValueOnce(shift),
         update: jest.fn().mockResolvedValueOnce(shift),
         remove: jest.fn().mockResolvedValueOnce(undefined),
+      };
+      board = {
+        getScheduleBoard: jest.fn().mockResolvedValueOnce([boardView]),
+        getShift: jest.fn().mockResolvedValueOnce(boardView),
       };
 
       const module: TestingModule = await Test.createTestingModule({
         controllers: [ScheduleShiftsController, ShiftsController],
-        providers: [{ provide: ShiftsService, useValue: shifts }],
+        providers: [
+          { provide: ShiftsService, useValue: shifts },
+          { provide: ShiftsBoardService, useValue: board },
+        ],
       }).compile();
 
       scheduleShifts = module.get(ScheduleShiftsController);
@@ -163,21 +170,21 @@ describe('shifts controllers', () => {
       expect(shifts.create).toHaveBeenCalledWith(scheduleId, dto, user);
     });
 
-    it("should list a schedule's shifts for the current user", async () => {
-      const result = [shift];
-      shifts.findAll.mockResolvedValueOnce(result);
+    it("should list a schedule's shifts board for the current user", async () => {
+      const result = [boardView];
+      board.getScheduleBoard.mockResolvedValueOnce(result);
 
       await expect(
         scheduleShifts.findAll(scheduleId, user),
       ).resolves.toStrictEqual(result);
-      expect(shifts.findAll).toHaveBeenCalledWith(scheduleId, user);
+      expect(board.getScheduleBoard).toHaveBeenCalledWith(scheduleId, user);
     });
 
-    it('should return a single shift by its id for the current user', async () => {
+    it('should return a single shift board view by its id for the current user', async () => {
       await expect(
         shiftsController.findOne(shiftId, user),
-      ).resolves.toStrictEqual(shift);
-      expect(shifts.findOne).toHaveBeenCalledWith(shiftId, user);
+      ).resolves.toStrictEqual(boardView);
+      expect(board.getShift).toHaveBeenCalledWith(shiftId, user);
     });
 
     it('should apply the submitted changes to an existing shift', async () => {

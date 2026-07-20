@@ -52,18 +52,6 @@ export class ShiftsService {
     return this.cleanResult(await this.shifts.save(shift));
   }
 
-  async findAll(scheduleId: string, user: AuthenticatedUser) {
-    const schedule = await this.schedulesHelpers.findVisible(scheduleId, user);
-
-    return await this.shifts.find({
-      where: { scheduleId: schedule.id },
-    });
-  }
-
-  async findOne(id: string, user: AuthenticatedUser) {
-    return this.cleanResult(await this.helpers.findVisible(id, user));
-  }
-
   async update(id: string, dto: UpdateShiftDto, user: AuthenticatedUser) {
     const shift = await this.helpers.findEditable(id, user);
     if (shift.schedule.createdBy !== user.id) {
