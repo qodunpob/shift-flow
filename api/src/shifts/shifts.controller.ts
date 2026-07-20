@@ -27,12 +27,13 @@ export class ScheduleShiftsController {
 
   @Roles([UserRole.MANAGER])
   @Post()
-  create(
+  async create(
     @Param('scheduleId', ParseUUIDPipe) scheduleId: string,
     @Body() dto: CreateShiftDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.shifts.create(scheduleId, dto, user);
+    const shift = await this.shifts.create(scheduleId, dto, user);
+    return this.board.getShift(shift.id, user);
   }
 
   @Get()
@@ -61,12 +62,13 @@ export class ShiftsController {
 
   @Roles([UserRole.MANAGER])
   @Put()
-  update(
+  async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateShiftDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.shifts.update(id, dto, user);
+    await this.shifts.update(id, dto, user);
+    return this.board.getShift(id, user);
   }
 
   @Roles([UserRole.MANAGER])

@@ -12,7 +12,6 @@ import { startOfMinute } from 'date-fns';
 import { SchedulesHelpersService } from '@/schedules/schedules-helpers.service';
 import { ShiftsHelpersService } from '@/shifts/shifts-helpers.service';
 import { softDelete } from '@/utils/soft-delete';
-import { omit } from 'lodash';
 
 @Injectable()
 export class ShiftsService {
@@ -49,7 +48,7 @@ export class ShiftsService {
       updatedBy: user.id,
     });
 
-    return this.cleanResult(await this.shifts.save(shift));
+    return this.shifts.save(shift);
   }
 
   async update(id: string, dto: UpdateShiftDto, user: AuthenticatedUser) {
@@ -82,7 +81,7 @@ export class ShiftsService {
       updatedBy: user.id,
     });
 
-    return this.cleanResult(await this.shifts.save(shift));
+    return this.shifts.save(shift);
   }
 
   async remove(id: string, user: AuthenticatedUser) {
@@ -116,9 +115,5 @@ export class ShiftsService {
     if (await query.getExists()) {
       throw new ConflictException('Shift overlaps with an existing shift.');
     }
-  }
-
-  private cleanResult(shift: Shift) {
-    return omit(shift, ['schedule']);
   }
 }

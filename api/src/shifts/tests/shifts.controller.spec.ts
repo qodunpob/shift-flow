@@ -157,7 +157,7 @@ describe('shifts controllers', () => {
       shiftsController = module.get(ShiftsController);
     });
 
-    it('should create a shift on the schedule for the current user', async () => {
+    it('should create a shift and return its board view for the current user', async () => {
       const dto: CreateShiftDto = {
         startsAt: new Date('2026-01-01T09:00:00.000Z'),
         endsAt: new Date('2026-01-01T17:00:00.000Z'),
@@ -166,8 +166,9 @@ describe('shifts controllers', () => {
 
       await expect(
         scheduleShifts.create(scheduleId, dto, user),
-      ).resolves.toStrictEqual(shift);
+      ).resolves.toStrictEqual(boardView);
       expect(shifts.create).toHaveBeenCalledWith(scheduleId, dto, user);
+      expect(board.getShift).toHaveBeenCalledWith(shiftId, user);
     });
 
     it("should list a schedule's shifts board for the current user", async () => {
@@ -187,13 +188,14 @@ describe('shifts controllers', () => {
       expect(board.getShift).toHaveBeenCalledWith(shiftId, user);
     });
 
-    it('should apply the submitted changes to an existing shift', async () => {
+    it('should apply the submitted changes and return the updated board view', async () => {
       const dto: UpdateShiftDto = { requiredHeadcount: 5 };
 
       await expect(
         shiftsController.update(shiftId, dto, user),
-      ).resolves.toStrictEqual(shift);
+      ).resolves.toStrictEqual(boardView);
       expect(shifts.update).toHaveBeenCalledWith(shiftId, dto, user);
+      expect(board.getShift).toHaveBeenCalledWith(shiftId, user);
     });
 
     it('should delete a shift for the current user without returning a body', async () => {
