@@ -12,7 +12,7 @@ import {
   DeclineAssignmentDto,
 } from '@/assignments/assignments.dto';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
-import { ShiftsHelpersService } from '@/shift/shifts-helpers.service';
+import { ShiftsHelpersService } from '@/shifts/shifts-helpers.service';
 import { softDelete } from '@/utils/soft-delete';
 import { isScheduleVisibleTo } from '@/schedules/schedule-visibility';
 import { isEditable } from '@/schedules/schedule-lifecycle';

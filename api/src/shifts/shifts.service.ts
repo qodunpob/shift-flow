@@ -4,13 +4,13 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
-import { CreateShiftDto, UpdateShiftDto } from '@/shift/shifts.dto';
+import { CreateShiftDto, UpdateShiftDto } from '@/shifts/shifts.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Assignment, Shift } from '@/entities';
 import { DataSource, Repository } from 'typeorm';
 import { startOfMinute } from 'date-fns';
 import { SchedulesHelpersService } from '@/schedules/schedules-helpers.service';
-import { ShiftsHelpersService } from '@/shift/shifts-helpers.service';
+import { ShiftsHelpersService } from '@/shifts/shifts-helpers.service';
 import { softDelete } from '@/utils/soft-delete';
 import { omit } from 'lodash';
 

@@ -6,7 +6,7 @@ import {
 import { AssignmentsService } from './assignments.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Assignment, User } from '@/entities';
-import { ShiftsHelpersModule } from '@/shift/shifts-helpers.module';
+import { ShiftsHelpersModule } from '@/shifts/shifts-helpers.module';
 
 @Module({
   imports: [

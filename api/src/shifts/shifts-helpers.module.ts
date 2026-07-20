@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Shift } from '@/entities';
-import { ShiftsHelpersService } from '@/shift/shifts-helpers.service';
+import { ShiftsHelpersService } from '@/shifts/shifts-helpers.service';
 import { SchedulesHelpersModule } from '@/schedules/schedules-helpers.module';
 
 @Module({

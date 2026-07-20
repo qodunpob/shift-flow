@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Assignment, AssignmentProposal, User } from '@/entities';
 import { DataSource, Repository } from 'typeorm';
-import { ShiftsHelpersService } from '@/shift/shifts-helpers.service';
+import { ShiftsHelpersService } from '@/shifts/shifts-helpers.service';
 
 @Injectable()
 export class AssignmentProposalsService {

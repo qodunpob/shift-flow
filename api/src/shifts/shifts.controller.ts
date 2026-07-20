@@ -12,9 +12,9 @@ import {
 } from '@nestjs/common';
 import { Roles } from '@/auth/roles.decorator';
 import { UserRole } from '@/entities';
-import { ShiftsService } from '@/shift/shifts.service';
-import { ShiftsBoardService } from '@/shift/shifts-board.service';
-import { CreateShiftDto, UpdateShiftDto } from '@/shift/shifts.dto';
+import { ShiftsService } from '@/shifts/shifts.service';
+import { ShiftsBoardService } from '@/shifts/shifts-board.service';
+import { CreateShiftDto, UpdateShiftDto } from '@/shifts/shifts.dto';
 import type { AuthenticatedUser } from '@/auth/authenticated-request';
 import { CurrentUser } from '@/auth/current-user.decorator';
 

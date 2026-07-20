@@ -17,7 +17,7 @@ import {
   UserRole,
 } from '@/entities';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
-import { ShiftsHelpersService } from '@/shift/shifts-helpers.service';
+import { ShiftsHelpersService } from '@/shifts/shifts-helpers.service';
 
 describe('assignments/AssignmentsService', () => {
   let service: AssignmentsService;
