@@ -13,31 +13,60 @@ import {
 } from '@/assignment-proposals/assignment-proposal.dto';
 import { CurrentUser } from '@/auth/current-user.decorator';
 import type { AuthenticatedUser } from '@/auth/authenticated-request';
+import { UserRole } from '@/entities';
+import { Roles } from '@/auth/roles.decorator';
+import { AssignmentProposalsService } from '@/assignment-proposals/assignment-proposals.service';
 
 @Controller('shifts/:shiftId/assignment-proposals')
 export class ShiftAssignmentProposalsController {
+  constructor(private readonly proposals: AssignmentProposalsService) {}
+
   @Post()
   create(
     @Param('shiftId', ParseUUIDPipe) shiftId: string,
     @Body() dto: CreateAssignmentProposalDto,
-  ) {}
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.proposals.create(shiftId, dto, user);
+  }
 }
 
-@Controller('assignment-proposals')
+@Controller('assignment-proposals/:id')
 export class AssignmentProposalsController {
-  @Put(':id')
+  constructor(private readonly proposals: AssignmentProposalsService) {}
+
+  @Put()
   update(
-    @Param('id', ParseUUIDPipe) shiftId: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateAssignmentProposalDto,
     @CurrentUser() user: AuthenticatedUser,
-  ) {}
+  ) {
+    return this.proposals.update(id, dto, user);
+  }
 
-  @Delete(':id')
+  @Delete()
   delete(
-    @Param('id', ParseUUIDPipe) shiftId: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
-  ) {}
+  ) {
+    return this.proposals.remove(id, user);
+  }
 
-  @Post(':id/accept')
-  accept() {}
+  @Roles([UserRole.MANAGER])
+  @Post('accept')
+  accept(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.proposals.accept(id, user);
+  }
+
+  @Roles([UserRole.MANAGER])
+  @Post('decline')
+  decline(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    this.proposals.decline(id, user);
+  }
 }

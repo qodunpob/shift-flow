@@ -42,14 +42,21 @@ export class AssignmentsService {
     if (!employee) {
       throw new NotFoundException('Employee not found');
     }
-
-    const assignment = this.assignments.create({
+    const existingAssignment = await this.assignments.findOneBy({
       shiftId: shift.id,
       employeeId: employee.id,
+    });
+    if (existingAssignment) {
+      throw new ConflictException('Assignment already exists');
+    }
+
+    const assignment = this.assignments.create({
+      shift,
+      employee,
       createdBy: user.id,
       updatedBy: user.id,
     });
-    return this.cleanResult(await this.assignments.save(assignment));
+    return this.toView(await this.assignments.save(assignment));
   }
 
   async remove(id: string, user: AuthenticatedUser) {
@@ -73,7 +80,7 @@ export class AssignmentsService {
       updatedBy: user.id,
     });
 
-    return this.cleanResult(await this.assignments.save(assignment));
+    return this.toView(await this.assignments.save(assignment));
   }
 
   async decline(
@@ -94,7 +101,7 @@ export class AssignmentsService {
       updatedBy: user.id,
     });
 
-    return this.cleanResult(await this.assignments.save(assignment));
+    return this.toView(await this.assignments.save(assignment));
   }
 
   private async findVisible(id: string, user: AuthenticatedUser) {
@@ -107,7 +114,7 @@ export class AssignmentsService {
       },
     });
     if (!assignment || !isScheduleVisibleTo(assignment.shift.schedule, user)) {
-      throw new NotFoundException('Assignment not found');
+      throw new NotFoundException('Assignment not found.');
     }
     return assignment;
   }
@@ -122,7 +129,7 @@ export class AssignmentsService {
     return assignment;
   }
 
-  private cleanResult(assignment: Assignment) {
+  private toView(assignment: Assignment) {
     return omit(assignment, ['shift', 'employee']);
   }
 }
