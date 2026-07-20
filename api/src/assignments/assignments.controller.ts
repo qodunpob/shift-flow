@@ -42,11 +42,11 @@ export class ShiftAssignmentsController {
   }
 }
 
-@Controller('assignments')
+@Controller('assignments/:id')
 export class AssignmentsController {
   constructor(private readonly assignments: AssignmentsService) {}
 
-  @Get(':id')
+  @Get()
   findOne(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
@@ -55,7 +55,7 @@ export class AssignmentsController {
   }
 
   @Roles([UserRole.MANAGER])
-  @Delete(':id')
+  @Delete()
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(
     @Param('id', ParseUUIDPipe) id: string,
@@ -64,7 +64,7 @@ export class AssignmentsController {
     return this.assignments.remove(id, user);
   }
 
-  @Post(':id/accept')
+  @Post('accept')
   accept(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
@@ -72,7 +72,7 @@ export class AssignmentsController {
     return this.assignments.accept(id, user);
   }
 
-  @Post(':id/decline')
+  @Post('decline')
   decline(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: DeclineAssignmentDto,

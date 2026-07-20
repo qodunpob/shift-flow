@@ -40,11 +40,11 @@ export class ScheduleShiftsController {
   }
 }
 
-@Controller('shifts')
+@Controller('shifts/:id')
 export class ShiftsController {
   constructor(private readonly shifts: ShiftsService) {}
 
-  @Get(':id')
+  @Get()
   findOne(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
@@ -53,7 +53,7 @@ export class ShiftsController {
   }
 
   @Roles([UserRole.MANAGER])
-  @Put(':id')
+  @Put()
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateShiftDto,
@@ -63,7 +63,7 @@ export class ShiftsController {
   }
 
   @Roles([UserRole.MANAGER])
-  @Delete(':id')
+  @Delete()
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(
     @Param('id', ParseUUIDPipe) id: string,
