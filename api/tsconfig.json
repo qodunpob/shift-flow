@@ -28,6 +28,7 @@
   "include": [
     "src/**/*.ts",
     "migrations/**/*.ts",
+    "seeds/**/*.ts",
     "datasource.ts"
   ]
 }

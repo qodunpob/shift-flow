@@ -1,5 +1,4 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
-import { hashPassword } from "@/utils/password";
 
 export class Init1784529363456 implements MigrationInterface {
     name = 'Init1784529363456'
@@ -18,21 +17,6 @@ export class Init1784529363456 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "shifts" ADD CONSTRAINT "FK_99de60c4b123a0bc1b2126c530b" FOREIGN KEY ("scheduleId") REFERENCES "schedules"("id") ON DELETE RESTRICT ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "assignments" ADD CONSTRAINT "FK_f4a2aa95618490afc8139b1b3e4" FOREIGN KEY ("shiftId") REFERENCES "shifts"("id") ON DELETE RESTRICT ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "assignments" ADD CONSTRAINT "FK_731a69ec38c0292449a07e34f4b" FOREIGN KEY ("employeeId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE NO ACTION`);
-
-        // Seed the baseline users. Passwords are hashed; for these dev accounts
-        // the plaintext password equals the email address.
-        const seedUsers = [
-            { id: 'caffe836-3198-4e55-9a46-a1e8d8e49f9e', firstName: 'Employee', lastName: 'Test', emailAddress: 'test-employee@example.com', roles: [] },
-            { id: 'cde9a7fe-d70a-4af7-bdb1-0444ef03231b', firstName: 'Manager', lastName: 'Test', emailAddress: 'test-manager@example.com', roles: ['MANAGER'] },
-            { id: 'a7d3e30b-1362-499f-96d5-1efbf8c07b5f', firstName: 'Approver', lastName: 'Test', emailAddress: 'test-approver@example.com', roles: ['APPROVER'] },
-        ];
-        for (const user of seedUsers) {
-            const password = await hashPassword(user.emailAddress);
-            await queryRunner.query(
-                `INSERT INTO "users" ("id", "createdBy", "updatedBy", "password", "firstName", "lastName", "emailAddress", "avatarUrl", "roles") VALUES ($1, $1, $1, $2, $3, $4, $5, NULL, $6::"public"."users_roles_enum"[])`,
-                [user.id, password, user.firstName, user.lastName, user.emailAddress, user.roles],
-            );
-        }
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
