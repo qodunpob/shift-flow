@@ -34,7 +34,6 @@ describe('shifts/ShiftsBoardService', () => {
       lastName: `${id}-last`,
       avatarUrl: null,
       emailAddress: `${id}@example.com`,
-      authProviderId: `auth-${id}`,
       roles: [],
     }) as unknown as User;
 

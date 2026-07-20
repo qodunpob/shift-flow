@@ -4,6 +4,7 @@ import { AuthService } from '../auth.service';
 import { UsersService } from '@/users/users.service';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
 import { UserRole } from '@/entities';
+import { hashPassword } from '@/utils/password';
 
 describe('auth/AuthService', () => {
   let service: AuthService;
@@ -13,9 +14,13 @@ describe('auth/AuthService', () => {
   const storedUser = {
     id: 'user-1',
     emailAddress: 'manager@example.com',
-    password: 'secret',
+    password: '',
     roles: [UserRole.MANAGER],
   };
+
+  beforeAll(async () => {
+    storedUser.password = await hashPassword('secret');
+  });
 
   beforeEach(async () => {
     usersService = { findOne: jest.fn() };

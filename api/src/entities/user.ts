@@ -10,8 +10,8 @@ export enum UserRole {
 
 @Entity('users')
 export class User extends AuditableEntity {
-  @Column({ type: 'text', unique: true })
-  authProviderId: string;
+  @Column({ type: 'text', select: false })
+  password: string;
 
   @Column({ type: 'text' })
   firstName: string;
