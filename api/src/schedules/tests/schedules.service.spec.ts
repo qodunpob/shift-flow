@@ -11,6 +11,7 @@ import { SchedulesService } from '../schedules.service';
 import { Schedule, ScheduleStatus, UserRole } from '@/entities';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
 import { CreateScheduleDto } from '@/schedules/schedules.dto';
+import { SchedulesHelpersService } from '@/schedules/schedules-helpers.service';
 
 describe('schedules/SchedulesService', () => {
   let service: SchedulesService;
@@ -31,6 +32,10 @@ describe('schedules/SchedulesService', () => {
   };
   let entityManager: { save: jest.Mock; softDelete: jest.Mock };
   let dataSource: { transaction: jest.Mock };
+  let helpers: {
+    findVisible: jest.Mock;
+    findEditable: jest.Mock;
+  };
 
   const user: AuthenticatedUser = { id: 'user-1', roles: [] };
   const manager: AuthenticatedUser = {
@@ -67,12 +72,17 @@ describe('schedules/SchedulesService', () => {
         cb(entityManager as unknown as EntityManager),
       ),
     };
+    helpers = {
+      findVisible: jest.fn(),
+      findEditable: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SchedulesService,
         { provide: getRepositoryToken(Schedule), useValue: repository },
         { provide: DataSource, useValue: dataSource },
+        { provide: SchedulesHelpersService, useValue: helpers },
       ],
     }).compile();
 
@@ -89,7 +99,7 @@ describe('schedules/SchedulesService', () => {
     };
 
     it('should create the schedule when it does not overlap an existing one', async () => {
-      queryBuilder.getExists.mockResolvedValue(false);
+      queryBuilder.getExists.mockResolvedValueOnce(false);
 
       const result = await service.create(dto, manager);
 
@@ -121,7 +131,7 @@ describe('schedules/SchedulesService', () => {
     });
 
     it('should not create a schedule that overlaps an existing one', async () => {
-      queryBuilder.getExists.mockResolvedValue(true);
+      queryBuilder.getExists.mockResolvedValueOnce(true);
 
       await expect(service.create(dto, manager)).rejects.toBeInstanceOf(
         ConflictException,
@@ -139,40 +149,21 @@ describe('schedules/SchedulesService', () => {
       endsAt: endOfDay(new Date('2026-01-07T00:00:00.000Z')),
     } as Schedule;
 
-    it('should not update a schedule that does not exist', async () => {
-      repository.findOneBy.mockResolvedValue(null);
+    it('should not update a schedule that is not editable', async () => {
+      helpers.findEditable.mockRejectedValueOnce(new NotFoundException());
 
       await expect(
         service.update('missing', {}, manager),
       ).rejects.toBeInstanceOf(NotFoundException);
-      expect(queryBuilder.getExists).not.toHaveBeenCalled();
-    });
-
-    it("should report someone else's draft as not found rather than reveal it", async () => {
-      // A draft is invisible to non-owners, so an attempt to update it must
-      // 404 (hiding its existence) rather than 403.
-      repository.findOneBy.mockResolvedValue({
-        ...existing,
-        status: ScheduleStatus.DRAFT,
-        createdBy: 'another-user',
-      });
-
-      await expect(
-        service.update(existing.id, { label: 'Hijacked' }, manager),
-      ).rejects.toBeInstanceOf(NotFoundException);
-      expect(queryBuilder.getExists).not.toHaveBeenCalled();
       expect(repository.save).not.toHaveBeenCalled();
     });
 
     it("should forbid updating someone else's visible schedule", async () => {
-      // A published (non-draft) schedule is visible to everyone, so it cannot
-      // be hidden — a non-owner is told they may not modify it (403), not 404.
-      repository.findOneBy.mockResolvedValue({
+      helpers.findEditable.mockResolvedValueOnce({
         ...existing,
         status: ScheduleStatus.IN_REVIEW,
         createdBy: 'another-user',
       });
-
       await expect(
         service.update(existing.id, { label: 'Hijacked' }, manager),
       ).rejects.toBeInstanceOf(ForbiddenException);
@@ -180,21 +171,8 @@ describe('schedules/SchedulesService', () => {
       expect(repository.save).not.toHaveBeenCalled();
     });
 
-    it('should not update a schedule whose status is not editable', async () => {
-      repository.findOneBy.mockResolvedValue({
-        ...existing,
-        status: ScheduleStatus.AWAITING_APPROVAL,
-      });
-
-      await expect(
-        service.update(existing.id, { label: 'Too late' }, manager),
-      ).rejects.toBeInstanceOf(ConflictException);
-      expect(queryBuilder.getExists).not.toHaveBeenCalled();
-      expect(repository.save).not.toHaveBeenCalled();
-    });
-
     it('should not treat the schedule being updated as overlapping itself', async () => {
-      repository.findOneBy.mockResolvedValue({ ...existing });
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
 
       await service.update(
         existing.id,
@@ -211,7 +189,7 @@ describe('schedules/SchedulesService', () => {
     });
 
     it('should keep the current dates when the update leaves them unchanged', async () => {
-      repository.findOneBy.mockResolvedValue({ ...existing });
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
 
       await service.update(existing.id, { label: 'Renamed' }, manager);
 
@@ -226,8 +204,8 @@ describe('schedules/SchedulesService', () => {
     });
 
     it('should not update a schedule so that it overlaps another one', async () => {
-      repository.findOneBy.mockResolvedValue({ ...existing });
-      queryBuilder.getExists.mockResolvedValue(true);
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
+      queryBuilder.getExists.mockResolvedValueOnce(true);
 
       await expect(
         service.update(
@@ -242,8 +220,8 @@ describe('schedules/SchedulesService', () => {
     });
 
     it('should update the schedule when the new dates do not overlap another one', async () => {
-      repository.findOneBy.mockResolvedValue({ ...existing });
-      queryBuilder.getExists.mockResolvedValue(false);
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
+      queryBuilder.getExists.mockResolvedValueOnce(false);
 
       const result = await service.update(
         existing.id,
@@ -267,24 +245,10 @@ describe('schedules/SchedulesService', () => {
       endsAt: endOfDay(new Date('2026-01-07T00:00:00.000Z')),
     } as Schedule;
 
-    it('should not delete a schedule that does not exist', async () => {
-      repository.findOneBy.mockResolvedValue(null);
+    it('should not delete a schedule that is not editable', async () => {
+      helpers.findEditable.mockRejectedValueOnce(new NotFoundException());
 
       await expect(service.remove('missing', manager)).rejects.toBeInstanceOf(
-        NotFoundException,
-      );
-      expect(dataSource.transaction).not.toHaveBeenCalled();
-    });
-
-    it("should report someone else's draft as not found rather than reveal it", async () => {
-      // Invisible to non-owners, so deletion attempts 404 rather than 403.
-      repository.findOneBy.mockResolvedValue({
-        ...existing,
-        status: ScheduleStatus.DRAFT,
-        createdBy: 'another-user',
-      });
-
-      await expect(service.remove(existing.id, manager)).rejects.toBeInstanceOf(
         NotFoundException,
       );
       expect(dataSource.transaction).not.toHaveBeenCalled();
@@ -292,8 +256,7 @@ describe('schedules/SchedulesService', () => {
     });
 
     it("should forbid deleting someone else's visible schedule", async () => {
-      // Visible to everyone, so a non-owner is forbidden (403), not 404.
-      repository.findOneBy.mockResolvedValue({
+      helpers.findEditable.mockResolvedValueOnce({
         ...existing,
         status: ScheduleStatus.IN_REVIEW,
         createdBy: 'another-user',
@@ -306,21 +269,8 @@ describe('schedules/SchedulesService', () => {
       expect(entityManager.softDelete).not.toHaveBeenCalled();
     });
 
-    it('should not delete a schedule whose status is not deletable', async () => {
-      repository.findOneBy.mockResolvedValue({
-        ...existing,
-        status: ScheduleStatus.APPROVED,
-      });
-
-      await expect(service.remove(existing.id, manager)).rejects.toBeInstanceOf(
-        ConflictException,
-      );
-      expect(dataSource.transaction).not.toHaveBeenCalled();
-      expect(entityManager.softDelete).not.toHaveBeenCalled();
-    });
-
     it('should soft-delete the schedule and record who removed it when the owner deletes it', async () => {
-      repository.findOneBy.mockResolvedValue({ ...existing });
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
 
       await service.remove(existing.id, manager);
 
@@ -400,7 +350,7 @@ describe('schedules/SchedulesService', () => {
 
     it('should return the schedules ordered by their start date', async () => {
       const schedules = [{ id: 'schedule-1' }] as Schedule[];
-      queryBuilder.getManyAndCount.mockResolvedValue([schedules, 1]);
+      queryBuilder.getManyAndCount.mockResolvedValueOnce([schedules, 1]);
 
       const result = await service.findAll(pagination, manager);
 
@@ -408,12 +358,12 @@ describe('schedules/SchedulesService', () => {
         'schedule.startsAt',
         'ASC',
       );
-      expect(result.items).toBe(schedules);
+      expect(result.items).toStrictEqual(schedules);
     });
 
     it('should return the requested page together with pagination metadata', async () => {
       const schedules = [{ id: 'schedule-3' }] as Schedule[];
-      queryBuilder.getManyAndCount.mockResolvedValue([schedules, 42]);
+      queryBuilder.getManyAndCount.mockResolvedValueOnce([schedules, 42]);
 
       const result = await service.findAll({ page: 2, limit: 20 }, manager);
 
@@ -424,103 +374,6 @@ describe('schedules/SchedulesService', () => {
         items: schedules,
         meta: { total: 42, page: 2, limit: 20, totalPages: 3 },
       });
-    });
-  });
-
-  describe('findVisible', () => {
-    it('should return a published schedule to any user', async () => {
-      const schedule = {
-        id: 'schedule-1',
-        createdBy: 'someone-else',
-        status: ScheduleStatus.APPROVED,
-      } as Schedule;
-      repository.findOneBy.mockResolvedValue(schedule);
-
-      await expect(service.findVisible('schedule-1', user)).resolves.toBe(
-        schedule,
-      );
-    });
-
-    it('should return a draft to the manager who owns it', async () => {
-      const draft = {
-        id: 'schedule-1',
-        createdBy: manager.id,
-        status: ScheduleStatus.DRAFT,
-      } as Schedule;
-      repository.findOneBy.mockResolvedValue(draft);
-
-      await expect(service.findVisible('schedule-1', manager)).resolves.toBe(
-        draft,
-      );
-    });
-
-    it('should report a draft owned by someone else as not found', async () => {
-      repository.findOneBy.mockResolvedValue({
-        id: 'schedule-1',
-        createdBy: 'another-manager',
-        status: ScheduleStatus.DRAFT,
-      });
-
-      await expect(
-        service.findVisible('schedule-1', manager),
-      ).rejects.toBeInstanceOf(NotFoundException);
-    });
-
-    it('should throw NotFound when the schedule does not exist', async () => {
-      repository.findOneBy.mockResolvedValue(null);
-
-      await expect(
-        service.findVisible('missing', manager),
-      ).rejects.toBeInstanceOf(NotFoundException);
-    });
-  });
-
-  describe('findEditable', () => {
-    it('should return a visible schedule whose status is editable', async () => {
-      const schedule = {
-        id: 'schedule-1',
-        createdBy: manager.id,
-        status: ScheduleStatus.DRAFT,
-      } as Schedule;
-      repository.findOneBy.mockResolvedValue(schedule);
-
-      await expect(service.findEditable('schedule-1', manager)).resolves.toBe(
-        schedule,
-      );
-    });
-
-    it('should reject a visible schedule whose status is not editable', async () => {
-      repository.findOneBy.mockResolvedValue({
-        id: 'schedule-1',
-        createdBy: 'someone-else',
-        status: ScheduleStatus.APPROVED,
-      });
-
-      await expect(
-        service.findEditable('schedule-1', manager),
-      ).rejects.toBeInstanceOf(ConflictException);
-    });
-
-    it('should surface the visibility outcome, hiding a draft owned by someone else', async () => {
-      // findEditable builds on findVisible, so an invisible draft stays a 404
-      // and never leaks through as an editability conflict.
-      repository.findOneBy.mockResolvedValue({
-        id: 'schedule-1',
-        createdBy: 'another-manager',
-        status: ScheduleStatus.DRAFT,
-      });
-
-      await expect(
-        service.findEditable('schedule-1', manager),
-      ).rejects.toBeInstanceOf(NotFoundException);
-    });
-
-    it('should throw NotFound when the schedule does not exist', async () => {
-      repository.findOneBy.mockResolvedValue(null);
-
-      await expect(
-        service.findEditable('missing', manager),
-      ).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 });

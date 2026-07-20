@@ -54,6 +54,8 @@ describe('schedules/schedule-visibility', () => {
       query = { andWhere: jest.fn().mockReturnThis() };
     });
 
+    afterEach(() => jest.clearAllMocks());
+
     it('should restrict non-managers to published schedules', () => {
       applyScheduleVisibility(asQuery(), employee);
 

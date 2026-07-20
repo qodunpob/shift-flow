@@ -1,4 +1,83 @@
-import { Controller } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Post,
+} from '@nestjs/common';
+import { AssignmentsService } from '@/assignments/assignments.service';
+import { Roles } from '@/auth/roles.decorator';
+import { UserRole } from '@/entities';
+import {
+  CreateAssignmentDto,
+  DeclineAssignmentDto,
+} from '@/assignments/assignments.dto';
+import { CurrentUser } from '@/auth/current-user.decorator';
+import type { AuthenticatedUser } from '@/auth/authenticated-request';
+
+@Controller('shifts/:shiftId/assignments')
+export class ShiftAssignmentsController {
+  constructor(private readonly assignments: AssignmentsService) {}
+
+  @Roles([UserRole.MANAGER])
+  @Post()
+  create(
+    @Param('shiftId', ParseUUIDPipe) shiftId: string,
+    @Body() dto: CreateAssignmentDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.assignments.create(shiftId, dto, user);
+  }
+
+  @Get()
+  findAll(
+    @Param('shiftId', ParseUUIDPipe) shiftId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.assignments.findAll(shiftId, user);
+  }
+}
 
 @Controller('assignments')
-export class AssignmentsController {}
+export class AssignmentsController {
+  constructor(private readonly assignments: AssignmentsService) {}
+
+  @Get(':id')
+  findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.assignments.findOne(id, user);
+  }
+
+  @Roles([UserRole.MANAGER])
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.assignments.remove(id, user);
+  }
+
+  @Post(':id/accept')
+  accept(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.assignments.accept(id, user);
+  }
+
+  @Post(':id/decline')
+  decline(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: DeclineAssignmentDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.assignments.decline(id, dto, user);
+  }
+}

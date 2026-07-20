@@ -72,15 +72,8 @@ const TRANSITIONS: Record<
   },
 };
 
-/** Statuses in which a schedule's details may still be changed. */
+/** Statuses in which a schedule may be updated or deleted. */
 const EDITABLE_STATUSES: ReadonlySet<ScheduleStatus> = new Set([
-  ScheduleStatus.DRAFT,
-  ScheduleStatus.IN_REVIEW,
-  ScheduleStatus.REJECTED,
-]);
-
-/** Statuses in which a schedule may be deleted. */
-const DELETABLE_STATUSES: ReadonlySet<ScheduleStatus> = new Set([
   ScheduleStatus.DRAFT,
   ScheduleStatus.IN_REVIEW,
   ScheduleStatus.REJECTED,
@@ -104,8 +97,4 @@ export function getAvailableActions(status: ScheduleStatus): ScheduleAction[] {
 
 export function isEditable(status: ScheduleStatus): boolean {
   return EDITABLE_STATUSES.has(status);
-}
-
-export function isDeletable(status: ScheduleStatus): boolean {
-  return DELETABLE_STATUSES.has(status);
 }

@@ -18,6 +18,8 @@ describe('common/paginate', () => {
     };
   });
 
+  afterEach(() => jest.clearAllMocks());
+
   it('should skip and take according to the requested page', async () => {
     await paginate(asQuery(), { page: 3, limit: 10 });
 
@@ -28,7 +30,7 @@ describe('common/paginate', () => {
 
   it('should return the items together with pagination metadata', async () => {
     const items = [{ id: 'a' }, { id: 'b' }];
-    queryBuilder.getManyAndCount.mockResolvedValue([items, 25]);
+    queryBuilder.getManyAndCount.mockResolvedValueOnce([items, 25]);
 
     const result = await paginate(asQuery(), { page: 1, limit: 10 });
 
@@ -39,7 +41,7 @@ describe('common/paginate', () => {
   });
 
   it('should report zero total pages when there are no matching rows', async () => {
-    queryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
+    queryBuilder.getManyAndCount.mockResolvedValueOnce([[], 0]);
 
     const result = await paginate(asQuery(), { page: 1, limit: 10 });
 

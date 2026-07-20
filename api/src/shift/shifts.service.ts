@@ -1,15 +1,18 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
-  NotFoundException,
 } from '@nestjs/common';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
 import { CreateShiftDto, UpdateShiftDto } from '@/shift/shifts.dto';
-import { SchedulesService } from '@/schedules/schedules.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Assignment, Shift } from '@/entities';
 import { DataSource, Repository } from 'typeorm';
 import { startOfMinute } from 'date-fns';
+import { SchedulesHelpersService } from '@/schedules/schedules-helpers.service';
+import { ShiftsHelpersService } from '@/shift/shifts-helpers.service';
+import { softDelete } from '@/utils/soft-delete';
+import { omit } from 'lodash';
 
 @Injectable()
 export class ShiftsService {
@@ -18,8 +21,9 @@ export class ShiftsService {
     private readonly shifts: Repository<Shift>,
     @InjectRepository(Assignment)
     private readonly assignments: Repository<Assignment>,
-    private dataSource: DataSource,
-    private readonly schedulesService: SchedulesService,
+    private readonly dataSource: DataSource,
+    private readonly schedulesHelpers: SchedulesHelpersService,
+    private readonly helpers: ShiftsHelpersService,
   ) {}
 
   async create(
@@ -27,7 +31,10 @@ export class ShiftsService {
     dto: CreateShiftDto,
     user: AuthenticatedUser,
   ) {
-    const schedule = await this.schedulesService.findEditable(scheduleId, user);
+    const schedule = await this.schedulesHelpers.findEditable(scheduleId, user);
+    if (schedule.createdBy !== user.id) {
+      throw new ForbiddenException('You can only modify your own schedules.');
+    }
     const startsAt = startOfMinute(dto.startsAt);
     const endsAt = startOfMinute(dto.endsAt);
 
@@ -37,16 +44,16 @@ export class ShiftsService {
       ...dto,
       startsAt,
       endsAt,
-      scheduleId: schedule.id,
+      schedule,
       createdBy: user.id,
       updatedBy: user.id,
     });
 
-    return await this.shifts.save(shift);
+    return this.cleanResult(await this.shifts.save(shift));
   }
 
   async findAll(scheduleId: string, user: AuthenticatedUser) {
-    const schedule = await this.schedulesService.findVisible(scheduleId, user);
+    const schedule = await this.schedulesHelpers.findVisible(scheduleId, user);
 
     return await this.shifts.find({
       where: { scheduleId: schedule.id },
@@ -54,20 +61,14 @@ export class ShiftsService {
   }
 
   async findOne(id: string, user: AuthenticatedUser) {
-    const shift = await this.shifts.findOneBy({ id });
-    if (!shift) {
-      throw new NotFoundException('Shift not found.');
-    }
-    await this.schedulesService.findVisible(shift.scheduleId, user);
-    return shift;
+    return this.cleanResult(await this.helpers.findVisible(id, user));
   }
 
   async update(id: string, dto: UpdateShiftDto, user: AuthenticatedUser) {
-    const shift = await this.shifts.findOneBy({ id });
-    if (!shift) {
-      throw new NotFoundException('Shift not found.');
+    const shift = await this.helpers.findEditable(id, user);
+    if (shift.schedule.createdBy !== user.id) {
+      throw new ForbiddenException('You can only modify your own schedules.');
     }
-    await this.schedulesService.findEditable(shift.scheduleId, user);
 
     const startsAt = dto.startsAt
       ? startOfMinute(dto.startsAt)
@@ -93,21 +94,15 @@ export class ShiftsService {
       updatedBy: user.id,
     });
 
-    return this.shifts.save(shift);
+    return this.cleanResult(await this.shifts.save(shift));
   }
 
   async remove(id: string, user: AuthenticatedUser) {
-    const shift = await this.shifts.findOneBy({ id });
-    if (!shift) {
-      throw new NotFoundException('Shift not found.');
+    const shift = await this.helpers.findEditable(id, user);
+    if (shift.schedule.createdBy !== user.id) {
+      throw new ForbiddenException('You can only modify your own schedules.');
     }
-    await this.schedulesService.findEditable(shift.scheduleId, user);
-
-    return this.dataSource.transaction(async (entityManager) => {
-      Object.assign(shift, { updatedBy: user.id });
-      await entityManager.save(Shift, shift);
-      await entityManager.softDelete(Shift, id);
-    });
+    return this.dataSource.transaction(softDelete(Shift, shift, user.id));
   }
 
   /**
@@ -133,5 +128,9 @@ export class ShiftsService {
     if (await query.getExists()) {
       throw new ConflictException('Shift overlaps with an existing shift.');
     }
+  }
+
+  private cleanResult(shift: Shift) {
+    return omit(shift, ['schedule']);
   }
 }

@@ -2,7 +2,6 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
-  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
@@ -15,18 +14,17 @@ import {
 } from '@/schedules/schedules.dto';
 import { endOfDay, startOfDay } from 'date-fns';
 import { paginate, Paginated } from '@/common/pagination/paginate';
-import { isDeletable, isEditable } from '@/schedules/schedule-lifecycle';
-import {
-  applyScheduleVisibility,
-  isScheduleVisibleTo,
-} from '@/schedules/schedule-visibility';
+import { applyScheduleVisibility } from '@/schedules/schedule-visibility';
+import { SchedulesHelpersService } from '@/schedules/schedules-helpers.service';
+import { softDelete } from '@/utils/soft-delete';
 
 @Injectable()
 export class SchedulesService {
   constructor(
     @InjectRepository(Schedule)
     private readonly schedules: Repository<Schedule>,
-    private dataSource: DataSource,
+    private readonly dataSource: DataSource,
+    private readonly helpers: SchedulesHelpersService,
   ) {}
 
   async create(
@@ -70,45 +68,8 @@ export class SchedulesService {
     return paginate(query, filter);
   }
 
-  async findOne(id: string): Promise<Schedule> {
-    const schedule = await this.schedules.findOneBy({ id });
-    if (!schedule) {
-      throw new NotFoundException('Schedule not found.');
-    }
-
-    return schedule;
-  }
-
-  /**
-   * Loads a schedule the user is allowed to see, or throws NotFound. A draft
-   * that is invisible to the user is reported as not found rather than
-   * forbidden, so its existence is not leaked. Reuse this from other features
-   * (e.g. shifts) that need to enforce schedule visibility.
-   */
-  async findVisible(id: string, user: AuthenticatedUser): Promise<Schedule> {
-    const schedule = await this.schedules.findOneBy({ id });
-    if (!schedule || !isScheduleVisibleTo(schedule, user)) {
-      throw new NotFoundException('Schedule not found.');
-    }
-
-    return schedule;
-  }
-
-  /**
-   * Loads a schedule the user may see and asserts it is still editable, or
-   * throws. Sub-resources of a schedule (shifts, assignments) may only be
-   * created, updated or removed while the schedule itself is editable, so
-   * they should gate their mutations through this.
-   */
-  async findEditable(id: string, user: AuthenticatedUser): Promise<Schedule> {
-    const schedule = await this.findVisible(id, user);
-    if (!isEditable(schedule.status)) {
-      throw new ConflictException(
-        `A schedule in status ${schedule.status} cannot be edited.`,
-      );
-    }
-
-    return schedule;
+  async findOne(id: string, user: AuthenticatedUser): Promise<Schedule> {
+    return this.helpers.findVisible(id, user);
   }
 
   async update(
@@ -116,17 +77,9 @@ export class SchedulesService {
     dto: UpdateScheduleDto,
     user: AuthenticatedUser,
   ): Promise<Schedule> {
-    const schedule = await this.schedules.findOneBy({ id });
-    if (!schedule || !isScheduleVisibleTo(schedule, user)) {
-      throw new NotFoundException('Schedule not found.');
-    }
+    const schedule = await this.helpers.findEditable(id, user);
     if (schedule.createdBy !== user.id) {
       throw new ForbiddenException('You can only modify your own schedules.');
-    }
-    if (!isEditable(schedule.status)) {
-      throw new ConflictException(
-        `A schedule in status ${schedule.status} cannot be edited.`,
-      );
     }
 
     const startsAt = dto.startsAt
@@ -147,24 +100,11 @@ export class SchedulesService {
   }
 
   async remove(id: string, user: AuthenticatedUser): Promise<void> {
-    const schedule = await this.schedules.findOneBy({ id });
-    if (!schedule || !isScheduleVisibleTo(schedule, user)) {
-      throw new NotFoundException('Schedule not found.');
-    }
+    const schedule = await this.helpers.findEditable(id, user);
     if (schedule.createdBy !== user.id) {
       throw new ForbiddenException('You can only delete your own schedules.');
     }
-    if (!isDeletable(schedule.status)) {
-      throw new ConflictException(
-        `A schedule in status ${schedule.status} cannot be deleted.`,
-      );
-    }
-
-    return this.dataSource.transaction(async (entityManager) => {
-      Object.assign(schedule, { updatedBy: user.id });
-      await entityManager.save(Schedule, schedule);
-      await entityManager.softDelete(Schedule, id);
-    });
+    return this.dataSource.transaction(softDelete(Schedule, schedule, user.id));
   }
 
   /**

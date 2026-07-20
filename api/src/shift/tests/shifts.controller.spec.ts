@@ -134,11 +134,11 @@ describe('shifts controllers', () => {
 
     beforeEach(async () => {
       shifts = {
-        create: jest.fn().mockResolvedValue(shift),
-        findAll: jest.fn().mockResolvedValue([shift]),
-        findOne: jest.fn().mockResolvedValue(shift),
-        update: jest.fn().mockResolvedValue(shift),
-        remove: jest.fn().mockResolvedValue(undefined),
+        create: jest.fn().mockResolvedValueOnce(shift),
+        findAll: jest.fn().mockResolvedValueOnce([shift]),
+        findOne: jest.fn().mockResolvedValueOnce(shift),
+        update: jest.fn().mockResolvedValueOnce(shift),
+        remove: jest.fn().mockResolvedValueOnce(undefined),
       };
 
       const module: TestingModule = await Test.createTestingModule({
@@ -157,35 +157,35 @@ describe('shifts controllers', () => {
         requiredHeadcount: 3,
       };
 
-      await expect(scheduleShifts.create(scheduleId, dto, user)).resolves.toBe(
-        shift,
-      );
+      await expect(
+        scheduleShifts.create(scheduleId, dto, user),
+      ).resolves.toStrictEqual(shift);
       expect(shifts.create).toHaveBeenCalledWith(scheduleId, dto, user);
     });
 
     it("should list a schedule's shifts for the current user", async () => {
       const result = [shift];
-      shifts.findAll.mockResolvedValue(result);
+      shifts.findAll.mockResolvedValueOnce(result);
 
-      await expect(scheduleShifts.findAll(scheduleId, user)).resolves.toBe(
-        result,
-      );
+      await expect(
+        scheduleShifts.findAll(scheduleId, user),
+      ).resolves.toStrictEqual(result);
       expect(shifts.findAll).toHaveBeenCalledWith(scheduleId, user);
     });
 
     it('should return a single shift by its id for the current user', async () => {
-      await expect(shiftsController.findOne(shiftId, user)).resolves.toBe(
-        shift,
-      );
+      await expect(
+        shiftsController.findOne(shiftId, user),
+      ).resolves.toStrictEqual(shift);
       expect(shifts.findOne).toHaveBeenCalledWith(shiftId, user);
     });
 
     it('should apply the submitted changes to an existing shift', async () => {
       const dto: UpdateShiftDto = { requiredHeadcount: 5 };
 
-      await expect(shiftsController.update(shiftId, dto, user)).resolves.toBe(
-        shift,
-      );
+      await expect(
+        shiftsController.update(shiftId, dto, user),
+      ).resolves.toStrictEqual(shift);
       expect(shifts.update).toHaveBeenCalledWith(shiftId, dto, user);
     });
 

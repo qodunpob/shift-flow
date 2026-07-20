@@ -40,8 +40,8 @@ export class SchedulesTransitionService {
 
   reject(
     id: string,
-    user: AuthenticatedUser,
     dto: RejectScheduleDto,
+    user: AuthenticatedUser,
   ): Promise<Schedule> {
     return this.applyTransition(id, user, ScheduleAction.Reject, (schedule) => {
       schedule.rejectionReason = dto.rejectionReason;

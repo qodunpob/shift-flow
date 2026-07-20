@@ -32,13 +32,15 @@ describe('auth/AuthService', () => {
     service = module.get<AuthService>(AuthService);
   });
 
+  afterEach(() => jest.clearAllMocks());
+
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
   describe('validateUser', () => {
     it('should return the user without the password when credentials match', async () => {
-      usersService.findOne.mockResolvedValue({ ...storedUser });
+      usersService.findOne.mockResolvedValueOnce({ ...storedUser });
 
       const result = await service.validateUser(
         storedUser.emailAddress,
@@ -54,7 +56,7 @@ describe('auth/AuthService', () => {
     });
 
     it('should return null when the password does not match', async () => {
-      usersService.findOne.mockResolvedValue({ ...storedUser });
+      usersService.findOne.mockResolvedValueOnce({ ...storedUser });
 
       const result = await service.validateUser(
         storedUser.emailAddress,
@@ -65,7 +67,7 @@ describe('auth/AuthService', () => {
     });
 
     it('should return null when the user does not exist', async () => {
-      usersService.findOne.mockResolvedValue(undefined);
+      usersService.findOne.mockResolvedValueOnce(undefined);
 
       const result = await service.validateUser('nobody@example.com', 'secret');
 

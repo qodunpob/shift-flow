@@ -210,13 +210,17 @@ describe('schedules/SchedulesController', () => {
       controller = module.get(SchedulesController);
     });
 
+    afterEach(() => jest.clearAllMocks());
+
     it('should create a schedule from the submitted details on behalf of the current user', async () => {
       const dto: CreateScheduleDto = {
         startsAt: new Date('2026-01-01'),
         endsAt: new Date('2026-01-07'),
       };
 
-      await expect(controller.create(dto, user)).resolves.toBe(schedule);
+      await expect(controller.create(dto, user)).resolves.toStrictEqual(
+        schedule,
+      );
       expect(schedules.create).toHaveBeenCalledWith(dto, user);
     });
 
@@ -226,23 +230,27 @@ describe('schedules/SchedulesController', () => {
         items: [schedule],
         meta: { total: 1, page: 1, limit: 20, totalPages: 1 },
       };
-      schedules.findAll.mockResolvedValue(page);
+      schedules.findAll.mockResolvedValueOnce(page);
 
-      await expect(controller.findAll(query, user)).resolves.toBe(page);
+      await expect(controller.findAll(query, user)).resolves.toStrictEqual(
+        page,
+      );
       expect(schedules.findAll).toHaveBeenCalledWith(query, user);
     });
 
     it('should return a single schedule by its id', async () => {
-      await expect(controller.findOne(scheduleId)).resolves.toBe(schedule);
-      expect(schedules.findOne).toHaveBeenCalledWith(scheduleId);
+      await expect(controller.findOne(scheduleId, user)).resolves.toStrictEqual(
+        schedule,
+      );
+      expect(schedules.findOne).toHaveBeenCalledWith(scheduleId, user);
     });
 
     it('should apply the submitted changes to an existing schedule for the current user', async () => {
       const dto: UpdateScheduleDto = { label: 'Q1' };
 
-      await expect(controller.update(scheduleId, dto, user)).resolves.toBe(
-        schedule,
-      );
+      await expect(
+        controller.update(scheduleId, dto, user),
+      ).resolves.toStrictEqual(schedule);
       expect(schedules.update).toHaveBeenCalledWith(scheduleId, dto, user);
     });
 
@@ -262,9 +270,9 @@ describe('schedules/SchedulesController', () => {
     ] as const)(
       'should %s a schedule on behalf of the current user',
       async (action) => {
-        await expect(controller[action](scheduleId, user)).resolves.toBe(
-          schedule,
-        );
+        await expect(
+          controller[action](scheduleId, user),
+        ).resolves.toStrictEqual(schedule);
         expect(transitions[action]).toHaveBeenCalledWith(scheduleId, user);
       },
     );
@@ -272,10 +280,10 @@ describe('schedules/SchedulesController', () => {
     it('should reject a schedule with the supplied reason on behalf of the current user', async () => {
       const dto: RejectScheduleDto = { rejectionReason: 'Understaffed' };
 
-      await expect(controller.reject(scheduleId, user, dto)).resolves.toBe(
-        schedule,
-      );
-      expect(transitions.reject).toHaveBeenCalledWith(scheduleId, user, dto);
+      await expect(
+        controller.reject(scheduleId, dto, user),
+      ).resolves.toStrictEqual(schedule);
+      expect(transitions.reject).toHaveBeenCalledWith(scheduleId, dto, user);
     });
   });
 });

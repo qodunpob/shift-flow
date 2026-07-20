@@ -1,13 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { startOfMinute } from 'date-fns';
 import { ShiftsService } from '../shifts.service';
-import { CreateShiftDto, UpdateShiftDto } from '../shifts.dto';
+import { CreateShiftDto } from '../shifts.dto';
 import { Assignment, Schedule, Shift, UserRole } from '@/entities';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
-import { SchedulesService } from '@/schedules/schedules.service';
+import { ShiftsHelpersService } from '@/shift/shifts-helpers.service';
+import { SchedulesHelpersService } from '@/schedules/schedules-helpers.service';
+import { omit } from 'lodash';
 
 describe('shifts/ShiftsService', () => {
   let service: ShiftsService;
@@ -26,17 +32,15 @@ describe('shifts/ShiftsService', () => {
   let assignments: { countBy: jest.Mock };
   let entityManager: { save: jest.Mock; softDelete: jest.Mock };
   let dataSource: { transaction: jest.Mock };
-  let schedulesService: { findVisible: jest.Mock; findEditable: jest.Mock };
+  let schedulesHelpers: { findVisible: jest.Mock; findEditable: jest.Mock };
+  let helpers: { findVisible: jest.Mock; findEditable: jest.Mock };
 
   const manager: AuthenticatedUser = {
     id: 'manager-1',
     roles: [UserRole.MANAGER],
   };
   const scheduleId = 'schedule-1';
-  // The parent schedule the service resolves before touching shifts. Only its
-  // id matters here; visibility/editability rules are the SchedulesService's
-  // job and are mocked so these tests stay focused on shift behaviour.
-  const schedule = { id: scheduleId } as Schedule;
+  const schedule = { id: scheduleId, createdBy: manager.id } as Schedule;
 
   beforeEach(async () => {
     queryBuilder = {
@@ -45,8 +49,10 @@ describe('shifts/ShiftsService', () => {
       getExists: jest.fn().mockResolvedValue(false),
     };
     shifts = {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-      create: jest.fn((entity) => entity),
+      create: jest.fn((entity: Shift) => ({
+        ...entity,
+        scheduleId: entity.schedule.id,
+      })),
       save: jest.fn((entity) => Promise.resolve({ id: 'shift-1', ...entity })),
       find: jest.fn().mockResolvedValue([]),
       findOneBy: jest.fn(),
@@ -63,9 +69,13 @@ describe('shifts/ShiftsService', () => {
         cb(entityManager as unknown as EntityManager),
       ),
     };
-    schedulesService = {
+    schedulesHelpers = {
       findVisible: jest.fn().mockResolvedValue(schedule),
       findEditable: jest.fn().mockResolvedValue(schedule),
+    };
+    helpers = {
+      findVisible: jest.fn(),
+      findEditable: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -74,7 +84,8 @@ describe('shifts/ShiftsService', () => {
         { provide: getRepositoryToken(Shift), useValue: shifts },
         { provide: getRepositoryToken(Assignment), useValue: assignments },
         { provide: DataSource, useValue: dataSource },
-        { provide: SchedulesService, useValue: schedulesService },
+        { provide: SchedulesHelpersService, useValue: schedulesHelpers },
+        { provide: ShiftsHelpersService, useValue: helpers },
       ],
     }).compile();
 
@@ -90,26 +101,6 @@ describe('shifts/ShiftsService', () => {
       requiredHeadcount: 3,
     };
 
-    it('should only create a shift on a schedule that is still editable', async () => {
-      await service.create(scheduleId, dto, manager);
-
-      expect(schedulesService.findEditable).toHaveBeenCalledWith(
-        scheduleId,
-        manager,
-      );
-    });
-
-    it('should not create a shift when the schedule cannot be edited', async () => {
-      schedulesService.findEditable.mockRejectedValue(
-        new ConflictException('locked'),
-      );
-
-      await expect(
-        service.create(scheduleId, dto, manager),
-      ).rejects.toBeInstanceOf(ConflictException);
-      expect(shifts.save).not.toHaveBeenCalled();
-    });
-
     it('should create the shift, normalising its bounds to whole minutes', async () => {
       const result = await service.create(scheduleId, dto, manager);
 
@@ -121,6 +112,17 @@ describe('shifts/ShiftsService', () => {
         createdBy: manager.id,
         updatedBy: manager.id,
       });
+    });
+
+    it('should not create a shift when the schedule cannot be edited', async () => {
+      schedulesHelpers.findEditable.mockRejectedValue(
+        new ConflictException('locked'),
+      );
+
+      await expect(
+        service.create(scheduleId, dto, manager),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(shifts.save).not.toHaveBeenCalled();
     });
 
     it('should check for overlaps using the minute-normalised bounds', async () => {
@@ -142,7 +144,7 @@ describe('shifts/ShiftsService', () => {
     });
 
     it('should not create a shift that overlaps an existing one', async () => {
-      queryBuilder.getExists.mockResolvedValue(true);
+      queryBuilder.getExists.mockResolvedValueOnce(true);
 
       await expect(
         service.create(scheduleId, dto, manager),
@@ -154,50 +156,43 @@ describe('shifts/ShiftsService', () => {
   describe('findAll', () => {
     it('should return the shifts of a schedule the user may see', async () => {
       const found = [{ id: 'shift-1' }] as Shift[];
-      shifts.find.mockResolvedValue(found);
+      shifts.find.mockResolvedValueOnce(found);
 
       const result = await service.findAll(scheduleId, manager);
 
-      expect(schedulesService.findVisible).toHaveBeenCalledWith(
+      expect(schedulesHelpers.findVisible).toHaveBeenCalledWith(
         scheduleId,
         manager,
       );
       expect(shifts.find).toHaveBeenCalledWith({ where: { scheduleId } });
-      expect(result).toBe(found);
+      expect(result).toStrictEqual(found);
+    });
+
+    it('should not return the shifts if a schedule is not visible', async () => {
+      schedulesHelpers.findVisible.mockRejectedValueOnce(
+        new NotFoundException(),
+      );
+
+      await expect(service.findAll(scheduleId, manager)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      expect(shifts.find).not.toHaveBeenCalled();
     });
   });
 
   describe('findOne', () => {
-    it('should not return a shift that does not exist', async () => {
-      shifts.findOneBy.mockResolvedValue(null);
-
-      await expect(service.findOne('missing', manager)).rejects.toBeInstanceOf(
-        NotFoundException,
-      );
-      // The shift is resolved before its schedule, so visibility is not checked.
-      expect(schedulesService.findVisible).not.toHaveBeenCalled();
-    });
-
-    it('should return the shift once the user may see its schedule', async () => {
+    it('should return the visible shift', async () => {
       const found = { id: 'shift-1', scheduleId } as Shift;
-      shifts.findOneBy.mockResolvedValue(found);
+      helpers.findVisible.mockResolvedValueOnce(found);
 
       const result = await service.findOne('shift-1', manager);
-
-      expect(shifts.findOneBy).toHaveBeenCalledWith({ id: 'shift-1' });
-      // Access is enforced against the shift's own schedule.
-      expect(schedulesService.findVisible).toHaveBeenCalledWith(
-        scheduleId,
-        manager,
-      );
-      expect(result).toBe(found);
+      expect(result).toStrictEqual(found);
     });
 
-    it('should hide a shift whose schedule the user may not see', async () => {
-      shifts.findOneBy.mockResolvedValue({ id: 'shift-1', scheduleId } as Shift);
-      schedulesService.findVisible.mockRejectedValue(new NotFoundException());
+    it('should not return a shift that is not visible', async () => {
+      helpers.findVisible.mockRejectedValueOnce(new NotFoundException());
 
-      await expect(service.findOne('shift-1', manager)).rejects.toBeInstanceOf(
+      await expect(service.findOne('missing', manager)).rejects.toBeInstanceOf(
         NotFoundException,
       );
     });
@@ -207,41 +202,64 @@ describe('shifts/ShiftsService', () => {
     const existing = {
       id: 'shift-1',
       scheduleId,
+      schedule,
       startsAt: startOfMinute(new Date('2026-01-01T09:00:00.000Z')),
       endsAt: startOfMinute(new Date('2026-01-01T17:00:00.000Z')),
       requiredHeadcount: 3,
     } as Shift;
 
-    it('should not update a shift that does not exist', async () => {
-      shifts.findOneBy.mockResolvedValue(null);
+    it('should apply the changes', async () => {
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
+
+      const result = await service.update(
+        existing.id,
+        { requiredHeadcount: 5 },
+        manager,
+      );
+
+      expect(shifts.save).toHaveBeenCalledTimes(1);
+      expect(result).toMatchObject({
+        requiredHeadcount: 5,
+        updatedBy: manager.id,
+      });
+    });
+
+    it('should return only the data of the shift itself, stripped of related entities', async () => {
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
+
+      const result = await service.update(existing.id, {}, manager);
+      expect(result).toEqual({
+        ...omit(existing, ['schedule']),
+        updatedBy: manager.id,
+      });
+    });
+
+    it('should not update a shift that is not editable', async () => {
+      helpers.findEditable.mockRejectedValueOnce(new NotFoundException());
 
       await expect(
         service.update('missing', {}, manager),
       ).rejects.toBeInstanceOf(NotFoundException);
-      // The shift is resolved before its schedule, so editability is not checked.
-      expect(schedulesService.findEditable).not.toHaveBeenCalled();
-      expect(queryBuilder.getExists).not.toHaveBeenCalled();
       expect(shifts.save).not.toHaveBeenCalled();
     });
 
-    it('should not update a shift when its schedule cannot be edited', async () => {
-      shifts.findOneBy.mockResolvedValue({ ...existing });
-      schedulesService.findEditable.mockRejectedValue(
-        new ConflictException('locked'),
-      );
+    it('should not update a shift when its schedule does not belong to the user', async () => {
+      helpers.findEditable.mockResolvedValueOnce({
+        ...existing,
+        schedule: {
+          ...existing.schedule,
+          createdBy: 'someone-else',
+        },
+      });
 
       await expect(
         service.update(existing.id, {}, manager),
-      ).rejects.toBeInstanceOf(ConflictException);
-      expect(schedulesService.findEditable).toHaveBeenCalledWith(
-        existing.scheduleId,
-        manager,
-      );
+      ).rejects.toBeInstanceOf(ForbiddenException);
       expect(shifts.save).not.toHaveBeenCalled();
     });
 
     it('should not treat the shift being updated as overlapping itself', async () => {
-      shifts.findOneBy.mockResolvedValue({ ...existing });
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
 
       await service.update(
         existing.id,
@@ -256,7 +274,7 @@ describe('shifts/ShiftsService', () => {
     });
 
     it('should keep the current bounds when the update leaves them unchanged', async () => {
-      shifts.findOneBy.mockResolvedValue({ ...existing });
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
 
       await service.update(existing.id, {}, manager);
 
@@ -271,8 +289,8 @@ describe('shifts/ShiftsService', () => {
     });
 
     it('should not update a shift so that it overlaps another one', async () => {
-      shifts.findOneBy.mockResolvedValue({ ...existing });
-      queryBuilder.getExists.mockResolvedValue(true);
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
+      queryBuilder.getExists.mockResolvedValueOnce(true);
 
       await expect(
         service.update(
@@ -285,75 +303,33 @@ describe('shifts/ShiftsService', () => {
     });
 
     it('should not reduce the headcount below the number already assigned', async () => {
-      shifts.findOneBy.mockResolvedValue({ ...existing });
-      assignments.countBy.mockResolvedValue(3);
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
+      assignments.countBy.mockResolvedValueOnce(3);
 
       await expect(
         service.update(existing.id, { requiredHeadcount: 2 }, manager),
       ).rejects.toBeInstanceOf(ConflictException);
-      expect(assignments.countBy).toHaveBeenCalledWith({ shiftId: existing.id });
+      expect(assignments.countBy).toHaveBeenCalledWith({
+        shiftId: existing.id,
+      });
       expect(shifts.save).not.toHaveBeenCalled();
     });
 
     it('should allow a headcount that still covers the assigned employees', async () => {
-      shifts.findOneBy.mockResolvedValue({ ...existing });
-      assignments.countBy.mockResolvedValue(2);
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
+      assignments.countBy.mockResolvedValueOnce(2);
 
       await service.update(existing.id, { requiredHeadcount: 2 }, manager);
 
       expect(shifts.save).toHaveBeenCalledTimes(1);
     });
-
-    it('should apply the changes and record who updated the shift', async () => {
-      shifts.findOneBy.mockResolvedValue({ ...existing });
-
-      const result = await service.update(
-        existing.id,
-        { requiredHeadcount: 5 },
-        manager,
-      );
-
-      expect(shifts.save).toHaveBeenCalledTimes(1);
-      expect(result).toMatchObject({
-        requiredHeadcount: 5,
-        updatedBy: manager.id,
-      });
-    });
   });
 
   describe('remove', () => {
-    const existing = { id: 'shift-1', scheduleId } as Shift;
+    const existing = { id: 'shift-1', scheduleId, schedule } as Shift;
 
-    it('should not delete a shift that does not exist', async () => {
-      shifts.findOneBy.mockResolvedValue(null);
-
-      await expect(service.remove('missing', manager)).rejects.toBeInstanceOf(
-        NotFoundException,
-      );
-      // The shift is resolved before its schedule, so editability is not checked.
-      expect(schedulesService.findEditable).not.toHaveBeenCalled();
-      expect(dataSource.transaction).not.toHaveBeenCalled();
-      expect(entityManager.softDelete).not.toHaveBeenCalled();
-    });
-
-    it('should not delete a shift when its schedule cannot be edited', async () => {
-      shifts.findOneBy.mockResolvedValue({ ...existing });
-      schedulesService.findEditable.mockRejectedValue(
-        new ConflictException('locked'),
-      );
-
-      await expect(
-        service.remove(existing.id, manager),
-      ).rejects.toBeInstanceOf(ConflictException);
-      expect(schedulesService.findEditable).toHaveBeenCalledWith(
-        existing.scheduleId,
-        manager,
-      );
-      expect(dataSource.transaction).not.toHaveBeenCalled();
-    });
-
-    it('should soft-delete the shift and record who removed it', async () => {
-      shifts.findOneBy.mockResolvedValue({ ...existing });
+    it('should soft-delete the shift', async () => {
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
 
       await service.remove(existing.id, manager);
 
@@ -362,6 +338,32 @@ describe('shifts/ShiftsService', () => {
         expect.objectContaining({ id: existing.id, updatedBy: manager.id }),
       );
       expect(entityManager.softDelete).toHaveBeenCalledWith(Shift, existing.id);
+    });
+
+    it('should not delete a shift that is not editable', async () => {
+      helpers.findEditable.mockRejectedValueOnce(new NotFoundException());
+
+      await expect(service.remove('missing', manager)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      expect(dataSource.transaction).not.toHaveBeenCalled();
+      expect(entityManager.softDelete).not.toHaveBeenCalled();
+    });
+
+    it('should not delete a shift when its schedule does not belong to the user', async () => {
+      helpers.findEditable.mockResolvedValueOnce({
+        ...existing,
+        schedule: {
+          ...existing.schedule,
+          createdBy: 'someone-else',
+        },
+      });
+
+      await expect(service.remove(existing.id, manager)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+      expect(dataSource.transaction).not.toHaveBeenCalled();
+      expect(entityManager.softDelete).not.toHaveBeenCalled();
     });
   });
 });

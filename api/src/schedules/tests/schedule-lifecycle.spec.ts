@@ -2,7 +2,6 @@ import { ScheduleStatus } from '@/entities';
 import {
   getAvailableActions,
   getTransition,
-  isDeletable,
   isEditable,
   ScheduleAction,
   ScheduleActor,
@@ -95,7 +94,7 @@ describe('schedules/schedule-lifecycle', () => {
     });
   });
 
-  describe('editability and deletability', () => {
+  describe('editability', () => {
     it.each([
       [ScheduleStatus.DRAFT, true],
       [ScheduleStatus.IN_REVIEW, true],
@@ -104,16 +103,6 @@ describe('schedules/schedule-lifecycle', () => {
       [ScheduleStatus.REJECTED, true],
     ])('should report %s editable=%s', (status, editable) => {
       expect(isEditable(status)).toBe(editable);
-    });
-
-    it.each([
-      [ScheduleStatus.DRAFT, true],
-      [ScheduleStatus.IN_REVIEW, true],
-      [ScheduleStatus.AWAITING_APPROVAL, false],
-      [ScheduleStatus.APPROVED, false],
-      [ScheduleStatus.REJECTED, true],
-    ])('should report %s deletable=%s', (status, deletable) => {
-      expect(isDeletable(status)).toBe(deletable);
     });
   });
 });

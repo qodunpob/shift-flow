@@ -50,8 +50,11 @@ export class SchedulesController {
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string): Promise<Schedule> {
-    return this.schedules.findOne(id);
+  findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<Schedule> {
+    return this.schedules.findOne(id, user);
   }
 
   @Roles([UserRole.MANAGER])
@@ -129,9 +132,9 @@ export class SchedulesController {
   @HttpCode(HttpStatus.OK)
   reject(
     @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() user: AuthenticatedUser,
     @Body() dto: RejectScheduleDto,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<Schedule> {
-    return this.transitions.reject(id, user, dto);
+    return this.transitions.reject(id, dto, user);
   }
 }

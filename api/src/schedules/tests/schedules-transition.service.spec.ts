@@ -11,40 +11,17 @@ import { SchedulesTransitionService } from '@/schedules/schedules-transition.ser
 
 describe('schedules/SchedulesTransitionService', () => {
   let service: SchedulesTransitionService;
-  let queryBuilder: {
-    where: jest.Mock;
-    andWhere: jest.Mock;
-    orderBy: jest.Mock;
-    skip: jest.Mock;
-    take: jest.Mock;
-    getExists: jest.Mock;
-    getManyAndCount: jest.Mock;
-  };
   let repository: {
-    create: jest.Mock;
     save: jest.Mock;
     findOneBy: jest.Mock;
-    createQueryBuilder: jest.Mock;
   };
 
   beforeEach(async () => {
-    queryBuilder = {
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      orderBy: jest.fn().mockReturnThis(),
-      skip: jest.fn().mockReturnThis(),
-      take: jest.fn().mockReturnThis(),
-      getExists: jest.fn().mockResolvedValue(false),
-      getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
-    };
     repository = {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-      create: jest.fn((entity) => entity),
       save: jest.fn((entity) =>
         Promise.resolve({ id: 'schedule-1', ...entity }),
       ),
       findOneBy: jest.fn(),
-      createQueryBuilder: jest.fn(() => queryBuilder),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -78,7 +55,9 @@ describe('schedules/SchedulesTransitionService', () => {
     }) as Schedule;
 
   it('should let the owning manager publish a draft, moving it to review', async () => {
-    repository.findOneBy.mockResolvedValue(scheduleIn(ScheduleStatus.DRAFT));
+    repository.findOneBy.mockResolvedValueOnce(
+      scheduleIn(ScheduleStatus.DRAFT),
+    );
 
     const result = await service.publish('schedule-1', manager);
 
@@ -91,7 +70,9 @@ describe('schedules/SchedulesTransitionService', () => {
 
   it('should not let a user who is not the owning manager publish a schedule', async () => {
     // `user` owns nothing here and lacks the manager role.
-    repository.findOneBy.mockResolvedValue(scheduleIn(ScheduleStatus.DRAFT));
+    repository.findOneBy.mockResolvedValueOnce(
+      scheduleIn(ScheduleStatus.DRAFT),
+    );
 
     await expect(service.publish('schedule-1', user)).rejects.toBeInstanceOf(
       ForbiddenException,
@@ -100,7 +81,9 @@ describe('schedules/SchedulesTransitionService', () => {
   });
 
   it('should reject an action that is invalid for the current status', async () => {
-    repository.findOneBy.mockResolvedValue(scheduleIn(ScheduleStatus.DRAFT));
+    repository.findOneBy.mockResolvedValueOnce(
+      scheduleIn(ScheduleStatus.DRAFT),
+    );
 
     // Approve is only valid from AWAITING_APPROVAL.
     await expect(
@@ -110,7 +93,7 @@ describe('schedules/SchedulesTransitionService', () => {
   });
 
   it('should fail the transition when the schedule does not exist', async () => {
-    repository.findOneBy.mockResolvedValue(null);
+    repository.findOneBy.mockResolvedValueOnce(null);
 
     await expect(service.publish('missing', manager)).rejects.toBeInstanceOf(
       NotFoundException,
@@ -118,7 +101,7 @@ describe('schedules/SchedulesTransitionService', () => {
   });
 
   it('should let an approver approve a schedule awaiting approval', async () => {
-    repository.findOneBy.mockResolvedValue(
+    repository.findOneBy.mockResolvedValueOnce(
       scheduleIn(ScheduleStatus.AWAITING_APPROVAL),
     );
 
@@ -131,7 +114,7 @@ describe('schedules/SchedulesTransitionService', () => {
   });
 
   it('should not let a non-approver approve a schedule', async () => {
-    repository.findOneBy.mockResolvedValue(
+    repository.findOneBy.mockResolvedValueOnce(
       scheduleIn(ScheduleStatus.AWAITING_APPROVAL),
     );
 
@@ -142,13 +125,17 @@ describe('schedules/SchedulesTransitionService', () => {
   });
 
   it('should record the reason when an approver rejects a schedule', async () => {
-    repository.findOneBy.mockResolvedValue(
+    repository.findOneBy.mockResolvedValueOnce(
       scheduleIn(ScheduleStatus.AWAITING_APPROVAL),
     );
 
-    const result = await service.reject('schedule-1', approver, {
-      rejectionReason: 'Understaffed on the weekend',
-    });
+    const result = await service.reject(
+      'schedule-1',
+      {
+        rejectionReason: 'Understaffed on the weekend',
+      },
+      approver,
+    );
 
     expect(result).toMatchObject({
       status: ScheduleStatus.REJECTED,
@@ -158,7 +145,7 @@ describe('schedules/SchedulesTransitionService', () => {
   });
 
   it('should clear a stale rejection reason when a rejected schedule is resubmitted', async () => {
-    repository.findOneBy.mockResolvedValue({
+    repository.findOneBy.mockResolvedValueOnce({
       ...scheduleIn(ScheduleStatus.REJECTED),
       rejectionReason: 'Previously rejected',
     });
