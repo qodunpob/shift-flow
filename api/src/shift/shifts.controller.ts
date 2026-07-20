@@ -18,7 +18,7 @@ import type { AuthenticatedUser } from '@/auth/authenticated-request';
 import { CurrentUser } from '@/auth/current-user.decorator';
 
 @Controller('schedules/:scheduleId/shifts')
-export class ShiftsController {
+export class ScheduleShiftsController {
   constructor(private readonly shifts: ShiftsService) {}
 
   @Roles([UserRole.MANAGER])
@@ -38,35 +38,31 @@ export class ShiftsController {
   ) {
     return this.shifts.findAll(scheduleId, user);
   }
+}
+
+@Controller('shifts')
+export class ShiftsController {
+  constructor(private readonly shifts: ShiftsService) {}
 
   @Get(':id')
-  findOne(
-    @Param('scheduleId', ParseUUIDPipe) scheduleId: string,
-    @Param('id') id: string,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
-    return this.shifts.findOne(scheduleId, id, user);
+  findOne(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.shifts.findOne(id, user);
   }
 
   @Roles([UserRole.MANAGER])
   @Put(':id')
   update(
-    @Param('scheduleId', ParseUUIDPipe) scheduleId: string,
     @Param('id') id: string,
     @Body() dto: UpdateShiftDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.shifts.update(scheduleId, id, dto, user);
+    return this.shifts.update(id, dto, user);
   }
 
   @Roles([UserRole.MANAGER])
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(
-    @Param('scheduleId', ParseUUIDPipe) scheduleId: string,
-    @Param('id') id: string,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
-    return this.shifts.remove(scheduleId, id, user);
+  remove(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.shifts.remove(id, user);
   }
 }

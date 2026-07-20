@@ -53,29 +53,21 @@ export class ShiftsService {
     });
   }
 
-  async findOne(scheduleId: string, id: string, user: AuthenticatedUser) {
-    const schedule = await this.schedulesService.findVisible(scheduleId, user);
-
-    return await this.shifts.findOneBy({
-      id,
-      scheduleId: schedule.id,
-    });
-  }
-
-  async update(
-    scheduleId: string,
-    id: string,
-    dto: UpdateShiftDto,
-    user: AuthenticatedUser,
-  ) {
-    const schedule = await this.schedulesService.findEditable(scheduleId, user);
-    const shift = await this.shifts.findOneBy({
-      id,
-      scheduleId: schedule.id,
-    });
+  async findOne(id: string, user: AuthenticatedUser) {
+    const shift = await this.shifts.findOneBy({ id });
     if (!shift) {
       throw new NotFoundException('Shift not found.');
     }
+    await this.schedulesService.findVisible(shift.scheduleId, user);
+    return shift;
+  }
+
+  async update(id: string, dto: UpdateShiftDto, user: AuthenticatedUser) {
+    const shift = await this.shifts.findOneBy({ id });
+    if (!shift) {
+      throw new NotFoundException('Shift not found.');
+    }
+    await this.schedulesService.findEditable(shift.scheduleId, user);
 
     const startsAt = dto.startsAt
       ? startOfMinute(dto.startsAt)
@@ -104,15 +96,12 @@ export class ShiftsService {
     return this.shifts.save(shift);
   }
 
-  async remove(scheduleId: string, id: string, user: AuthenticatedUser) {
-    const schedule = await this.schedulesService.findEditable(scheduleId, user);
-    const shift = await this.shifts.findOneBy({
-      id,
-      scheduleId: schedule.id,
-    });
+  async remove(id: string, user: AuthenticatedUser) {
+    const shift = await this.shifts.findOneBy({ id });
     if (!shift) {
       throw new NotFoundException('Shift not found.');
     }
+    await this.schedulesService.findEditable(shift.scheduleId, user);
 
     return this.dataSource.transaction(async (entityManager) => {
       Object.assign(shift, { updatedBy: user.id });
