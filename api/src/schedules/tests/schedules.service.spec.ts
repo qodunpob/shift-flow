@@ -376,4 +376,19 @@ describe('schedules/SchedulesService', () => {
       });
     });
   });
+
+  describe('findOne', () => {
+    it('should return a visible schedule', async () => {
+      helpers.findVisible.mockReturnValueOnce({ id: 'schedule-1' });
+      const result = await service.findOne('schedule-1', manager);
+      expect(result).toEqual({ id: 'schedule-1' });
+    });
+
+    it('should not return a non-visible schedule', async () => {
+      helpers.findVisible.mockRejectedValueOnce(new NotFoundException());
+      await expect(service.findOne('schedule-1', manager)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
 });
