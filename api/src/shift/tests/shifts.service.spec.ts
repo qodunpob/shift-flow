@@ -168,21 +168,38 @@ describe('shifts/ShiftsService', () => {
   });
 
   describe('findOne', () => {
-    it('should return a shift scoped to a schedule the user may see', async () => {
-      const found = { id: 'shift-1' } as Shift;
+    it('should not return a shift that does not exist', async () => {
+      shifts.findOneBy.mockResolvedValue(null);
+
+      await expect(service.findOne('missing', manager)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      // The shift is resolved before its schedule, so visibility is not checked.
+      expect(schedulesService.findVisible).not.toHaveBeenCalled();
+    });
+
+    it('should return the shift once the user may see its schedule', async () => {
+      const found = { id: 'shift-1', scheduleId } as Shift;
       shifts.findOneBy.mockResolvedValue(found);
 
-      const result = await service.findOne(scheduleId, 'shift-1', manager);
+      const result = await service.findOne('shift-1', manager);
 
+      expect(shifts.findOneBy).toHaveBeenCalledWith({ id: 'shift-1' });
+      // Access is enforced against the shift's own schedule.
       expect(schedulesService.findVisible).toHaveBeenCalledWith(
         scheduleId,
         manager,
       );
-      expect(shifts.findOneBy).toHaveBeenCalledWith({
-        id: 'shift-1',
-        scheduleId,
-      });
       expect(result).toBe(found);
+    });
+
+    it('should hide a shift whose schedule the user may not see', async () => {
+      shifts.findOneBy.mockResolvedValue({ id: 'shift-1', scheduleId } as Shift);
+      schedulesService.findVisible.mockRejectedValue(new NotFoundException());
+
+      await expect(service.findOne('shift-1', manager)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
   });
 
@@ -195,25 +212,31 @@ describe('shifts/ShiftsService', () => {
       requiredHeadcount: 3,
     } as Shift;
 
-    it('should only update a shift on a schedule that is still editable', async () => {
+    it('should not update a shift that does not exist', async () => {
+      shifts.findOneBy.mockResolvedValue(null);
+
+      await expect(
+        service.update('missing', {}, manager),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      // The shift is resolved before its schedule, so editability is not checked.
+      expect(schedulesService.findEditable).not.toHaveBeenCalled();
+      expect(queryBuilder.getExists).not.toHaveBeenCalled();
+      expect(shifts.save).not.toHaveBeenCalled();
+    });
+
+    it('should not update a shift when its schedule cannot be edited', async () => {
+      shifts.findOneBy.mockResolvedValue({ ...existing });
       schedulesService.findEditable.mockRejectedValue(
         new ConflictException('locked'),
       );
 
       await expect(
-        service.update(scheduleId, existing.id, {}, manager),
+        service.update(existing.id, {}, manager),
       ).rejects.toBeInstanceOf(ConflictException);
-      expect(shifts.findOneBy).not.toHaveBeenCalled();
-      expect(shifts.save).not.toHaveBeenCalled();
-    });
-
-    it('should not update a shift that does not exist', async () => {
-      shifts.findOneBy.mockResolvedValue(null);
-
-      await expect(
-        service.update(scheduleId, 'missing', {}, manager),
-      ).rejects.toBeInstanceOf(NotFoundException);
-      expect(queryBuilder.getExists).not.toHaveBeenCalled();
+      expect(schedulesService.findEditable).toHaveBeenCalledWith(
+        existing.scheduleId,
+        manager,
+      );
       expect(shifts.save).not.toHaveBeenCalled();
     });
 
@@ -221,7 +244,6 @@ describe('shifts/ShiftsService', () => {
       shifts.findOneBy.mockResolvedValue({ ...existing });
 
       await service.update(
-        scheduleId,
         existing.id,
         { startsAt: new Date('2026-01-01T10:00:00.000Z') },
         manager,
@@ -236,7 +258,7 @@ describe('shifts/ShiftsService', () => {
     it('should keep the current bounds when the update leaves them unchanged', async () => {
       shifts.findOneBy.mockResolvedValue({ ...existing });
 
-      await service.update(scheduleId, existing.id, {}, manager);
+      await service.update(existing.id, {}, manager);
 
       expect(queryBuilder.where).toHaveBeenCalledWith(
         'shift.startsAt <= :endsAt',
@@ -254,7 +276,6 @@ describe('shifts/ShiftsService', () => {
 
       await expect(
         service.update(
-          scheduleId,
           existing.id,
           { endsAt: new Date('2026-01-01T20:00:00.000Z') },
           manager,
@@ -268,12 +289,7 @@ describe('shifts/ShiftsService', () => {
       assignments.countBy.mockResolvedValue(3);
 
       await expect(
-        service.update(
-          scheduleId,
-          existing.id,
-          { requiredHeadcount: 2 },
-          manager,
-        ),
+        service.update(existing.id, { requiredHeadcount: 2 }, manager),
       ).rejects.toBeInstanceOf(ConflictException);
       expect(assignments.countBy).toHaveBeenCalledWith({ shiftId: existing.id });
       expect(shifts.save).not.toHaveBeenCalled();
@@ -283,12 +299,7 @@ describe('shifts/ShiftsService', () => {
       shifts.findOneBy.mockResolvedValue({ ...existing });
       assignments.countBy.mockResolvedValue(2);
 
-      await service.update(
-        scheduleId,
-        existing.id,
-        { requiredHeadcount: 2 },
-        manager,
-      );
+      await service.update(existing.id, { requiredHeadcount: 2 }, manager);
 
       expect(shifts.save).toHaveBeenCalledTimes(1);
     });
@@ -297,7 +308,6 @@ describe('shifts/ShiftsService', () => {
       shifts.findOneBy.mockResolvedValue({ ...existing });
 
       const result = await service.update(
-        scheduleId,
         existing.id,
         { requiredHeadcount: 5 },
         manager,
@@ -314,32 +324,38 @@ describe('shifts/ShiftsService', () => {
   describe('remove', () => {
     const existing = { id: 'shift-1', scheduleId } as Shift;
 
-    it('should only delete a shift on a schedule that is still editable', async () => {
+    it('should not delete a shift that does not exist', async () => {
+      shifts.findOneBy.mockResolvedValue(null);
+
+      await expect(service.remove('missing', manager)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      // The shift is resolved before its schedule, so editability is not checked.
+      expect(schedulesService.findEditable).not.toHaveBeenCalled();
+      expect(dataSource.transaction).not.toHaveBeenCalled();
+      expect(entityManager.softDelete).not.toHaveBeenCalled();
+    });
+
+    it('should not delete a shift when its schedule cannot be edited', async () => {
+      shifts.findOneBy.mockResolvedValue({ ...existing });
       schedulesService.findEditable.mockRejectedValue(
         new ConflictException('locked'),
       );
 
       await expect(
-        service.remove(scheduleId, existing.id, manager),
+        service.remove(existing.id, manager),
       ).rejects.toBeInstanceOf(ConflictException);
-      expect(shifts.findOneBy).not.toHaveBeenCalled();
+      expect(schedulesService.findEditable).toHaveBeenCalledWith(
+        existing.scheduleId,
+        manager,
+      );
       expect(dataSource.transaction).not.toHaveBeenCalled();
-    });
-
-    it('should not delete a shift that does not exist', async () => {
-      shifts.findOneBy.mockResolvedValue(null);
-
-      await expect(
-        service.remove(scheduleId, 'missing', manager),
-      ).rejects.toBeInstanceOf(NotFoundException);
-      expect(dataSource.transaction).not.toHaveBeenCalled();
-      expect(entityManager.softDelete).not.toHaveBeenCalled();
     });
 
     it('should soft-delete the shift and record who removed it', async () => {
       shifts.findOneBy.mockResolvedValue({ ...existing });
 
-      await service.remove(scheduleId, existing.id, manager);
+      await service.remove(existing.id, manager);
 
       expect(entityManager.save).toHaveBeenCalledWith(
         Shift,

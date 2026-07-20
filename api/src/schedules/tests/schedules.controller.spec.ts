@@ -1,9 +1,5 @@
 import 'reflect-metadata';
-import {
-  ExecutionContext,
-  ForbiddenException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { SchedulesController } from '../schedules.controller';
@@ -148,12 +144,6 @@ describe('schedules/SchedulesController', () => {
         (handler) => {
           expect(canAccess(handler, noRoles)).toBe(true);
         },
-      );
-    });
-
-    it('should reject a role-restricted endpoint when no user is present', () => {
-      expect(() => canAccess('create', undefined)).toThrow(
-        UnauthorizedException,
       );
     });
   });

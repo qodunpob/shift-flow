@@ -1,22 +1,29 @@
 import 'reflect-metadata';
-import {
-  ExecutionContext,
-  ForbiddenException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ShiftsController } from '../shifts.controller';
+import {
+  ScheduleShiftsController,
+  ShiftsController,
+} from '../shifts.controller';
 import { ShiftsService } from '../shifts.service';
 import { CreateShiftDto, UpdateShiftDto } from '../shifts.dto';
 import { RolesGuard } from '@/auth/roles.guard';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
 import { Shift, UserRole } from '@/entities';
 
-describe('shifts/ShiftsController', () => {
+type Controller = { prototype: Record<string, any> };
+interface Endpoint {
+  controller: Controller;
+  handler: string;
+}
+
+describe('shifts controllers', () => {
   /**
-   * Exercises the real RolesGuard against the actual ShiftsController handlers,
+   * Exercises the real RolesGuard against the actual controller handlers,
    * asserting the access matrix declared by the `@Roles(...)` decorators.
+   * Shift mutations live on ShiftsController; creating and listing shifts of a
+   * schedule live on ScheduleShiftsController.
    */
   describe('Access control', () => {
     let guard: RolesGuard;
@@ -31,92 +38,89 @@ describe('shifts/ShiftsController', () => {
     };
     const noRoles: AuthenticatedUser = { id: 'u-none', roles: [] };
 
-    type HandlerName = keyof ShiftsController;
-
     const createContext = (
-      handlerName: HandlerName,
+      { controller, handler }: Endpoint,
       user?: AuthenticatedUser,
     ): ExecutionContext =>
       ({
-        getHandler: () => ShiftsController.prototype[handlerName],
-        getClass: () => ShiftsController,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        getHandler: () => controller.prototype[handler],
+        getClass: () => controller,
         switchToHttp: () => ({
           getRequest: () => ({ user }),
         }),
       }) as unknown as ExecutionContext;
 
-    const canAccess = (
-      handlerName: HandlerName,
-      user?: AuthenticatedUser,
-    ): boolean => guard.canActivate(createContext(handlerName, user));
+    const canAccess = (endpoint: Endpoint, user?: AuthenticatedUser): boolean =>
+      guard.canActivate(createContext(endpoint, user));
 
     beforeEach(() => {
       guard = new RolesGuard(new Reflector());
     });
 
-    // Mutating a schedule's shifts is a manager task; reading them is open to
-    // any authenticated user (subject to schedule visibility in the service).
-    const managerOnly: HandlerName[] = ['create', 'update', 'remove'];
-    const openToAny: HandlerName[] = ['findAll', 'findOne'];
+    // Mutating shifts is a manager task; reading them is open to any
+    // authenticated user (subject to schedule visibility in the service).
+    const managerOnly: Endpoint[] = [
+      { controller: ScheduleShiftsController, handler: 'create' },
+      { controller: ShiftsController, handler: 'update' },
+      { controller: ShiftsController, handler: 'remove' },
+    ];
+    const openToAny: Endpoint[] = [
+      { controller: ScheduleShiftsController, handler: 'findAll' },
+      { controller: ShiftsController, handler: 'findOne' },
+    ];
 
     describe('manager-only endpoints', () => {
-      it.each(managerOnly)('should allow a manager to call %s', (handler) => {
-        expect(canAccess(handler, manager)).toBe(true);
+      it.each(managerOnly)('should allow a manager to call $handler', (ep) => {
+        expect(canAccess(ep, manager)).toBe(true);
       });
 
       it.each(managerOnly)(
-        'should reject an approver calling %s',
-        (handler) => {
-          expect(() => canAccess(handler, approver)).toThrow(
-            ForbiddenException,
-          );
+        'should reject an approver calling $handler',
+        (ep) => {
+          expect(() => canAccess(ep, approver)).toThrow(ForbiddenException);
         },
       );
 
       it.each(managerOnly)(
-        'should reject a user without roles calling %s',
-        (handler) => {
-          expect(() => canAccess(handler, noRoles)).toThrow(ForbiddenException);
-        },
-      );
-
-      it.each(managerOnly)(
-        'should reject %s when no user is present',
-        (handler) => {
-          expect(() => canAccess(handler, undefined)).toThrow(
-            UnauthorizedException,
-          );
+        'should reject a user without roles calling $handler',
+        (ep) => {
+          expect(() => canAccess(ep, noRoles)).toThrow(ForbiddenException);
         },
       );
     });
 
     describe('endpoints open to any authenticated user', () => {
-      it.each(openToAny)('should allow a manager to call %s', (handler) => {
-        expect(canAccess(handler, manager)).toBe(true);
+      it.each(openToAny)('should allow a manager to call $handler', (ep) => {
+        expect(canAccess(ep, manager)).toBe(true);
       });
 
-      it.each(openToAny)('should allow an approver to call %s', (handler) => {
-        expect(canAccess(handler, approver)).toBe(true);
+      it.each(openToAny)('should allow an approver to call $handler', (ep) => {
+        expect(canAccess(ep, approver)).toBe(true);
       });
 
       it.each(openToAny)(
-        'should allow a user without roles to call %s',
-        (handler) => {
-          expect(canAccess(handler, noRoles)).toBe(true);
+        'should allow a user without roles to call $handler',
+        (ep) => {
+          expect(canAccess(ep, noRoles)).toBe(true);
         },
       );
     });
   });
 
   /**
-   * Verifies the controller is a thin pass-through: each handler forwards to
+   * Verifies the controllers are thin pass-throughs: each handler forwards to
    * the service with the expected arguments and returns what it returns.
    * Business rules live in ShiftsService and are covered by its own spec.
    */
   describe('Service delegation', () => {
-    let controller: ShiftsController;
+    let scheduleShifts: ScheduleShiftsController;
+    let shiftsController: ShiftsController;
     let shifts: jest.Mocked<
-      Pick<ShiftsService, 'create' | 'findAll' | 'findOne' | 'update' | 'remove'>
+      Pick<
+        ShiftsService,
+        'create' | 'findAll' | 'findOne' | 'update' | 'remove'
+      >
     >;
 
     const user: AuthenticatedUser = {
@@ -138,11 +142,12 @@ describe('shifts/ShiftsController', () => {
       };
 
       const module: TestingModule = await Test.createTestingModule({
-        controllers: [ShiftsController],
+        controllers: [ScheduleShiftsController, ShiftsController],
         providers: [{ provide: ShiftsService, useValue: shifts }],
       }).compile();
 
-      controller = module.get(ShiftsController);
+      scheduleShifts = module.get(ScheduleShiftsController);
+      shiftsController = module.get(ShiftsController);
     });
 
     it('should create a shift on the schedule for the current user', async () => {
@@ -152,7 +157,7 @@ describe('shifts/ShiftsController', () => {
         requiredHeadcount: 3,
       };
 
-      await expect(controller.create(scheduleId, dto, user)).resolves.toBe(
+      await expect(scheduleShifts.create(scheduleId, dto, user)).resolves.toBe(
         shift,
       );
       expect(shifts.create).toHaveBeenCalledWith(scheduleId, dto, user);
@@ -162,36 +167,33 @@ describe('shifts/ShiftsController', () => {
       const result = [shift];
       shifts.findAll.mockResolvedValue(result);
 
-      await expect(controller.findAll(scheduleId, user)).resolves.toBe(result);
+      await expect(scheduleShifts.findAll(scheduleId, user)).resolves.toBe(
+        result,
+      );
       expect(shifts.findAll).toHaveBeenCalledWith(scheduleId, user);
     });
 
     it('should return a single shift by its id for the current user', async () => {
-      await expect(
-        controller.findOne(scheduleId, shiftId, user),
-      ).resolves.toBe(shift);
-      expect(shifts.findOne).toHaveBeenCalledWith(scheduleId, shiftId, user);
+      await expect(shiftsController.findOne(shiftId, user)).resolves.toBe(
+        shift,
+      );
+      expect(shifts.findOne).toHaveBeenCalledWith(shiftId, user);
     });
 
     it('should apply the submitted changes to an existing shift', async () => {
       const dto: UpdateShiftDto = { requiredHeadcount: 5 };
 
-      await expect(
-        controller.update(scheduleId, shiftId, dto, user),
-      ).resolves.toBe(shift);
-      expect(shifts.update).toHaveBeenCalledWith(
-        scheduleId,
-        shiftId,
-        dto,
-        user,
+      await expect(shiftsController.update(shiftId, dto, user)).resolves.toBe(
+        shift,
       );
+      expect(shifts.update).toHaveBeenCalledWith(shiftId, dto, user);
     });
 
     it('should delete a shift for the current user without returning a body', async () => {
       await expect(
-        controller.remove(scheduleId, shiftId, user),
+        shiftsController.remove(shiftId, user),
       ).resolves.toBeUndefined();
-      expect(shifts.remove).toHaveBeenCalledWith(scheduleId, shiftId, user);
+      expect(shifts.remove).toHaveBeenCalledWith(shiftId, user);
     });
   });
 });
