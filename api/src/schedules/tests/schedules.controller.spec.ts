@@ -5,6 +5,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { SchedulesController } from '../schedules.controller';
 import { SchedulesService } from '../schedules.service';
 import { SchedulesTransitionService } from '../schedules-transition.service';
+import { ScheduleView } from '../schedule-stats.service';
 import { RolesGuard } from '@/auth/roles.guard';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
 import { Schedule, UserRole } from '@/entities';
@@ -181,12 +182,19 @@ describe('schedules/SchedulesController', () => {
     const scheduleId = 'schedule-1';
     // A stand-in returned by the mocked services; identity is what we assert on.
     const schedule = { id: scheduleId } as Schedule;
+    // The read endpoints return schedules enriched with headcount totals.
+    const scheduleView = {
+      id: scheduleId,
+      totalRequiredHeadcount: 4,
+      totalFilledCount: 2,
+      totalAcceptedCount: 1,
+    } as ScheduleView;
 
     beforeEach(async () => {
       schedules = {
         create: jest.fn().mockResolvedValue(schedule),
         findAll: jest.fn(),
-        findOne: jest.fn().mockResolvedValue(schedule),
+        findOne: jest.fn().mockResolvedValue(scheduleView),
         update: jest.fn().mockResolvedValue(schedule),
         remove: jest.fn().mockResolvedValue(undefined),
       };
@@ -227,7 +235,7 @@ describe('schedules/SchedulesController', () => {
     it('should list schedules matching the query for the current user', async () => {
       const query = { mine: true } as FindSchedulesQueryDto;
       const page = {
-        items: [schedule],
+        items: [scheduleView],
         meta: { total: 1, page: 1, limit: 20, totalPages: 1 },
       };
       schedules.findAll.mockResolvedValueOnce(page);
@@ -240,7 +248,7 @@ describe('schedules/SchedulesController', () => {
 
     it('should return a single schedule by its id', async () => {
       await expect(controller.findOne(scheduleId, user)).resolves.toStrictEqual(
-        schedule,
+        scheduleView,
       );
       expect(schedules.findOne).toHaveBeenCalledWith(scheduleId, user);
     });

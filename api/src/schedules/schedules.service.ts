@@ -16,6 +16,10 @@ import { endOfDay, startOfDay } from 'date-fns';
 import { paginate, Paginated } from '@/common/pagination/paginate';
 import { applyScheduleVisibility } from '@/schedules/schedule-visibility';
 import { SchedulesHelpersService } from '@/schedules/schedules-helpers.service';
+import {
+  ScheduleStatsService,
+  ScheduleView,
+} from '@/schedules/schedule-stats.service';
 import { softDelete } from '@/utils/soft-delete';
 
 @Injectable()
@@ -25,6 +29,7 @@ export class SchedulesService {
     private readonly schedules: Repository<Schedule>,
     private readonly dataSource: DataSource,
     private readonly helpers: SchedulesHelpersService,
+    private readonly stats: ScheduleStatsService,
   ) {}
 
   async create(
@@ -50,7 +55,7 @@ export class SchedulesService {
   async findAll(
     filter: FindSchedulesQueryDto,
     user: AuthenticatedUser,
-  ): Promise<Paginated<Schedule>> {
+  ): Promise<Paginated<ScheduleView>> {
     const query = this.schedules
       .createQueryBuilder('schedule')
       .orderBy('schedule.startsAt', 'ASC');
@@ -65,11 +70,21 @@ export class SchedulesService {
       query.andWhere('schedule.createdBy = :ownerId', { ownerId: user.id });
     }
 
-    return paginate(query, filter);
+    const page = await paginate(query, filter);
+    const stats = await this.stats.statsFor(page.items.map((s) => s.id));
+
+    return {
+      ...page,
+      items: page.items.map((schedule) =>
+        this.stats.withStats(schedule, stats),
+      ),
+    };
   }
 
-  async findOne(id: string, user: AuthenticatedUser): Promise<Schedule> {
-    return this.helpers.findVisible(id, user);
+  async findOne(id: string, user: AuthenticatedUser): Promise<ScheduleView> {
+    const schedule = await this.helpers.findVisible(id, user);
+    const stats = await this.stats.statsFor([schedule.id]);
+    return this.stats.withStats(schedule, stats);
   }
 
   async update(

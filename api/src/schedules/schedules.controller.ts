@@ -24,6 +24,7 @@ import {
 } from '@/schedules/schedules.dto';
 import { Paginated } from '@/common/pagination/paginate';
 import { SchedulesTransitionService } from '@/schedules/schedules-transition.service';
+import { ScheduleView } from '@/schedules/schedule-stats.service';
 
 @Controller('schedules')
 export class SchedulesController {
@@ -45,7 +46,7 @@ export class SchedulesController {
   findAll(
     @Query() query: FindSchedulesQueryDto,
     @CurrentUser() user: AuthenticatedUser,
-  ): Promise<Paginated<Schedule>> {
+  ): Promise<Paginated<ScheduleView>> {
     return this.schedules.findAll(query, user);
   }
 
@@ -53,7 +54,7 @@ export class SchedulesController {
   findOne(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
-  ): Promise<Schedule> {
+  ): Promise<ScheduleView> {
     return this.schedules.findOne(id, user);
   }
 

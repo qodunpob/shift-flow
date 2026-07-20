@@ -12,6 +12,10 @@ import { Schedule, ScheduleStatus, UserRole } from '@/entities';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
 import { CreateScheduleDto } from '@/schedules/schedules.dto';
 import { SchedulesHelpersService } from '@/schedules/schedules-helpers.service';
+import {
+  ScheduleStats,
+  ScheduleStatsService,
+} from '@/schedules/schedule-stats.service';
 
 describe('schedules/SchedulesService', () => {
   let service: SchedulesService;
@@ -35,6 +39,16 @@ describe('schedules/SchedulesService', () => {
   let helpers: {
     findVisible: jest.Mock;
     findEditable: jest.Mock;
+  };
+  let stats: {
+    statsFor: jest.Mock;
+    withStats: jest.Mock;
+  };
+
+  const zeroStats: ScheduleStats = {
+    totalRequiredHeadcount: 0,
+    totalFilledCount: 0,
+    totalAcceptedCount: 0,
   };
 
   const user: AuthenticatedUser = { id: 'user-1', roles: [] };
@@ -76,6 +90,13 @@ describe('schedules/SchedulesService', () => {
       findVisible: jest.fn(),
       findEditable: jest.fn(),
     };
+    stats = {
+      statsFor: jest.fn().mockResolvedValue(new Map<string, ScheduleStats>()),
+      withStats: jest.fn((schedule: Schedule) => ({
+        ...schedule,
+        ...zeroStats,
+      })),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -83,6 +104,7 @@ describe('schedules/SchedulesService', () => {
         { provide: getRepositoryToken(Schedule), useValue: repository },
         { provide: DataSource, useValue: dataSource },
         { provide: SchedulesHelpersService, useValue: helpers },
+        { provide: ScheduleStatsService, useValue: stats },
       ],
     }).compile();
 
@@ -358,7 +380,46 @@ describe('schedules/SchedulesService', () => {
         'schedule.startsAt',
         'ASC',
       );
-      expect(result.items).toStrictEqual(schedules);
+      expect(result.items).toStrictEqual([{ id: 'schedule-1', ...zeroStats }]);
+    });
+
+    it('should enrich each returned schedule with its headcount totals', async () => {
+      const schedules = [
+        { id: 'schedule-1' },
+        { id: 'schedule-2' },
+      ] as Schedule[];
+      queryBuilder.getManyAndCount.mockResolvedValueOnce([schedules, 2]);
+
+      const totals = new Map<string, ScheduleStats>([
+        [
+          'schedule-1',
+          {
+            totalRequiredHeadcount: 5,
+            totalFilledCount: 3,
+            totalAcceptedCount: 2,
+          },
+        ],
+      ]);
+      stats.statsFor.mockResolvedValueOnce(totals);
+      stats.withStats.mockImplementation((schedule: Schedule) => ({
+        ...schedule,
+        ...(totals.get(schedule.id) ?? zeroStats),
+      }));
+
+      const result = await service.findAll(pagination, manager);
+
+      // Totals are resolved in a single batched call for the whole page.
+      expect(stats.statsFor).toHaveBeenCalledWith(['schedule-1', 'schedule-2']);
+      expect(result.items).toStrictEqual([
+        {
+          id: 'schedule-1',
+          totalRequiredHeadcount: 5,
+          totalFilledCount: 3,
+          totalAcceptedCount: 2,
+        },
+        // A schedule with no shifts falls back to zeroed totals.
+        { id: 'schedule-2', ...zeroStats },
+      ]);
     });
 
     it('should return the requested page together with pagination metadata', async () => {
@@ -371,17 +432,40 @@ describe('schedules/SchedulesService', () => {
       expect(queryBuilder.skip).toHaveBeenCalledWith(20);
       expect(queryBuilder.take).toHaveBeenCalledWith(20);
       expect(result).toEqual({
-        items: schedules,
+        items: [{ id: 'schedule-3', ...zeroStats }],
         meta: { total: 42, page: 2, limit: 20, totalPages: 3 },
       });
     });
   });
 
   describe('findOne', () => {
-    it('should return a visible schedule', async () => {
+    it('should return a visible schedule enriched with its headcount totals', async () => {
       helpers.findVisible.mockReturnValueOnce({ id: 'schedule-1' });
+      const totals = new Map<string, ScheduleStats>([
+        [
+          'schedule-1',
+          {
+            totalRequiredHeadcount: 8,
+            totalFilledCount: 6,
+            totalAcceptedCount: 4,
+          },
+        ],
+      ]);
+      stats.statsFor.mockResolvedValueOnce(totals);
+      stats.withStats.mockImplementation((schedule: Schedule) => ({
+        ...schedule,
+        ...(totals.get(schedule.id) ?? zeroStats),
+      }));
+
       const result = await service.findOne('schedule-1', manager);
-      expect(result).toEqual({ id: 'schedule-1' });
+
+      expect(stats.statsFor).toHaveBeenCalledWith(['schedule-1']);
+      expect(result).toEqual({
+        id: 'schedule-1',
+        totalRequiredHeadcount: 8,
+        totalFilledCount: 6,
+        totalAcceptedCount: 4,
+      });
     });
 
     it('should not return a non-visible schedule', async () => {

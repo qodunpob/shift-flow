@@ -6,6 +6,7 @@ import { SchedulesService } from './schedules.service';
 import { SchedulesTransitionService } from '@/schedules/schedules-transition.service';
 import { SchedulesHelpersService } from '@/schedules/schedules-helpers.service';
 import { SchedulesHelpersModule } from '@/schedules/schedules-helpers.module';
+import { ScheduleStatsService } from '@/schedules/schedule-stats.service';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { SchedulesHelpersModule } from '@/schedules/schedules-helpers.module';
     SchedulesService,
     SchedulesTransitionService,
     SchedulesHelpersService,
+    ScheduleStatsService,
   ],
 })
 export class SchedulesModule {}
