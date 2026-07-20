@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseUUIDPipe,
   Post,
   Put,
   Query,
@@ -49,14 +50,14 @@ export class SchedulesController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string): Promise<Schedule> {
+  findOne(@Param('id', ParseUUIDPipe) id: string): Promise<Schedule> {
     return this.schedules.findOne(id);
   }
 
   @Roles([UserRole.MANAGER])
   @Put(':id')
   update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateScheduleDto,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<Schedule> {
@@ -67,7 +68,7 @@ export class SchedulesController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<void> {
     await this.schedules.remove(id, user);
@@ -77,7 +78,7 @@ export class SchedulesController {
   @Post(':id/publish')
   @HttpCode(HttpStatus.OK)
   publish(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<Schedule> {
     return this.transitions.publish(id, user);
@@ -87,7 +88,7 @@ export class SchedulesController {
   @Post(':id/submit-for-approval')
   @HttpCode(HttpStatus.OK)
   submitForApproval(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<Schedule> {
     return this.transitions.submitForApproval(id, user);
@@ -97,7 +98,7 @@ export class SchedulesController {
   @Post(':id/unpublish')
   @HttpCode(HttpStatus.OK)
   unpublish(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<Schedule> {
     return this.transitions.unpublish(id, user);
@@ -107,7 +108,7 @@ export class SchedulesController {
   @Post(':id/withdraw')
   @HttpCode(HttpStatus.OK)
   withdraw(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<Schedule> {
     return this.transitions.withdraw(id, user);
@@ -117,7 +118,7 @@ export class SchedulesController {
   @Post(':id/approve')
   @HttpCode(HttpStatus.OK)
   approve(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<Schedule> {
     return this.transitions.approve(id, user);
@@ -127,7 +128,7 @@ export class SchedulesController {
   @Post(':id/reject')
   @HttpCode(HttpStatus.OK)
   reject(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: RejectScheduleDto,
   ): Promise<Schedule> {

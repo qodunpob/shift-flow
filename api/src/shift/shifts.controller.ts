@@ -45,14 +45,17 @@ export class ShiftsController {
   constructor(private readonly shifts: ShiftsService) {}
 
   @Get(':id')
-  findOne(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+  findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.shifts.findOne(id, user);
   }
 
   @Roles([UserRole.MANAGER])
   @Put(':id')
   update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateShiftDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
@@ -62,7 +65,10 @@ export class ShiftsController {
   @Roles([UserRole.MANAGER])
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+  remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.shifts.remove(id, user);
   }
 }
