@@ -67,6 +67,6 @@ export class AssignmentProposalsController {
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    this.proposals.decline(id, user);
+    return this.proposals.decline(id, user);
   }
 }
