@@ -16,10 +16,10 @@ export class AssignmentProposal extends AuditableEntity {
   @Column({ type: 'uuid' })
   employeeId: string;
 
-  @ManyToOne(() => User, (user) => user.assignments, {
+  @ManyToOne(() => User, (user) => user.assignmentProposals, {
     onDelete: 'RESTRICT',
   })
-  employee: Shift;
+  employee: User;
 
   @Column({ type: 'text', nullable: true })
   message: string | null;

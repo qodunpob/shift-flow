@@ -25,7 +25,7 @@ export class Assignment extends AuditableEntity {
   @ManyToOne(() => User, (user) => user.assignments, {
     onDelete: 'RESTRICT',
   })
-  employee: Shift;
+  employee: User;
 
   @Column({
     type: 'enum',
