@@ -25,7 +25,14 @@ import {
 import { Paginated } from '@/common/pagination/paginate';
 import { SchedulesTransitionService } from '@/schedules/schedules-transition.service';
 import { ScheduleView } from '@/schedules/schedule-stats.service';
+import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  PaginatedSchedulesDto,
+  ScheduleViewDto,
+} from '@/schedules/schedules-response.dto';
 
+@ApiTags('schedules')
+@ApiBearerAuth()
 @Controller('schedules')
 export class SchedulesController {
   constructor(
@@ -43,6 +50,7 @@ export class SchedulesController {
   }
 
   @Get()
+  @ApiOkResponse({ type: PaginatedSchedulesDto })
   findAll(
     @Query() query: FindSchedulesQueryDto,
     @CurrentUser() user: AuthenticatedUser,
@@ -51,6 +59,7 @@ export class SchedulesController {
   }
 
   @Get(':id')
+  @ApiOkResponse({ type: ScheduleViewDto })
   findOne(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
