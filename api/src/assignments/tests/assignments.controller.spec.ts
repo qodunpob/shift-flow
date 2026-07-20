@@ -10,7 +10,7 @@ import { AssignmentsService } from '../assignments.service';
 import { CreateAssignmentDto, DeclineAssignmentDto } from '../assignments.dto';
 import { RolesGuard } from '@/auth/roles.guard';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
-import { Assignment, UserRole } from '@/entities';
+import { AssignmentEntity, UserRole } from '@/entities';
 
 type Controller = { prototype: Record<string, any> };
 interface Endpoint {
@@ -124,7 +124,7 @@ describe('assignments controllers', () => {
     const shiftId = 'shift-1';
     const assignmentId = 'assignment-1';
     // A stand-in returned by the mocked service; identity is what we assert on.
-    const assignment = { id: assignmentId } as Assignment;
+    const assignment = { id: assignmentId } as AssignmentEntity;
 
     beforeEach(async () => {
       assignments = {

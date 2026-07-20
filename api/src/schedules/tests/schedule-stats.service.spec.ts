@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ScheduleStatsService } from '../schedule-stats.service';
-import { AssignmentStatus, Schedule, Shift } from '@/entities';
+import { AssignmentStatus, ScheduleEntity, ShiftEntity } from '@/entities';
 
 /**
  * A chainable stand-in for a TypeORM SelectQueryBuilder. Every builder method
@@ -44,7 +44,7 @@ describe('schedules/ScheduleStatsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ScheduleStatsService,
-        { provide: getRepositoryToken(Shift), useValue: repository },
+        { provide: getRepositoryToken(ShiftEntity), useValue: repository },
       ],
     }).compile();
 
@@ -131,7 +131,7 @@ describe('schedules/ScheduleStatsService', () => {
 
   describe('withStats', () => {
     it('should merge the stored totals onto the schedule', () => {
-      const schedule = { id: 's1' } as Schedule;
+      const schedule = { id: 's1' } as ScheduleEntity;
       const stats = new Map([
         [
           's1',
@@ -152,7 +152,7 @@ describe('schedules/ScheduleStatsService', () => {
     });
 
     it('should fall back to zeroed totals when the schedule has none', () => {
-      const schedule = { id: 's1' } as Schedule;
+      const schedule = { id: 's1' } as ScheduleEntity;
 
       expect(service.withStats(schedule, new Map())).toEqual({
         id: 's1',

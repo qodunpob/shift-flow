@@ -3,13 +3,13 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { ShiftsBoardService } from '../shifts-board.service';
 import {
-  Assignment,
-  AssignmentProposal,
+  AssignmentEntity,
+  AssignmentProposalEntity,
   AssignmentStatus,
-  Schedule,
+  ScheduleEntity,
   ScheduleStatus,
-  Shift,
-  User,
+  ShiftEntity,
+  UserEntity,
   UserRole,
 } from '@/entities';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
@@ -27,17 +27,16 @@ describe('shifts/ShiftsBoardService', () => {
   const employee: AuthenticatedUser = { id: 'emp-1', roles: [] };
   const scheduleId = 'schedule-1';
 
-  const employeeUser = (id: string): User =>
-    ({
-      id,
-      firstName: `${id}-first`,
-      lastName: `${id}-last`,
-      avatarUrl: null,
-      emailAddress: `${id}@example.com`,
-      roles: [],
-    }) as unknown as User;
+  const employeeUser = (id: string): UserEntity => ({
+    id,
+    firstName: `${id}-first`,
+    lastName: `${id}-last`,
+    avatarUrl: null,
+    emailAddress: `${id}@example.com`,
+    roles: [],
+  });
 
-  const assignment = (over: Partial<Assignment> = {}): Assignment =>
+  const assignment = (over: Partial<AssignmentEntity> = {}): AssignmentEntity =>
     ({
       id: 'a-default',
       employeeId: 'emp-1',
@@ -45,11 +44,11 @@ describe('shifts/ShiftsBoardService', () => {
       status: AssignmentStatus.PENDING,
       declineReason: null,
       ...over,
-    }) as Assignment;
+    }) as AssignmentEntity;
 
   const proposal = (
-    over: Partial<AssignmentProposal> = {},
-  ): AssignmentProposal =>
+    over: Partial<AssignmentProposalEntity> = {},
+  ): AssignmentProposalEntity =>
     ({
       id: 'p-default',
       employeeId: 'emp-1',
@@ -57,9 +56,9 @@ describe('shifts/ShiftsBoardService', () => {
       message: 'pick me',
       createdAt: new Date('2026-01-01T00:00:00.000Z'),
       ...over,
-    }) as AssignmentProposal;
+    }) as AssignmentProposalEntity;
 
-  const shift = (over: Partial<Shift> = {}): Shift =>
+  const shift = (over: Partial<ShiftEntity> = {}): ShiftEntity =>
     ({
       id: 'shift-1',
       scheduleId,
@@ -69,7 +68,7 @@ describe('shifts/ShiftsBoardService', () => {
       assignments: [],
       assignmentProposals: [],
       ...over,
-    }) as Shift;
+    }) as ShiftEntity;
 
   beforeEach(async () => {
     shifts = { find: jest.fn().mockResolvedValue([]), findOne: jest.fn() };
@@ -80,7 +79,7 @@ describe('shifts/ShiftsBoardService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ShiftsBoardService,
-        { provide: getRepositoryToken(Shift), useValue: shifts },
+        { provide: getRepositoryToken(ShiftEntity), useValue: shifts },
         { provide: SchedulesHelpersService, useValue: schedulesHelpers },
       ],
     }).compile();
@@ -197,7 +196,7 @@ describe('shifts/ShiftsBoardService', () => {
     it('should return the enriched shift when the schedule is visible', async () => {
       shifts.findOne.mockResolvedValueOnce(
         shift({
-          schedule: { status: ScheduleStatus.APPROVED } as Schedule,
+          schedule: { status: ScheduleStatus.APPROVED } as ScheduleEntity,
           assignmentProposals: [
             proposal({ id: 'p-own', employeeId: 'emp-1' }),
             proposal({ id: 'p-other', employeeId: 'emp-3' }),
@@ -226,7 +225,7 @@ describe('shifts/ShiftsBoardService', () => {
           schedule: {
             status: ScheduleStatus.DRAFT,
             createdBy: 'another-manager',
-          } as Schedule,
+          } as ScheduleEntity,
         }),
       );
 

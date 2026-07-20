@@ -1,6 +1,6 @@
 import { Column, Entity, OneToMany } from 'typeorm';
 import { AuditableEntity } from './auditable.entity';
-import { Shift } from './shift';
+import { ShiftEntity } from './shift.entity';
 
 export enum ScheduleStatus {
   DRAFT = 'DRAFT',
@@ -11,7 +11,7 @@ export enum ScheduleStatus {
 }
 
 @Entity('schedules')
-export class Schedule extends AuditableEntity {
+export class ScheduleEntity extends AuditableEntity {
   @Column({ type: 'text', nullable: true })
   label: string | null;
 
@@ -27,6 +27,6 @@ export class Schedule extends AuditableEntity {
   @Column({ type: 'text', nullable: true })
   rejectionReason: string | null;
 
-  @OneToMany(() => Shift, (shift) => shift.schedule)
-  shifts: Shift[];
+  @OneToMany(() => ShiftEntity, (shift) => shift.schedule)
+  shifts: ShiftEntity[];
 }

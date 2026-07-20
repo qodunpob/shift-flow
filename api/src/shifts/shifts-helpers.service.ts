@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Shift } from '@/entities';
+import { ShiftEntity } from '@/entities';
 import { Repository } from 'typeorm';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
 import { isEditable } from '@/schedules/schedule-lifecycle';
@@ -13,8 +13,8 @@ import { isScheduleVisibleTo } from '@/schedules/schedule-visibility';
 @Injectable()
 export class ShiftsHelpersService {
   constructor(
-    @InjectRepository(Shift)
-    private readonly shifts: Repository<Shift>,
+    @InjectRepository(ShiftEntity)
+    private readonly shifts: Repository<ShiftEntity>,
   ) {}
 
   async findVisible(id: string, user: AuthenticatedUser) {

@@ -13,9 +13,8 @@ import {
 } from '../assignment-proposal.dto';
 import { RolesGuard } from '@/auth/roles.guard';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
-import { AssignmentProposal, UserRole } from '@/entities';
+import { AssignmentProposalEntity, UserRole } from '@/entities';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Controller = { prototype: Record<string, any> };
 interface Endpoint {
   controller: Controller;
@@ -129,7 +128,7 @@ describe('assignment-proposals controllers', () => {
     const shiftId = 'shift-1';
     const proposalId = 'proposal-1';
     // A stand-in returned by the mocked service; identity is what we assert on.
-    const proposal = { id: proposalId } as AssignmentProposal;
+    const proposal = { id: proposalId } as AssignmentProposalEntity;
 
     beforeEach(async () => {
       proposals = {

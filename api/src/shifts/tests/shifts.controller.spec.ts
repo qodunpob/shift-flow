@@ -11,7 +11,7 @@ import { ShiftBoardView, ShiftsBoardService } from '../shifts-board.service';
 import { CreateShiftDto, UpdateShiftDto } from '../shifts.dto';
 import { RolesGuard } from '@/auth/roles.guard';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
-import { Shift, UserRole } from '@/entities';
+import { ShiftEntity, UserRole } from '@/entities';
 
 type Controller = { prototype: Record<string, any> };
 interface Endpoint {
@@ -131,7 +131,7 @@ describe('shifts controllers', () => {
     const scheduleId = 'schedule-1';
     const shiftId = 'shift-1';
     // Stand-ins returned by the mocked services; identity is what we assert on.
-    const shift = { id: shiftId } as Shift;
+    const shift = { id: shiftId } as ShiftEntity;
     const boardView = { id: shiftId } as unknown as ShiftBoardView;
 
     beforeEach(async () => {

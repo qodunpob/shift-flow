@@ -2,11 +2,11 @@ import { ConfigModule, ConfigType } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import dbConfig from '@/config/db.config';
 import {
-  Assignment,
-  AssignmentProposal,
-  Schedule,
-  Shift,
-  User,
+  AssignmentEntity,
+  AssignmentProposalEntity,
+  ScheduleEntity,
+  ShiftEntity,
+  UserEntity,
 } from '@/entities';
 
 export default TypeOrmModule.forRootAsync({
@@ -20,7 +20,13 @@ export default TypeOrmModule.forRootAsync({
     username: config.username,
     password: config.password,
     database: config.database,
-    entities: [Schedule, Shift, Assignment, AssignmentProposal, User],
+    entities: [
+      ScheduleEntity,
+      ShiftEntity,
+      AssignmentEntity,
+      AssignmentProposalEntity,
+      UserEntity,
+    ],
     synchronize: false,
   }),
 });

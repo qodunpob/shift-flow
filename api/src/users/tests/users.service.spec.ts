@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { UsersService } from '../users.service';
-import { User, UserRole } from '@/entities';
+import { UserEntity, UserRole } from '@/entities';
 
 describe('users/UsersService', () => {
   let service: UsersService;
@@ -17,7 +17,7 @@ describe('users/UsersService', () => {
     emailAddress: 'manager@example.com',
     password: 'salt:hash',
     roles: [UserRole.MANAGER],
-  } as unknown as User;
+  } as unknown as UserEntity;
 
   beforeEach(async () => {
     queryBuilder = {
@@ -30,7 +30,7 @@ describe('users/UsersService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
-        { provide: getRepositoryToken(User), useValue: users },
+        { provide: getRepositoryToken(UserEntity), useValue: users },
       ],
     }).compile();
 

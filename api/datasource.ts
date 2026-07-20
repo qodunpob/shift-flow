@@ -1,11 +1,11 @@
 import dotenv from 'dotenv';
 import { DataSource } from 'typeorm';
 import {
-  Assignment,
-  AssignmentProposal,
-  Schedule,
-  Shift,
-  User,
+  AssignmentEntity,
+  AssignmentProposalEntity,
+  ScheduleEntity,
+  ShiftEntity,
+  UserEntity,
 } from '@/entities';
 
 dotenv.config();
@@ -17,7 +17,13 @@ const dataSource = new DataSource({
   username: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  entities: [Schedule, Shift, Assignment, AssignmentProposal, User],
+  entities: [
+    ScheduleEntity,
+    ShiftEntity,
+    AssignmentEntity,
+    AssignmentProposalEntity,
+    UserEntity,
+  ],
   migrations: [__dirname + '/migrations/**/*{.js,.ts}'],
 });
 

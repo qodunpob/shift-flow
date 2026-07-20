@@ -12,7 +12,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { CurrentUser } from '@/auth/current-user.decorator';
-import { Schedule, UserRole } from '@/entities';
+import { ScheduleEntity, UserRole } from '@/entities';
 import type { AuthenticatedUser } from '@/auth/authenticated-request';
 import { SchedulesService } from './schedules.service';
 import { Roles } from '@/auth/roles.decorator';
@@ -38,7 +38,7 @@ export class SchedulesController {
   create(
     @Body() dto: CreateScheduleDto,
     @CurrentUser() user: AuthenticatedUser,
-  ): Promise<Schedule> {
+  ): Promise<ScheduleEntity> {
     return this.schedules.create(dto, user);
   }
 
@@ -64,7 +64,7 @@ export class SchedulesController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateScheduleDto,
     @CurrentUser() user: AuthenticatedUser,
-  ): Promise<Schedule> {
+  ): Promise<ScheduleEntity> {
     return this.schedules.update(id, dto, user);
   }
 
@@ -84,7 +84,7 @@ export class SchedulesController {
   publish(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
-  ): Promise<Schedule> {
+  ): Promise<ScheduleEntity> {
     return this.transitions.publish(id, user);
   }
 
@@ -94,7 +94,7 @@ export class SchedulesController {
   submitForApproval(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
-  ): Promise<Schedule> {
+  ): Promise<ScheduleEntity> {
     return this.transitions.submitForApproval(id, user);
   }
 
@@ -104,7 +104,7 @@ export class SchedulesController {
   unpublish(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
-  ): Promise<Schedule> {
+  ): Promise<ScheduleEntity> {
     return this.transitions.unpublish(id, user);
   }
 
@@ -114,7 +114,7 @@ export class SchedulesController {
   withdraw(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
-  ): Promise<Schedule> {
+  ): Promise<ScheduleEntity> {
     return this.transitions.withdraw(id, user);
   }
 
@@ -124,7 +124,7 @@ export class SchedulesController {
   approve(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
-  ): Promise<Schedule> {
+  ): Promise<ScheduleEntity> {
     return this.transitions.approve(id, user);
   }
 
@@ -135,7 +135,7 @@ export class SchedulesController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: RejectScheduleDto,
     @CurrentUser() user: AuthenticatedUser,
-  ): Promise<Schedule> {
+  ): Promise<ScheduleEntity> {
     return this.transitions.reject(id, dto, user);
   }
 }

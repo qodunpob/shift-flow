@@ -1,4 +1,4 @@
-import { Schedule, ScheduleStatus, UserRole } from '@/entities';
+import { ScheduleEntity, ScheduleStatus, UserRole } from '@/entities';
 import { SchedulesHelpersService } from '@/schedules/schedules-helpers.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -22,7 +22,7 @@ describe('schedules/SchedulesHelpersService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SchedulesHelpersService,
-        { provide: getRepositoryToken(Schedule), useValue: repository },
+        { provide: getRepositoryToken(ScheduleEntity), useValue: repository },
       ],
     }).compile();
 
@@ -37,7 +37,7 @@ describe('schedules/SchedulesHelpersService', () => {
         id: 'schedule-1',
         createdBy: 'someone-else',
         status: ScheduleStatus.APPROVED,
-      } as Schedule;
+      } as ScheduleEntity;
       repository.findOneBy.mockResolvedValueOnce(schedule);
 
       await expect(
@@ -50,7 +50,7 @@ describe('schedules/SchedulesHelpersService', () => {
         id: 'schedule-1',
         createdBy: manager.id,
         status: ScheduleStatus.DRAFT,
-      } as Schedule;
+      } as ScheduleEntity;
       repository.findOneBy.mockResolvedValueOnce(draft);
 
       await expect(
@@ -85,7 +85,7 @@ describe('schedules/SchedulesHelpersService', () => {
         id: 'schedule-1',
         createdBy: manager.id,
         status: ScheduleStatus.DRAFT,
-      } as Schedule;
+      } as ScheduleEntity;
       repository.findOneBy.mockResolvedValueOnce(schedule);
 
       await expect(

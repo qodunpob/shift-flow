@@ -1,5 +1,10 @@
 import { AuthenticatedUser } from '@/auth/authenticated-request';
-import { Schedule, ScheduleStatus, Shift, UserRole } from '@/entities';
+import {
+  ScheduleEntity,
+  ScheduleStatus,
+  ShiftEntity,
+  UserRole,
+} from '@/entities';
 import {
   ConflictException,
   ForbiddenException,
@@ -48,8 +53,8 @@ describe('schedules/SchedulesTransitionService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SchedulesTransitionService,
-        { provide: getRepositoryToken(Schedule), useValue: repository },
-        { provide: getRepositoryToken(Shift), useValue: shifts },
+        { provide: getRepositoryToken(ScheduleEntity), useValue: repository },
+        { provide: getRepositoryToken(ShiftEntity), useValue: shifts },
       ],
     }).compile();
 
@@ -74,7 +79,7 @@ describe('schedules/SchedulesTransitionService', () => {
       id: 'schedule-1',
       createdBy: manager.id,
       status,
-    }) as Schedule;
+    }) as ScheduleEntity;
 
   it('should let the owning manager publish a draft, moving it to review', async () => {
     repository.findOneBy.mockResolvedValueOnce(

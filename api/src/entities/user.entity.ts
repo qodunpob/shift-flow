@@ -1,7 +1,7 @@
 import { Column, Entity, OneToMany } from 'typeorm';
 import { AuditableEntity } from './auditable.entity';
-import { Assignment } from '@/entities/assignment';
-import { AssignmentProposal } from '@/entities/assignment-proposal';
+import { AssignmentEntity } from '@/entities/assignment.entity';
+import { AssignmentProposalEntity } from '@/entities/assignment-proposal.entity';
 
 export enum UserRole {
   MANAGER = 'MANAGER',
@@ -9,7 +9,7 @@ export enum UserRole {
 }
 
 @Entity('users')
-export class User extends AuditableEntity {
+export class UserEntity extends AuditableEntity {
   @Column({ type: 'text', select: false })
   password: string;
 
@@ -28,12 +28,12 @@ export class User extends AuditableEntity {
   @Column({ type: 'enum', enum: UserRole, array: true })
   roles: UserRole[];
 
-  @OneToMany(() => Assignment, (assignment) => assignment.employee)
-  assignments: Assignment[];
+  @OneToMany(() => AssignmentEntity, (assignment) => assignment.employee)
+  assignments: AssignmentEntity[];
 
   @OneToMany(
-    () => AssignmentProposal,
+    () => AssignmentProposalEntity,
     (assignmentProposal) => assignmentProposal.employee,
   )
-  assignmentProposals: AssignmentProposal[];
+  proposals: AssignmentProposalEntity[];
 }

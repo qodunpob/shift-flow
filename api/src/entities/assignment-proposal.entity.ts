@@ -1,25 +1,25 @@
 import { Column, Entity, ManyToOne } from 'typeorm';
 import { AuditableEntity } from './auditable.entity';
-import { Shift } from './shift';
-import { User } from '@/entities/user';
+import { ShiftEntity } from './shift.entity';
+import { UserEntity } from '@/entities/user.entity';
 
 @Entity('assignment_proposals')
-export class AssignmentProposal extends AuditableEntity {
+export class AssignmentProposalEntity extends AuditableEntity {
   @Column({ type: 'uuid' })
   shiftId: string;
 
-  @ManyToOne(() => Shift, (shift) => shift.assignmentProposals, {
+  @ManyToOne(() => ShiftEntity, (shift) => shift.proposals, {
     onDelete: 'RESTRICT',
   })
-  shift: Shift;
+  shift: ShiftEntity;
 
   @Column({ type: 'uuid' })
   employeeId: string;
 
-  @ManyToOne(() => User, (user) => user.assignmentProposals, {
+  @ManyToOne(() => UserEntity, (user) => user.proposals, {
     onDelete: 'RESTRICT',
   })
-  employee: User;
+  employee: UserEntity;
 
   @Column({ type: 'text', nullable: true })
   message: string | null;

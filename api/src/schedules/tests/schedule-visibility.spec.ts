@@ -1,5 +1,5 @@
 import { SelectQueryBuilder } from 'typeorm';
-import { Schedule, ScheduleStatus, UserRole } from '@/entities';
+import { ScheduleEntity, ScheduleStatus, UserRole } from '@/entities';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
 import {
   applyScheduleVisibility,
@@ -16,8 +16,10 @@ describe('schedules/schedule-visibility', () => {
     roles: [UserRole.MANAGER],
   };
 
-  const scheduleWith = (status: ScheduleStatus, createdBy: string): Schedule =>
-    ({ id: 's', status, createdBy }) as Schedule;
+  const scheduleWith = (
+    status: ScheduleStatus,
+    createdBy: string,
+  ): ScheduleEntity => ({ id: 's', status, createdBy }) as ScheduleEntity;
 
   describe('isScheduleVisibleTo', () => {
     it('should show a published schedule to anyone', () => {
@@ -48,7 +50,8 @@ describe('schedules/schedule-visibility', () => {
   describe('applyScheduleVisibility', () => {
     let query: { andWhere: jest.Mock };
 
-    const asQuery = () => query as unknown as SelectQueryBuilder<Schedule>;
+    const asQuery = () =>
+      query as unknown as SelectQueryBuilder<ScheduleEntity>;
 
     beforeEach(() => {
       query = { andWhere: jest.fn().mockReturnThis() };

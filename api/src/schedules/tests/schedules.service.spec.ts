@@ -8,7 +8,7 @@ import {
 import { DataSource, EntityManager } from 'typeorm';
 import { endOfDay, startOfDay } from 'date-fns';
 import { SchedulesService } from '../schedules.service';
-import { Schedule, ScheduleStatus, UserRole } from '@/entities';
+import { ScheduleEntity, ScheduleStatus, UserRole } from '@/entities';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
 import { CreateScheduleDto } from '@/schedules/schedules.dto';
 import { SchedulesHelpersService } from '@/schedules/schedules-helpers.service';
@@ -92,7 +92,7 @@ describe('schedules/SchedulesService', () => {
     };
     stats = {
       statsFor: jest.fn().mockResolvedValue(new Map<string, ScheduleStats>()),
-      withStats: jest.fn((schedule: Schedule) => ({
+      withStats: jest.fn((schedule: ScheduleEntity) => ({
         ...schedule,
         ...zeroStats,
       })),
@@ -101,7 +101,7 @@ describe('schedules/SchedulesService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SchedulesService,
-        { provide: getRepositoryToken(Schedule), useValue: repository },
+        { provide: getRepositoryToken(ScheduleEntity), useValue: repository },
         { provide: DataSource, useValue: dataSource },
         { provide: SchedulesHelpersService, useValue: helpers },
         { provide: ScheduleStatsService, useValue: stats },
@@ -169,7 +169,7 @@ describe('schedules/SchedulesService', () => {
       status: ScheduleStatus.DRAFT,
       startsAt: startOfDay(new Date('2026-01-01T00:00:00.000Z')),
       endsAt: endOfDay(new Date('2026-01-07T00:00:00.000Z')),
-    } as Schedule;
+    } as ScheduleEntity;
 
     it('should not update a schedule that is not editable', async () => {
       helpers.findEditable.mockRejectedValueOnce(new NotFoundException());
@@ -265,7 +265,7 @@ describe('schedules/SchedulesService', () => {
       status: ScheduleStatus.DRAFT,
       startsAt: startOfDay(new Date('2026-01-01T00:00:00.000Z')),
       endsAt: endOfDay(new Date('2026-01-07T00:00:00.000Z')),
-    } as Schedule;
+    } as ScheduleEntity;
 
     it('should not delete a schedule that is not editable', async () => {
       helpers.findEditable.mockRejectedValueOnce(new NotFoundException());
@@ -297,11 +297,11 @@ describe('schedules/SchedulesService', () => {
       await service.remove(existing.id, manager);
 
       expect(entityManager.save).toHaveBeenCalledWith(
-        Schedule,
+        ScheduleEntity,
         expect.objectContaining({ id: existing.id, updatedBy: manager.id }),
       );
       expect(entityManager.softDelete).toHaveBeenCalledWith(
-        Schedule,
+        ScheduleEntity,
         existing.id,
       );
     });
@@ -371,7 +371,7 @@ describe('schedules/SchedulesService', () => {
     });
 
     it('should return the schedules ordered by their start date', async () => {
-      const schedules = [{ id: 'schedule-1' }] as Schedule[];
+      const schedules = [{ id: 'schedule-1' }] as ScheduleEntity[];
       queryBuilder.getManyAndCount.mockResolvedValueOnce([schedules, 1]);
 
       const result = await service.findAll(pagination, manager);
@@ -387,7 +387,7 @@ describe('schedules/SchedulesService', () => {
       const schedules = [
         { id: 'schedule-1' },
         { id: 'schedule-2' },
-      ] as Schedule[];
+      ] as ScheduleEntity[];
       queryBuilder.getManyAndCount.mockResolvedValueOnce([schedules, 2]);
 
       const totals = new Map<string, ScheduleStats>([
@@ -401,7 +401,7 @@ describe('schedules/SchedulesService', () => {
         ],
       ]);
       stats.statsFor.mockResolvedValueOnce(totals);
-      stats.withStats.mockImplementation((schedule: Schedule) => ({
+      stats.withStats.mockImplementation((schedule: ScheduleEntity) => ({
         ...schedule,
         ...(totals.get(schedule.id) ?? zeroStats),
       }));
@@ -423,7 +423,7 @@ describe('schedules/SchedulesService', () => {
     });
 
     it('should return the requested page together with pagination metadata', async () => {
-      const schedules = [{ id: 'schedule-3' }] as Schedule[];
+      const schedules = [{ id: 'schedule-3' }] as ScheduleEntity[];
       queryBuilder.getManyAndCount.mockResolvedValueOnce([schedules, 42]);
 
       const result = await service.findAll({ page: 2, limit: 20 }, manager);
@@ -452,7 +452,7 @@ describe('schedules/SchedulesService', () => {
         ],
       ]);
       stats.statsFor.mockResolvedValueOnce(totals);
-      stats.withStats.mockImplementation((schedule: Schedule) => ({
+      stats.withStats.mockImplementation((schedule: ScheduleEntity) => ({
         ...schedule,
         ...(totals.get(schedule.id) ?? zeroStats),
       }));

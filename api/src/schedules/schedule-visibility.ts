@@ -1,6 +1,6 @@
 import { SelectQueryBuilder } from 'typeorm';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
-import { Schedule, ScheduleStatus, UserRole } from '@/entities';
+import { ScheduleEntity, ScheduleStatus, UserRole } from '@/entities';
 
 /**
  * The single source of truth for who may see a schedule: published schedules
@@ -9,7 +9,7 @@ import { Schedule, ScheduleStatus, UserRole } from '@/entities';
  * schedule and a query contributor for listing.
  */
 export function isScheduleVisibleTo(
-  schedule: Schedule,
+  schedule: ScheduleEntity,
   user: AuthenticatedUser,
 ): boolean {
   if (schedule.status !== ScheduleStatus.DRAFT) {
@@ -26,7 +26,7 @@ export function isScheduleVisibleTo(
  * must alias the schedule table as `schedule`.
  */
 export function applyScheduleVisibility(
-  query: SelectQueryBuilder<Schedule>,
+  query: SelectQueryBuilder<ScheduleEntity>,
   user: AuthenticatedUser,
 ): void {
   if (user.roles.includes(UserRole.MANAGER)) {

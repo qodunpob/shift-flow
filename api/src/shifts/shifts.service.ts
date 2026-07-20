@@ -6,7 +6,7 @@ import {
 import { AuthenticatedUser } from '@/auth/authenticated-request';
 import { CreateShiftDto, UpdateShiftDto } from '@/shifts/shifts.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Assignment, Shift } from '@/entities';
+import { AssignmentEntity, ShiftEntity } from '@/entities';
 import { DataSource, Repository } from 'typeorm';
 import { startOfMinute } from 'date-fns';
 import { SchedulesHelpersService } from '@/schedules/schedules-helpers.service';
@@ -16,10 +16,10 @@ import { softDelete } from '@/utils/soft-delete';
 @Injectable()
 export class ShiftsService {
   constructor(
-    @InjectRepository(Shift)
-    private readonly shifts: Repository<Shift>,
-    @InjectRepository(Assignment)
-    private readonly assignments: Repository<Assignment>,
+    @InjectRepository(ShiftEntity)
+    private readonly shifts: Repository<ShiftEntity>,
+    @InjectRepository(AssignmentEntity)
+    private readonly assignments: Repository<AssignmentEntity>,
     private readonly dataSource: DataSource,
     private readonly schedulesHelpers: SchedulesHelpersService,
     private readonly helpers: ShiftsHelpersService,
@@ -89,7 +89,7 @@ export class ShiftsService {
     if (shift.schedule.createdBy !== user.id) {
       throw new ForbiddenException('You can only modify your own schedules.');
     }
-    return this.dataSource.transaction(softDelete(Shift, shift, user.id));
+    return this.dataSource.transaction(softDelete(ShiftEntity, shift, user.id));
   }
 
   /**

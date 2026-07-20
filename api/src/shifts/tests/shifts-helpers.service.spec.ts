@@ -2,7 +2,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { ShiftsHelpersService } from '../shifts-helpers.service';
-import { Schedule, ScheduleStatus, Shift, UserRole } from '@/entities';
+import {
+  ScheduleEntity,
+  ScheduleStatus,
+  ShiftEntity,
+  UserRole,
+} from '@/entities';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
 
 describe('shifts/ShiftsHelpersService', () => {
@@ -16,12 +21,12 @@ describe('shifts/ShiftsHelpersService', () => {
 
   // Builds a shift whose schedule carries the given status/owner, so the real
   // visibility and editability rules can be exercised end to end.
-  const shiftWithSchedule = (schedule: Partial<Schedule>): Shift =>
+  const shiftWithSchedule = (schedule: Partial<ScheduleEntity>): ShiftEntity =>
     ({
       id: 'shift-1',
       scheduleId: 'schedule-1',
-      schedule: { id: 'schedule-1', ...schedule } as Schedule,
-    }) as Shift;
+      schedule: { id: 'schedule-1', ...schedule } as ScheduleEntity,
+    }) as ShiftEntity;
 
   beforeEach(async () => {
     shifts = { findOne: jest.fn() };
@@ -29,7 +34,7 @@ describe('shifts/ShiftsHelpersService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ShiftsHelpersService,
-        { provide: getRepositoryToken(Shift), useValue: shifts },
+        { provide: getRepositoryToken(ShiftEntity), useValue: shifts },
       ],
     }).compile();
 
@@ -59,7 +64,9 @@ describe('shifts/ShiftsHelpersService', () => {
       });
       shifts.findOne.mockResolvedValue(shift);
 
-      await expect(service.findVisible('shift-1', manager)).resolves.toBe(shift);
+      await expect(service.findVisible('shift-1', manager)).resolves.toBe(
+        shift,
+      );
     });
 
     it('should return a shift on a draft to the manager who owns the schedule', async () => {
@@ -69,7 +76,9 @@ describe('shifts/ShiftsHelpersService', () => {
       });
       shifts.findOne.mockResolvedValue(shift);
 
-      await expect(service.findVisible('shift-1', manager)).resolves.toBe(shift);
+      await expect(service.findVisible('shift-1', manager)).resolves.toBe(
+        shift,
+      );
     });
 
     it('should hide a shift on a draft owned by someone else', async () => {

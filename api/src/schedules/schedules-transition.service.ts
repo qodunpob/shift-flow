@@ -5,7 +5,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { AssignmentStatus, Schedule, Shift, UserRole } from '@/entities';
+import {
+  AssignmentStatus,
+  ScheduleEntity,
+  ShiftEntity,
+  UserRole,
+} from '@/entities';
 import { Repository } from 'typeorm';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
 import {
@@ -18,27 +23,30 @@ import { RejectScheduleDto } from '@/schedules/schedules.dto';
 @Injectable()
 export class SchedulesTransitionService {
   constructor(
-    @InjectRepository(Schedule)
-    private readonly schedules: Repository<Schedule>,
-    @InjectRepository(Shift)
-    private readonly shifts: Repository<Shift>,
+    @InjectRepository(ScheduleEntity)
+    private readonly schedules: Repository<ScheduleEntity>,
+    @InjectRepository(ShiftEntity)
+    private readonly shifts: Repository<ShiftEntity>,
   ) {}
 
-  publish(id: string, user: AuthenticatedUser): Promise<Schedule> {
+  publish(id: string, user: AuthenticatedUser): Promise<ScheduleEntity> {
     return this.applyTransition(id, user, ScheduleAction.Publish);
   }
 
-  submitForApproval(id: string, user: AuthenticatedUser): Promise<Schedule> {
+  submitForApproval(
+    id: string,
+    user: AuthenticatedUser,
+  ): Promise<ScheduleEntity> {
     return this.applyTransition(id, user, ScheduleAction.SubmitForApproval, {
       guard: (schedule) => this.assertNoUnfilledShifts(schedule),
     });
   }
 
-  unpublish(id: string, user: AuthenticatedUser): Promise<Schedule> {
+  unpublish(id: string, user: AuthenticatedUser): Promise<ScheduleEntity> {
     return this.applyTransition(id, user, ScheduleAction.Unpublish);
   }
 
-  approve(id: string, user: AuthenticatedUser): Promise<Schedule> {
+  approve(id: string, user: AuthenticatedUser): Promise<ScheduleEntity> {
     return this.applyTransition(id, user, ScheduleAction.Approve);
   }
 
@@ -46,7 +54,7 @@ export class SchedulesTransitionService {
     id: string,
     dto: RejectScheduleDto,
     user: AuthenticatedUser,
-  ): Promise<Schedule> {
+  ): Promise<ScheduleEntity> {
     return this.applyTransition(id, user, ScheduleAction.Reject, {
       mutate: (schedule) => {
         schedule.rejectionReason = dto.rejectionReason;
@@ -54,7 +62,7 @@ export class SchedulesTransitionService {
     });
   }
 
-  withdraw(id: string, user: AuthenticatedUser): Promise<Schedule> {
+  withdraw(id: string, user: AuthenticatedUser): Promise<ScheduleEntity> {
     return this.applyTransition(id, user, ScheduleAction.Withdraw);
   }
 
@@ -70,10 +78,10 @@ export class SchedulesTransitionService {
     user: AuthenticatedUser,
     action: ScheduleAction,
     options: {
-      guard?: (schedule: Schedule) => Promise<void>;
-      mutate?: (schedule: Schedule) => void;
+      guard?: (schedule: ScheduleEntity) => Promise<void>;
+      mutate?: (schedule: ScheduleEntity) => void;
     } = {},
-  ): Promise<Schedule> {
+  ): Promise<ScheduleEntity> {
     const schedule = await this.schedules.findOneBy({ id });
     if (!schedule) {
       throw new NotFoundException('Schedule not found.');
@@ -105,7 +113,9 @@ export class SchedulesTransitionService {
    * `filledCount`), so a shift is unfilled when its non-declined assignment
    * count is below its `requiredHeadcount`.
    */
-  private async assertNoUnfilledShifts(schedule: Schedule): Promise<void> {
+  private async assertNoUnfilledShifts(
+    schedule: ScheduleEntity,
+  ): Promise<void> {
     const hasUnfilledShift = await this.shifts
       .createQueryBuilder('shift')
       .leftJoin(
@@ -130,7 +140,7 @@ export class SchedulesTransitionService {
   private assertActor(
     actor: ScheduleActor,
     user: AuthenticatedUser,
-    schedule: Schedule,
+    schedule: ScheduleEntity,
   ): void {
     if (actor === ScheduleActor.OwnerManager) {
       const isOwnerManager =

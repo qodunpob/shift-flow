@@ -2,11 +2,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
-  Assignment,
-  AssignmentProposal,
+  AssignmentEntity,
+  AssignmentProposalEntity,
   AssignmentStatus,
-  Shift,
-  User,
+  ShiftEntity,
+  UserEntity,
   UserRole,
 } from '@/entities';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
@@ -44,7 +44,7 @@ export interface ProposalView {
  * the write paths live in ShiftsService and are unaffected by it.
  */
 export type ShiftBoardView = Omit<
-  Shift,
+  ShiftEntity,
   'schedule' | 'assignments' | 'assignmentProposals'
 > & {
   filledCount: number;
@@ -56,8 +56,8 @@ export type ShiftBoardView = Omit<
 @Injectable()
 export class ShiftsBoardService {
   constructor(
-    @InjectRepository(Shift)
-    private readonly shifts: Repository<Shift>,
+    @InjectRepository(ShiftEntity)
+    private readonly shifts: Repository<ShiftEntity>,
     private readonly schedulesHelpers: SchedulesHelpersService,
   ) {}
 
@@ -103,7 +103,10 @@ export class ShiftsBoardService {
    * while other users see only their own. Headcount figures are derived from
    * the full assignment set so the numbers stay honest regardless of role.
    */
-  private toBoardView(shift: Shift, user: AuthenticatedUser): ShiftBoardView {
+  private toBoardView(
+    shift: ShiftEntity,
+    user: AuthenticatedUser,
+  ): ShiftBoardView {
     const isManager = user.roles.includes(UserRole.MANAGER);
 
     const assignments = shift.assignments ?? [];
@@ -127,7 +130,7 @@ export class ShiftsBoardService {
     };
   }
 
-  private toAssignmentView(assignment: Assignment): AssignmentView {
+  private toAssignmentView(assignment: AssignmentEntity): AssignmentView {
     return {
       id: assignment.id,
       employeeId: assignment.employeeId,
@@ -137,7 +140,7 @@ export class ShiftsBoardService {
     };
   }
 
-  private toProposalView(proposal: AssignmentProposal): ProposalView {
+  private toProposalView(proposal: AssignmentProposalEntity): ProposalView {
     return {
       id: proposal.id,
       employeeId: proposal.employeeId,
@@ -147,7 +150,9 @@ export class ShiftsBoardService {
     };
   }
 
-  private toEmployeeRef(employee: User | null | undefined): EmployeeRef | null {
+  private toEmployeeRef(
+    employee: UserEntity | null | undefined,
+  ): EmployeeRef | null {
     if (!employee) {
       return null;
     }

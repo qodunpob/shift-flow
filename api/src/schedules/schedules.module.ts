@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Schedule, Shift } from '@/entities';
+import { ScheduleEntity, ShiftEntity } from '@/entities';
 import { SchedulesController } from './schedules.controller';
 import { SchedulesService } from './schedules.service';
 import { SchedulesTransitionService } from '@/schedules/schedules-transition.service';
@@ -10,7 +10,7 @@ import { ScheduleStatsService } from '@/schedules/schedule-stats.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Schedule, Shift]),
+    TypeOrmModule.forFeature([ScheduleEntity, ShiftEntity]),
     SchedulesHelpersModule,
   ],
   controllers: [SchedulesController],

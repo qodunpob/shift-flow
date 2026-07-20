@@ -6,10 +6,10 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
-  Assignment,
-  AssignmentProposal,
+  AssignmentEntity,
+  AssignmentProposalEntity,
   AssignmentStatus,
-  User,
+  UserEntity,
 } from '@/entities';
 import { DataSource, Repository } from 'typeorm';
 import {
@@ -26,10 +26,10 @@ import { omit } from 'lodash';
 @Injectable()
 export class AssignmentsService {
   constructor(
-    @InjectRepository(Assignment)
-    private readonly assignments: Repository<Assignment>,
-    @InjectRepository(User)
-    private readonly users: Repository<User>,
+    @InjectRepository(AssignmentEntity)
+    private readonly assignments: Repository<AssignmentEntity>,
+    @InjectRepository(UserEntity)
+    private readonly users: Repository<UserEntity>,
     private readonly dataSource: DataSource,
     private readonly shiftsHelpers: ShiftsHelpersService,
   ) {}
@@ -58,22 +58,28 @@ export class AssignmentsService {
     return this.dataSource.transaction(async (entityManager) => {
       // Assigning an employee who already proposed to work this shift fulfils
       // that proposal: consume it and record the assignment as ACCEPTED.
-      const proposal = await entityManager.findOneBy(AssignmentProposal, {
+      const proposal = await entityManager.findOneBy(AssignmentProposalEntity, {
         shiftId: shift.id,
         employeeId: employee.id,
       });
       if (proposal) {
-        await softDelete(AssignmentProposal, proposal, user.id)(entityManager);
+        await softDelete(
+          AssignmentProposalEntity,
+          proposal,
+          user.id,
+        )(entityManager);
       }
 
-      const assignment = entityManager.create(Assignment, {
+      const assignment = entityManager.create(AssignmentEntity, {
         shiftId: shift.id,
         employeeId: employee.id,
         status: proposal ? AssignmentStatus.ACCEPTED : AssignmentStatus.PENDING,
         createdBy: user.id,
         updatedBy: user.id,
       });
-      return this.toView(await entityManager.save(Assignment, assignment));
+      return this.toView(
+        await entityManager.save(AssignmentEntity, assignment),
+      );
     });
   }
 
@@ -83,7 +89,7 @@ export class AssignmentsService {
       throw new ForbiddenException('You can only modify your own schedules.');
     }
     return this.dataSource.transaction(
-      softDelete(Assignment, assignment, user.id),
+      softDelete(AssignmentEntity, assignment, user.id),
     );
   }
 
@@ -147,7 +153,7 @@ export class AssignmentsService {
     return assignment;
   }
 
-  private toView(assignment: Assignment) {
+  private toView(assignment: AssignmentEntity) {
     return omit(assignment, ['shift', 'employee']);
   }
 }

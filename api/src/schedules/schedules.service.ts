@@ -6,7 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
-import { Schedule } from '@/entities';
+import { ScheduleEntity } from '@/entities';
 import {
   CreateScheduleDto,
   FindSchedulesQueryDto,
@@ -25,8 +25,8 @@ import { softDelete } from '@/utils/soft-delete';
 @Injectable()
 export class SchedulesService {
   constructor(
-    @InjectRepository(Schedule)
-    private readonly schedules: Repository<Schedule>,
+    @InjectRepository(ScheduleEntity)
+    private readonly schedules: Repository<ScheduleEntity>,
     private readonly dataSource: DataSource,
     private readonly helpers: SchedulesHelpersService,
     private readonly stats: ScheduleStatsService,
@@ -35,7 +35,7 @@ export class SchedulesService {
   async create(
     dto: CreateScheduleDto,
     user: AuthenticatedUser,
-  ): Promise<Schedule> {
+  ): Promise<ScheduleEntity> {
     const startsAt = startOfDay(dto.startsAt);
     const endsAt = endOfDay(dto.endsAt);
 
@@ -91,7 +91,7 @@ export class SchedulesService {
     id: string,
     dto: UpdateScheduleDto,
     user: AuthenticatedUser,
-  ): Promise<Schedule> {
+  ): Promise<ScheduleEntity> {
     const schedule = await this.helpers.findEditable(id, user);
     if (schedule.createdBy !== user.id) {
       throw new ForbiddenException('You can only modify your own schedules.');
@@ -119,7 +119,9 @@ export class SchedulesService {
     if (schedule.createdBy !== user.id) {
       throw new ForbiddenException('You can only delete your own schedules.');
     }
-    return this.dataSource.transaction(softDelete(Schedule, schedule, user.id));
+    return this.dataSource.transaction(
+      softDelete(ScheduleEntity, schedule, user.id),
+    );
   }
 
   /**

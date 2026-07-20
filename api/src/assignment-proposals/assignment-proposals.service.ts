@@ -6,10 +6,10 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
-  Assignment,
-  AssignmentProposal,
+  AssignmentEntity,
+  AssignmentProposalEntity,
   AssignmentStatus,
-  User,
+  UserEntity,
 } from '@/entities';
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import { ShiftsHelpersService } from '@/shifts/shifts-helpers.service';
@@ -25,12 +25,12 @@ import { softDelete } from '@/utils/soft-delete';
 @Injectable()
 export class AssignmentProposalsService {
   constructor(
-    @InjectRepository(AssignmentProposal)
-    private readonly assignmentProposals: Repository<AssignmentProposal>,
-    @InjectRepository(User)
-    private readonly users: Repository<User>,
-    @InjectRepository(Assignment)
-    private readonly assignments: Repository<Assignment>,
+    @InjectRepository(AssignmentProposalEntity)
+    private readonly assignmentProposals: Repository<AssignmentProposalEntity>,
+    @InjectRepository(UserEntity)
+    private readonly users: Repository<UserEntity>,
+    @InjectRepository(AssignmentEntity)
+    private readonly assignments: Repository<AssignmentEntity>,
     private readonly dataSource: DataSource,
     private readonly shiftsHelpers: ShiftsHelpersService,
   ) {}
@@ -86,7 +86,7 @@ export class AssignmentProposalsService {
       throw new ForbiddenException('You can only delete your own proposals.');
     }
     return this.dataSource.transaction(
-      softDelete(AssignmentProposal, proposal, user.id),
+      softDelete(AssignmentProposalEntity, proposal, user.id),
     );
   }
 
@@ -96,15 +96,19 @@ export class AssignmentProposalsService {
       throw new ForbiddenException('You can only modify your own schedules.');
     }
     return this.dataSource.transaction(async (entityManager: EntityManager) => {
-      const assignment = entityManager.create(Assignment, {
+      const assignment = entityManager.create(AssignmentEntity, {
         shiftId: proposal.shiftId,
         employeeId: proposal.employeeId,
         status: AssignmentStatus.ACCEPTED,
         createdBy: user.id,
         updatedBy: user.id,
       });
-      await entityManager.save(Assignment, assignment);
-      await softDelete(AssignmentProposal, proposal, user.id)(entityManager);
+      await entityManager.save(AssignmentEntity, assignment);
+      await softDelete(
+        AssignmentProposalEntity,
+        proposal,
+        user.id,
+      )(entityManager);
     });
   }
 
@@ -114,7 +118,7 @@ export class AssignmentProposalsService {
       throw new ForbiddenException('You can only modify your own schedules.');
     }
     return this.dataSource.transaction(
-      softDelete(AssignmentProposal, proposal, user.id),
+      softDelete(AssignmentProposalEntity, proposal, user.id),
     );
   }
 

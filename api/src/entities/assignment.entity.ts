@@ -1,7 +1,7 @@
 import { Column, Entity, ManyToOne } from 'typeorm';
 import { AuditableEntity } from './auditable.entity';
-import { Shift } from './shift';
-import { User } from '@/entities/user';
+import { ShiftEntity } from './shift.entity';
+import { UserEntity } from '@/entities/user.entity';
 
 export enum AssignmentStatus {
   PENDING = 'PENDING',
@@ -10,22 +10,22 @@ export enum AssignmentStatus {
 }
 
 @Entity('assignments')
-export class Assignment extends AuditableEntity {
+export class AssignmentEntity extends AuditableEntity {
   @Column({ type: 'uuid' })
   shiftId: string;
 
-  @ManyToOne(() => Shift, (shift) => shift.assignments, {
+  @ManyToOne(() => ShiftEntity, (shift) => shift.assignments, {
     onDelete: 'RESTRICT',
   })
-  shift: Shift;
+  shift: ShiftEntity;
 
   @Column({ type: 'uuid' })
   employeeId: string;
 
-  @ManyToOne(() => User, (user) => user.assignments, {
+  @ManyToOne(() => UserEntity, (user) => user.assignments, {
     onDelete: 'RESTRICT',
   })
-  employee: User;
+  employee: UserEntity;
 
   @Column({
     type: 'enum',

@@ -8,7 +8,7 @@ import { SchedulesTransitionService } from '../schedules-transition.service';
 import { ScheduleView } from '../schedule-stats.service';
 import { RolesGuard } from '@/auth/roles.guard';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
-import { Schedule, UserRole } from '@/entities';
+import { ScheduleEntity, UserRole } from '@/entities';
 import {
   CreateScheduleDto,
   FindSchedulesQueryDto,
@@ -181,7 +181,7 @@ describe('schedules/SchedulesController', () => {
     };
     const scheduleId = 'schedule-1';
     // A stand-in returned by the mocked services; identity is what we assert on.
-    const schedule = { id: scheduleId } as Schedule;
+    const schedule = { id: scheduleId } as ScheduleEntity;
     // The read endpoints return schedules enriched with headcount totals.
     const scheduleView = {
       id: scheduleId,

@@ -8,13 +8,13 @@ import {
 import { DataSource, EntityManager } from 'typeorm';
 import { AssignmentsService } from '../assignments.service';
 import {
-  Assignment,
-  AssignmentProposal,
+  AssignmentEntity,
+  AssignmentProposalEntity,
   AssignmentStatus,
-  Schedule,
+  ScheduleEntity,
   ScheduleStatus,
-  Shift,
-  User,
+  ShiftEntity,
+  UserEntity,
   UserRole,
 } from '@/entities';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
@@ -49,7 +49,9 @@ describe('assignments/AssignmentsService', () => {
   // A shift whose schedule the manager owns and can still edit. IN_REVIEW is
   // both editable and visible to everyone (unlike a draft), so it also covers
   // the employee-driven accept/decline flows out of the box.
-  const editableShift = (overrides: Partial<Schedule> = {}): Shift =>
+  const editableShift = (
+    overrides: Partial<ScheduleEntity> = {},
+  ): ShiftEntity =>
     ({
       id: shiftId,
       schedule: {
@@ -57,12 +59,14 @@ describe('assignments/AssignmentsService', () => {
         createdBy: manager.id,
         status: ScheduleStatus.IN_REVIEW,
         ...overrides,
-      } as Schedule,
-    }) as Shift;
+      } as ScheduleEntity,
+    }) as ShiftEntity;
 
   // A stored assignment with its shift/schedule graph loaded, as the private
   // findVisible/findEditable resolve it.
-  const storedAssignment = (overrides: Partial<Assignment> = {}): Assignment =>
+  const storedAssignment = (
+    overrides: Partial<AssignmentEntity> = {},
+  ): AssignmentEntity =>
     ({
       id: 'assignment-1',
       shiftId,
@@ -70,9 +74,9 @@ describe('assignments/AssignmentsService', () => {
       status: AssignmentStatus.PENDING,
       declineReason: null,
       shift: editableShift(),
-      employee: { id: employee.id } as User,
+      employee: { id: employee.id } as UserEntity,
       ...overrides,
-    }) as Assignment;
+    }) as AssignmentEntity;
 
   beforeEach(async () => {
     assignments = {
@@ -109,8 +113,11 @@ describe('assignments/AssignmentsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AssignmentsService,
-        { provide: getRepositoryToken(Assignment), useValue: assignments },
-        { provide: getRepositoryToken(User), useValue: users },
+        {
+          provide: getRepositoryToken(AssignmentEntity),
+          useValue: assignments,
+        },
+        { provide: getRepositoryToken(UserEntity), useValue: users },
         { provide: DataSource, useValue: dataSource },
         { provide: ShiftsHelpersService, useValue: shiftsHelpers },
       ],
@@ -193,11 +200,11 @@ describe('assignments/AssignmentsService', () => {
       expect(dataSource.transaction).toHaveBeenCalledTimes(1);
       // The proposal is soft-deleted and the assignment saved on the same manager.
       expect(entityManager.softDelete).toHaveBeenCalledWith(
-        AssignmentProposal,
+        AssignmentProposalEntity,
         'proposal-1',
       );
       expect(entityManager.save).toHaveBeenCalledWith(
-        Assignment,
+        AssignmentEntity,
         expect.objectContaining({
           shiftId,
           employeeId: employee.id,
@@ -281,11 +288,11 @@ describe('assignments/AssignmentsService', () => {
       await service.remove('assignment-1', manager);
 
       expect(entityManager.save).toHaveBeenCalledWith(
-        Assignment,
+        AssignmentEntity,
         expect.objectContaining({ id: 'assignment-1', updatedBy: manager.id }),
       );
       expect(entityManager.softDelete).toHaveBeenCalledWith(
-        Assignment,
+        AssignmentEntity,
         'assignment-1',
       );
     });

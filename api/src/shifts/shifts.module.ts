@@ -6,15 +6,15 @@ import {
 import { ShiftsService } from './shifts.service';
 import { ShiftsBoardService } from './shifts-board.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Assignment, Shift } from '@/entities';
+import { AssignmentEntity, ShiftEntity } from '@/entities';
 import { ShiftsHelpersService } from '@/shifts/shifts-helpers.service';
 import { SchedulesHelpersModule } from '@/schedules/schedules-helpers.module';
 import { ShiftsHelpersModule } from '@/shifts/shifts-helpers.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Shift]),
-    TypeOrmModule.forFeature([Assignment]),
+    TypeOrmModule.forFeature([ShiftEntity]),
+    TypeOrmModule.forFeature([AssignmentEntity]),
     SchedulesHelpersModule,
     ShiftsHelpersModule,
   ],

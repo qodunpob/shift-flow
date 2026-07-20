@@ -1,6 +1,6 @@
-export { Assignment, AssignmentStatus } from './assignment';
-export { AssignmentProposal } from './assignment-proposal';
+export { AssignmentEntity, AssignmentStatus } from './assignment.entity';
+export { AssignmentProposalEntity } from './assignment-proposal.entity';
 export { AuditableEntity } from './auditable.entity';
-export { Schedule, ScheduleStatus } from './schedule';
-export { Shift } from './shift';
-export { User, UserRole } from './user';
+export { ScheduleEntity, ScheduleStatus } from './schedule.entity';
+export { ShiftEntity } from './shift.entity';
+export { UserEntity, UserRole } from './user.entity';

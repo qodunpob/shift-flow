@@ -8,13 +8,13 @@ import {
 import { DataSource, EntityManager } from 'typeorm';
 import { AssignmentProposalsService } from '../assignment-proposals.service';
 import {
-  Assignment,
-  AssignmentProposal,
+  AssignmentEntity,
+  AssignmentProposalEntity,
   AssignmentStatus,
-  Schedule,
+  ScheduleEntity,
   ScheduleStatus,
-  Shift,
-  User,
+  ShiftEntity,
+  UserEntity,
   UserRole,
 } from '@/entities';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
@@ -47,7 +47,9 @@ describe('assignment-proposals/AssignmentProposalsService', () => {
 
   // A shift whose schedule the manager owns and can still edit. IN_REVIEW is
   // both editable and visible to everyone (unlike a draft).
-  const editableShift = (overrides: Partial<Schedule> = {}): Shift =>
+  const editableShift = (
+    overrides: Partial<ScheduleEntity> = {},
+  ): ShiftEntity =>
     ({
       id: shiftId,
       schedule: {
@@ -55,14 +57,14 @@ describe('assignment-proposals/AssignmentProposalsService', () => {
         createdBy: manager.id,
         status: ScheduleStatus.IN_REVIEW,
         ...overrides,
-      } as Schedule,
-    }) as Shift;
+      } as ScheduleEntity,
+    }) as ShiftEntity;
 
   // A stored proposal with its shift/schedule graph loaded, as the private
   // findVisible/findEditable resolve it.
   const storedProposal = (
-    overrides: Partial<AssignmentProposal> = {},
-  ): AssignmentProposal =>
+    overrides: Partial<AssignmentProposalEntity> = {},
+  ): AssignmentProposalEntity =>
     ({
       id: 'proposal-1',
       shiftId,
@@ -70,7 +72,7 @@ describe('assignment-proposals/AssignmentProposalsService', () => {
       message: 'Please add me',
       shift: editableShift(),
       ...overrides,
-    }) as AssignmentProposal;
+    }) as AssignmentProposalEntity;
 
   beforeEach(async () => {
     proposalsRepo = {
@@ -105,11 +107,14 @@ describe('assignment-proposals/AssignmentProposalsService', () => {
       providers: [
         AssignmentProposalsService,
         {
-          provide: getRepositoryToken(AssignmentProposal),
+          provide: getRepositoryToken(AssignmentProposalEntity),
           useValue: proposalsRepo,
         },
-        { provide: getRepositoryToken(User), useValue: users },
-        { provide: getRepositoryToken(Assignment), useValue: assignments },
+        { provide: getRepositoryToken(UserEntity), useValue: users },
+        {
+          provide: getRepositoryToken(AssignmentEntity),
+          useValue: assignments,
+        },
         { provide: DataSource, useValue: dataSource },
         { provide: ShiftsHelpersService, useValue: shiftsHelpers },
       ],
@@ -224,11 +229,11 @@ describe('assignment-proposals/AssignmentProposalsService', () => {
       await service.remove('proposal-1', employee);
 
       expect(entityManager.save).toHaveBeenCalledWith(
-        AssignmentProposal,
+        AssignmentProposalEntity,
         expect.objectContaining({ id: 'proposal-1', updatedBy: employee.id }),
       );
       expect(entityManager.softDelete).toHaveBeenCalledWith(
-        AssignmentProposal,
+        AssignmentProposalEntity,
         'proposal-1',
       );
     });
@@ -254,7 +259,7 @@ describe('assignment-proposals/AssignmentProposalsService', () => {
       await service.accept('proposal-1', manager);
 
       expect(entityManager.save).toHaveBeenCalledWith(
-        Assignment,
+        AssignmentEntity,
         expect.objectContaining({
           shiftId,
           employeeId: employee.id,
@@ -263,7 +268,7 @@ describe('assignment-proposals/AssignmentProposalsService', () => {
         }),
       );
       expect(entityManager.softDelete).toHaveBeenCalledWith(
-        AssignmentProposal,
+        AssignmentProposalEntity,
         'proposal-1',
       );
     });
@@ -289,7 +294,7 @@ describe('assignment-proposals/AssignmentProposalsService', () => {
       await service.decline('proposal-1', manager);
 
       expect(entityManager.softDelete).toHaveBeenCalledWith(
-        AssignmentProposal,
+        AssignmentProposalEntity,
         'proposal-1',
       );
     });

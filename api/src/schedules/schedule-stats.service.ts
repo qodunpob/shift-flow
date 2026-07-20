@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { AssignmentStatus, Schedule, Shift } from '@/entities';
+import { AssignmentStatus, ScheduleEntity, ShiftEntity } from '@/entities';
 
 /** Aggregate headcount figures derived from all shifts of a schedule. */
 export interface ScheduleStats {
@@ -14,7 +14,7 @@ export interface ScheduleStats {
 }
 
 /** A schedule enriched with its derived headcount figures. */
-export type ScheduleView = Schedule & ScheduleStats;
+export type ScheduleView = ScheduleEntity & ScheduleStats;
 
 const ZERO_STATS: ScheduleStats = {
   totalRequiredHeadcount: 0,
@@ -25,8 +25,8 @@ const ZERO_STATS: ScheduleStats = {
 @Injectable()
 export class ScheduleStatsService {
   constructor(
-    @InjectRepository(Shift)
-    private readonly shifts: Repository<Shift>,
+    @InjectRepository(ShiftEntity)
+    private readonly shifts: Repository<ShiftEntity>,
   ) {}
 
   /**
@@ -93,7 +93,7 @@ export class ScheduleStatsService {
 
   /** Attaches the totals to a schedule, defaulting to zero when it has none. */
   withStats(
-    schedule: Schedule,
+    schedule: ScheduleEntity,
     stats: Map<string, ScheduleStats>,
   ): ScheduleView {
     return { ...schedule, ...(stats.get(schedule.id) ?? ZERO_STATS) };

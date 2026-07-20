@@ -1,13 +1,13 @@
 import 'reflect-metadata';
 import dataSource from '../datasource';
 import {
-  Assignment,
-  AssignmentProposal,
+  AssignmentEntity,
+  AssignmentProposalEntity,
   AssignmentStatus,
-  Schedule,
+  ScheduleEntity,
   ScheduleStatus,
-  Shift,
-  User,
+  ShiftEntity,
+  UserEntity,
   UserRole,
 } from '@/entities';
 import { hashPassword } from '@/utils/password';
@@ -89,11 +89,11 @@ async function seed() {
       'TRUNCATE TABLE "assignments", "assignment_proposals", "shifts", "schedules", "users" RESTART IDENTITY CASCADE',
     );
 
-    const users = dataSource.getRepository(User);
-    const schedules = dataSource.getRepository(Schedule);
-    const shifts = dataSource.getRepository(Shift);
-    const assignments = dataSource.getRepository(Assignment);
-    const proposals = dataSource.getRepository(AssignmentProposal);
+    const users = dataSource.getRepository(UserEntity);
+    const schedules = dataSource.getRepository(ScheduleEntity);
+    const shifts = dataSource.getRepository(ShiftEntity);
+    const assignments = dataSource.getRepository(AssignmentEntity);
+    const proposals = dataSource.getRepository(AssignmentProposalEntity);
 
     // --- Users -------------------------------------------------------------
     await users.save(

@@ -9,7 +9,12 @@ import { DataSource, EntityManager } from 'typeorm';
 import { startOfMinute } from 'date-fns';
 import { ShiftsService } from '../shifts.service';
 import { CreateShiftDto } from '../shifts.dto';
-import { Assignment, Schedule, Shift, UserRole } from '@/entities';
+import {
+  AssignmentEntity,
+  ScheduleEntity,
+  ShiftEntity,
+  UserRole,
+} from '@/entities';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
 import { ShiftsHelpersService } from '@/shifts/shifts-helpers.service';
 import { SchedulesHelpersService } from '@/schedules/schedules-helpers.service';
@@ -40,7 +45,7 @@ describe('shifts/ShiftsService', () => {
     roles: [UserRole.MANAGER],
   };
   const scheduleId = 'schedule-1';
-  const schedule = { id: scheduleId, createdBy: manager.id } as Schedule;
+  const schedule = { id: scheduleId, createdBy: manager.id } as ScheduleEntity;
 
   beforeEach(async () => {
     queryBuilder = {
@@ -49,7 +54,7 @@ describe('shifts/ShiftsService', () => {
       getExists: jest.fn().mockResolvedValue(false),
     };
     shifts = {
-      create: jest.fn((entity: Shift) => ({
+      create: jest.fn((entity: ShiftEntity) => ({
         ...entity,
         scheduleId: entity.schedule.id,
       })),
@@ -81,8 +86,11 @@ describe('shifts/ShiftsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ShiftsService,
-        { provide: getRepositoryToken(Shift), useValue: shifts },
-        { provide: getRepositoryToken(Assignment), useValue: assignments },
+        { provide: getRepositoryToken(ShiftEntity), useValue: shifts },
+        {
+          provide: getRepositoryToken(AssignmentEntity),
+          useValue: assignments,
+        },
         { provide: DataSource, useValue: dataSource },
         { provide: SchedulesHelpersService, useValue: schedulesHelpers },
         { provide: ShiftsHelpersService, useValue: helpers },
@@ -161,7 +169,7 @@ describe('shifts/ShiftsService', () => {
       startsAt: startOfMinute(new Date('2026-01-01T09:00:00.000Z')),
       endsAt: startOfMinute(new Date('2026-01-01T17:00:00.000Z')),
       requiredHeadcount: 3,
-    } as Shift;
+    } as ShiftEntity;
 
     it('should apply the changes', async () => {
       helpers.findEditable.mockResolvedValueOnce({ ...existing });
@@ -281,7 +289,7 @@ describe('shifts/ShiftsService', () => {
   });
 
   describe('remove', () => {
-    const existing = { id: 'shift-1', scheduleId, schedule } as Shift;
+    const existing = { id: 'shift-1', scheduleId, schedule } as ShiftEntity;
 
     it('should soft-delete the shift', async () => {
       helpers.findEditable.mockResolvedValueOnce({ ...existing });
@@ -289,10 +297,13 @@ describe('shifts/ShiftsService', () => {
       await service.remove(existing.id, manager);
 
       expect(entityManager.save).toHaveBeenCalledWith(
-        Shift,
+        ShiftEntity,
         expect.objectContaining({ id: existing.id, updatedBy: manager.id }),
       );
-      expect(entityManager.softDelete).toHaveBeenCalledWith(Shift, existing.id);
+      expect(entityManager.softDelete).toHaveBeenCalledWith(
+        ShiftEntity,
+        existing.id,
+      );
     });
 
     it('should not delete a shift that is not editable', async () => {
