@@ -45,7 +45,7 @@ export interface ProposalView {
  */
 export type ShiftBoardView = Omit<
   ShiftEntity,
-  'schedule' | 'assignments' | 'assignmentProposals'
+  'schedule' | 'assignments' | 'proposals'
 > & {
   filledCount: number;
   spotsRemaining: number;
@@ -72,7 +72,7 @@ export class ShiftsBoardService {
       where: { scheduleId: schedule.id },
       relations: {
         assignments: { employee: true },
-        assignmentProposals: { employee: true },
+        proposals: { employee: true },
       },
       order: { startsAt: 'ASC' },
     });
@@ -87,7 +87,7 @@ export class ShiftsBoardService {
       relations: {
         schedule: true,
         assignments: { employee: true },
-        assignmentProposals: { employee: true },
+        proposals: { employee: true },
       },
     });
     if (!shift || !isScheduleVisibleTo(shift.schedule, user)) {
@@ -110,7 +110,7 @@ export class ShiftsBoardService {
     const isManager = user.roles.includes(UserRole.MANAGER);
 
     const assignments = shift.assignments ?? [];
-    const proposals = shift.assignmentProposals ?? [];
+    const proposals = shift.proposals ?? [];
 
     // A slot is occupied by any assignment that has not been declined.
     const filledCount = assignments.filter(
@@ -118,7 +118,7 @@ export class ShiftsBoardService {
     ).length;
 
     return {
-      ...omit(shift, ['schedule', 'assignments', 'assignmentProposals']),
+      ...omit(shift, ['schedule', 'assignments', 'proposals']),
       filledCount,
       spotsRemaining: Math.max(0, shift.requiredHeadcount - filledCount),
       assignments: assignments.map((assignment) =>

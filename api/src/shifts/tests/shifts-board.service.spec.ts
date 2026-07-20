@@ -27,14 +27,15 @@ describe('shifts/ShiftsBoardService', () => {
   const employee: AuthenticatedUser = { id: 'emp-1', roles: [] };
   const scheduleId = 'schedule-1';
 
-  const employeeUser = (id: string): UserEntity => ({
-    id,
-    firstName: `${id}-first`,
-    lastName: `${id}-last`,
-    avatarUrl: null,
-    emailAddress: `${id}@example.com`,
-    roles: [],
-  });
+  const employeeUser = (id: string): UserEntity =>
+    ({
+      id,
+      firstName: `${id}-first`,
+      lastName: `${id}-last`,
+      avatarUrl: null,
+      emailAddress: `${id}@example.com`,
+      roles: [],
+    }) as unknown as UserEntity;
 
   const assignment = (over: Partial<AssignmentEntity> = {}): AssignmentEntity =>
     ({
@@ -66,7 +67,7 @@ describe('shifts/ShiftsBoardService', () => {
       endsAt: new Date('2026-01-02T17:00:00.000Z'),
       requiredHeadcount: 3,
       assignments: [],
-      assignmentProposals: [],
+      proposals: [],
       ...over,
     }) as ShiftEntity;
 
@@ -102,7 +103,7 @@ describe('shifts/ShiftsBoardService', () => {
           where: { scheduleId },
           relations: {
             assignments: { employee: true },
-            assignmentProposals: { employee: true },
+            proposals: { employee: true },
           },
           order: { startsAt: 'ASC' },
         }),
@@ -132,7 +133,7 @@ describe('shifts/ShiftsBoardService', () => {
               status: AssignmentStatus.DECLINED,
             }),
           ],
-          assignmentProposals: [
+          proposals: [
             proposal({ id: 'p-1', employeeId: 'emp-1' }),
             proposal({ id: 'p-2', employeeId: 'emp-3' }),
           ],
@@ -155,7 +156,7 @@ describe('shifts/ShiftsBoardService', () => {
             assignment({ id: 'a-1', employeeId: 'emp-1' }),
             assignment({ id: 'a-2', employeeId: 'emp-2' }),
           ],
-          assignmentProposals: [
+          proposals: [
             proposal({ id: 'p-own', employeeId: 'emp-1' }),
             proposal({ id: 'p-other', employeeId: 'emp-3' }),
           ],
@@ -197,7 +198,7 @@ describe('shifts/ShiftsBoardService', () => {
       shifts.findOne.mockResolvedValueOnce(
         shift({
           schedule: { status: ScheduleStatus.APPROVED } as ScheduleEntity,
-          assignmentProposals: [
+          proposals: [
             proposal({ id: 'p-own', employeeId: 'emp-1' }),
             proposal({ id: 'p-other', employeeId: 'emp-3' }),
           ],
