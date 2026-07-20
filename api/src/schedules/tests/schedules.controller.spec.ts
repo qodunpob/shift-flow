@@ -1,10 +1,19 @@
 import 'reflect-metadata';
 import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { Test, TestingModule } from '@nestjs/testing';
 import { SchedulesController } from '../schedules.controller';
+import { SchedulesService } from '../schedules.service';
+import { SchedulesTransitionService } from '../schedules-transition.service';
 import { RolesGuard } from '@/auth/roles.guard';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
-import { UserRole } from '@/entities';
+import { Schedule, UserRole } from '@/entities';
+import {
+  CreateScheduleDto,
+  FindSchedulesQueryDto,
+  RejectScheduleDto,
+  UpdateScheduleDto,
+} from '../schedules.dto';
 
 describe('schedules/SchedulesController', () => {
   /**
@@ -148,6 +157,137 @@ describe('schedules/SchedulesController', () => {
       expect(() => canAccess('create', undefined)).toThrow(
         UnauthorizedException,
       );
+    });
+  });
+
+  /**
+   * These tests verify the controller is a thin pass-through: each handler
+   * forwards to the correct service method with the expected arguments and
+   * returns whatever the service returns. Business rules live in the services
+   * and are covered by their own specs.
+   */
+  describe('Service delegation', () => {
+    let controller: SchedulesController;
+    let schedules: jest.Mocked<
+      Pick<
+        SchedulesService,
+        'create' | 'findAll' | 'findOne' | 'update' | 'remove'
+      >
+    >;
+    let transitions: jest.Mocked<
+      Pick<
+        SchedulesTransitionService,
+        | 'publish'
+        | 'submitForApproval'
+        | 'unpublish'
+        | 'withdraw'
+        | 'approve'
+        | 'reject'
+      >
+    >;
+
+    const user: AuthenticatedUser = {
+      id: 'u-manager',
+      roles: [UserRole.MANAGER],
+    };
+    const scheduleId = 'schedule-1';
+    // A stand-in returned by the mocked services; identity is what we assert on.
+    const schedule = { id: scheduleId } as Schedule;
+
+    beforeEach(async () => {
+      schedules = {
+        create: jest.fn().mockResolvedValue(schedule),
+        findAll: jest.fn(),
+        findOne: jest.fn().mockResolvedValue(schedule),
+        update: jest.fn().mockResolvedValue(schedule),
+        remove: jest.fn().mockResolvedValue(undefined),
+      };
+      transitions = {
+        publish: jest.fn().mockResolvedValue(schedule),
+        submitForApproval: jest.fn().mockResolvedValue(schedule),
+        unpublish: jest.fn().mockResolvedValue(schedule),
+        withdraw: jest.fn().mockResolvedValue(schedule),
+        approve: jest.fn().mockResolvedValue(schedule),
+        reject: jest.fn().mockResolvedValue(schedule),
+      };
+
+      const module: TestingModule = await Test.createTestingModule({
+        controllers: [SchedulesController],
+        providers: [
+          { provide: SchedulesService, useValue: schedules },
+          { provide: SchedulesTransitionService, useValue: transitions },
+        ],
+      }).compile();
+
+      controller = module.get(SchedulesController);
+    });
+
+    it('should create a schedule from the submitted details on behalf of the current user', async () => {
+      const dto: CreateScheduleDto = {
+        startsAt: new Date('2026-01-01'),
+        endsAt: new Date('2026-01-07'),
+      };
+
+      await expect(controller.create(dto, user)).resolves.toBe(schedule);
+      expect(schedules.create).toHaveBeenCalledWith(dto, user);
+    });
+
+    it('should list schedules matching the query for the current user', async () => {
+      const query = { mine: true } as FindSchedulesQueryDto;
+      const page = {
+        items: [schedule],
+        meta: { total: 1, page: 1, limit: 20, totalPages: 1 },
+      };
+      schedules.findAll.mockResolvedValue(page);
+
+      await expect(controller.findAll(query, user)).resolves.toBe(page);
+      expect(schedules.findAll).toHaveBeenCalledWith(query, user);
+    });
+
+    it('should return a single schedule by its id', async () => {
+      await expect(controller.findOne(scheduleId)).resolves.toBe(schedule);
+      expect(schedules.findOne).toHaveBeenCalledWith(scheduleId);
+    });
+
+    it('should apply the submitted changes to an existing schedule for the current user', async () => {
+      const dto: UpdateScheduleDto = { label: 'Q1' };
+
+      await expect(controller.update(scheduleId, dto, user)).resolves.toBe(
+        schedule,
+      );
+      expect(schedules.update).toHaveBeenCalledWith(scheduleId, dto, user);
+    });
+
+    it('should delete a schedule on behalf of the current user without returning a body', async () => {
+      await expect(
+        controller.remove(scheduleId, user),
+      ).resolves.toBeUndefined();
+      expect(schedules.remove).toHaveBeenCalledWith(scheduleId, user);
+    });
+
+    it.each([
+      'publish',
+      'submitForApproval',
+      'unpublish',
+      'withdraw',
+      'approve',
+    ] as const)(
+      'should %s a schedule on behalf of the current user',
+      async (action) => {
+        await expect(controller[action](scheduleId, user)).resolves.toBe(
+          schedule,
+        );
+        expect(transitions[action]).toHaveBeenCalledWith(scheduleId, user);
+      },
+    );
+
+    it('should reject a schedule with the supplied reason on behalf of the current user', async () => {
+      const dto: RejectScheduleDto = { rejectionReason: 'Understaffed' };
+
+      await expect(controller.reject(scheduleId, user, dto)).resolves.toBe(
+        schedule,
+      );
+      expect(transitions.reject).toHaveBeenCalledWith(scheduleId, user, dto);
     });
   });
 });
