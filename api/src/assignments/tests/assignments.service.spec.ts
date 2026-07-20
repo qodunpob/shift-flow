@@ -9,6 +9,7 @@ import { DataSource, EntityManager } from 'typeorm';
 import { AssignmentsService } from '../assignments.service';
 import {
   Assignment,
+  AssignmentProposal,
   AssignmentStatus,
   Schedule,
   ScheduleStatus,
@@ -26,9 +27,15 @@ describe('assignments/AssignmentsService', () => {
     save: jest.Mock;
     find: jest.Mock;
     findOne: jest.Mock;
+    findOneBy: jest.Mock;
   };
   let users: { findOneBy: jest.Mock };
-  let entityManager: { save: jest.Mock; softDelete: jest.Mock };
+  let entityManager: {
+    findOneBy: jest.Mock;
+    create: jest.Mock;
+    save: jest.Mock;
+    softDelete: jest.Mock;
+  };
   let dataSource: { transaction: jest.Mock };
   let shiftsHelpers: { findVisible: jest.Mock; findEditable: jest.Mock };
 
@@ -76,10 +83,16 @@ describe('assignments/AssignmentsService', () => {
       ),
       find: jest.fn().mockResolvedValue([]),
       findOne: jest.fn(),
+      findOneBy: jest.fn().mockResolvedValue(null),
     };
     users = { findOneBy: jest.fn().mockResolvedValue({ id: employee.id }) };
     entityManager = {
-      save: jest.fn().mockResolvedValue(undefined),
+      findOneBy: jest.fn().mockResolvedValue(null),
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+      create: jest.fn((_entity, data) => data),
+      save: jest.fn((_entity, data) =>
+        Promise.resolve({ id: 'assignment-1', ...data }),
+      ),
       softDelete: jest.fn().mockResolvedValue(undefined),
     };
     dataSource = {
@@ -119,7 +132,7 @@ describe('assignments/AssignmentsService', () => {
       await expect(
         service.create(shiftId, dto, manager),
       ).rejects.toBeInstanceOf(ConflictException);
-      expect(assignments.save).not.toHaveBeenCalled();
+      expect(dataSource.transaction).not.toHaveBeenCalled();
     });
 
     it('should forbid assigning on a schedule owned by someone else', async () => {
@@ -131,7 +144,7 @@ describe('assignments/AssignmentsService', () => {
         service.create(shiftId, dto, manager),
       ).rejects.toBeInstanceOf(ForbiddenException);
       expect(users.findOneBy).not.toHaveBeenCalled();
-      expect(assignments.save).not.toHaveBeenCalled();
+      expect(dataSource.transaction).not.toHaveBeenCalled();
     });
 
     it('should reject an assignment for an employee that does not exist', async () => {
@@ -140,23 +153,62 @@ describe('assignments/AssignmentsService', () => {
       await expect(
         service.create(shiftId, dto, manager),
       ).rejects.toBeInstanceOf(NotFoundException);
-      expect(assignments.save).not.toHaveBeenCalled();
+      expect(dataSource.transaction).not.toHaveBeenCalled();
     });
 
-    it('should create the assignment and record who made it', async () => {
+    it('should reject assigning an employee that is already assigned', async () => {
+      assignments.findOneBy.mockResolvedValue({ id: 'assignment-1' });
+
+      await expect(
+        service.create(shiftId, dto, manager),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(dataSource.transaction).not.toHaveBeenCalled();
+    });
+
+    it('should create a PENDING assignment when the employee has no proposal', async () => {
+      entityManager.findOneBy.mockResolvedValue(null);
+
       const result = await service.create(shiftId, dto, manager);
 
-      expect(assignments.save).toHaveBeenCalledTimes(1);
+      expect(entityManager.softDelete).not.toHaveBeenCalled();
+      expect(entityManager.save).toHaveBeenCalledTimes(1);
       expect(result).toMatchObject({
         shiftId,
         employeeId: employee.id,
+        status: AssignmentStatus.PENDING,
         createdBy: manager.id,
         updatedBy: manager.id,
       });
     });
 
+    it('should consume an existing proposal and accept the assignment in one transaction', async () => {
+      entityManager.findOneBy.mockResolvedValue({
+        id: 'proposal-1',
+        shiftId,
+        employeeId: employee.id,
+      });
+
+      const result = await service.create(shiftId, dto, manager);
+
+      expect(dataSource.transaction).toHaveBeenCalledTimes(1);
+      // The proposal is soft-deleted and the assignment saved on the same manager.
+      expect(entityManager.softDelete).toHaveBeenCalledWith(
+        AssignmentProposal,
+        'proposal-1',
+      );
+      expect(entityManager.save).toHaveBeenCalledWith(
+        Assignment,
+        expect.objectContaining({
+          shiftId,
+          employeeId: employee.id,
+          status: AssignmentStatus.ACCEPTED,
+        }),
+      );
+      expect(result).toMatchObject({ status: AssignmentStatus.ACCEPTED });
+    });
+
     it('should not expose the shift and employee relations in the result', async () => {
-      assignments.save.mockResolvedValue({
+      entityManager.save.mockResolvedValueOnce({
         id: 'assignment-1',
         shiftId,
         employeeId: employee.id,

@@ -5,7 +5,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Assignment, AssignmentStatus, User } from '@/entities';
+import {
+  Assignment,
+  AssignmentProposal,
+  AssignmentStatus,
+  User,
+} from '@/entities';
 import { DataSource, Repository } from 'typeorm';
 import {
   CreateAssignmentDto,
@@ -50,13 +55,26 @@ export class AssignmentsService {
       throw new ConflictException('Assignment already exists');
     }
 
-    const assignment = this.assignments.create({
-      shift,
-      employee,
-      createdBy: user.id,
-      updatedBy: user.id,
+    return this.dataSource.transaction(async (entityManager) => {
+      // Assigning an employee who already proposed to work this shift fulfils
+      // that proposal: consume it and record the assignment as ACCEPTED.
+      const proposal = await entityManager.findOneBy(AssignmentProposal, {
+        shiftId: shift.id,
+        employeeId: employee.id,
+      });
+      if (proposal) {
+        await softDelete(AssignmentProposal, proposal, user.id)(entityManager);
+      }
+
+      const assignment = entityManager.create(Assignment, {
+        shiftId: shift.id,
+        employeeId: employee.id,
+        status: proposal ? AssignmentStatus.ACCEPTED : AssignmentStatus.PENDING,
+        createdBy: user.id,
+        updatedBy: user.id,
+      });
+      return this.toView(await entityManager.save(Assignment, assignment));
     });
-    return this.toView(await this.assignments.save(assignment));
   }
 
   async remove(id: string, user: AuthenticatedUser) {
