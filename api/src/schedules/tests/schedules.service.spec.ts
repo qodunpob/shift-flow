@@ -1,6 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { endOfDay, startOfDay } from 'date-fns';
 import { SchedulesService } from '../schedules.service';
@@ -144,15 +148,34 @@ describe('schedules/SchedulesService', () => {
       expect(queryBuilder.getExists).not.toHaveBeenCalled();
     });
 
-    it('should not let a user update a schedule owned by someone else', async () => {
+    it("should report someone else's draft as not found rather than reveal it", async () => {
+      // A draft is invisible to non-owners, so an attempt to update it must
+      // 404 (hiding its existence) rather than 403.
       repository.findOneBy.mockResolvedValue({
         ...existing,
+        status: ScheduleStatus.DRAFT,
         createdBy: 'another-user',
       });
 
       await expect(
         service.update(existing.id, { label: 'Hijacked' }, manager),
       ).rejects.toBeInstanceOf(NotFoundException);
+      expect(queryBuilder.getExists).not.toHaveBeenCalled();
+      expect(repository.save).not.toHaveBeenCalled();
+    });
+
+    it("should forbid updating someone else's visible schedule", async () => {
+      // A published (non-draft) schedule is visible to everyone, so it cannot
+      // be hidden — a non-owner is told they may not modify it (403), not 404.
+      repository.findOneBy.mockResolvedValue({
+        ...existing,
+        status: ScheduleStatus.IN_REVIEW,
+        createdBy: 'another-user',
+      });
+
+      await expect(
+        service.update(existing.id, { label: 'Hijacked' }, manager),
+      ).rejects.toBeInstanceOf(ForbiddenException);
       expect(queryBuilder.getExists).not.toHaveBeenCalled();
       expect(repository.save).not.toHaveBeenCalled();
     });
@@ -253,14 +276,31 @@ describe('schedules/SchedulesService', () => {
       expect(dataSource.transaction).not.toHaveBeenCalled();
     });
 
-    it('should not let a user delete a schedule owned by someone else', async () => {
+    it("should report someone else's draft as not found rather than reveal it", async () => {
+      // Invisible to non-owners, so deletion attempts 404 rather than 403.
       repository.findOneBy.mockResolvedValue({
         ...existing,
+        status: ScheduleStatus.DRAFT,
         createdBy: 'another-user',
       });
 
       await expect(service.remove(existing.id, manager)).rejects.toBeInstanceOf(
         NotFoundException,
+      );
+      expect(dataSource.transaction).not.toHaveBeenCalled();
+      expect(entityManager.softDelete).not.toHaveBeenCalled();
+    });
+
+    it("should forbid deleting someone else's visible schedule", async () => {
+      // Visible to everyone, so a non-owner is forbidden (403), not 404.
+      repository.findOneBy.mockResolvedValue({
+        ...existing,
+        status: ScheduleStatus.IN_REVIEW,
+        createdBy: 'another-user',
+      });
+
+      await expect(service.remove(existing.id, manager)).rejects.toBeInstanceOf(
+        ForbiddenException,
       );
       expect(dataSource.transaction).not.toHaveBeenCalled();
       expect(entityManager.softDelete).not.toHaveBeenCalled();
@@ -431,6 +471,55 @@ describe('schedules/SchedulesService', () => {
 
       await expect(
         service.findVisible('missing', manager),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+  });
+
+  describe('findEditable', () => {
+    it('should return a visible schedule whose status is editable', async () => {
+      const schedule = {
+        id: 'schedule-1',
+        createdBy: manager.id,
+        status: ScheduleStatus.DRAFT,
+      } as Schedule;
+      repository.findOneBy.mockResolvedValue(schedule);
+
+      await expect(service.findEditable('schedule-1', manager)).resolves.toBe(
+        schedule,
+      );
+    });
+
+    it('should reject a visible schedule whose status is not editable', async () => {
+      repository.findOneBy.mockResolvedValue({
+        id: 'schedule-1',
+        createdBy: 'someone-else',
+        status: ScheduleStatus.APPROVED,
+      });
+
+      await expect(
+        service.findEditable('schedule-1', manager),
+      ).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('should surface the visibility outcome, hiding a draft owned by someone else', async () => {
+      // findEditable builds on findVisible, so an invisible draft stays a 404
+      // and never leaks through as an editability conflict.
+      repository.findOneBy.mockResolvedValue({
+        id: 'schedule-1',
+        createdBy: 'another-manager',
+        status: ScheduleStatus.DRAFT,
+      });
+
+      await expect(
+        service.findEditable('schedule-1', manager),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('should throw NotFound when the schedule does not exist', async () => {
+      repository.findOneBy.mockResolvedValue(null);
+
+      await expect(
+        service.findEditable('missing', manager),
       ).rejects.toBeInstanceOf(NotFoundException);
     });
   });
