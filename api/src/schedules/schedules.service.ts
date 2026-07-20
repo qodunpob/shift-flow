@@ -100,7 +100,7 @@ export class SchedulesService {
     dto: UpdateScheduleDto,
   ): Promise<Schedule> {
     const schedule = await this.schedules.findOneBy({ id });
-    if (!schedule) {
+    if (!schedule || !isScheduleVisibleTo(schedule, user)) {
       throw new NotFoundException('Schedule not found.');
     }
     if (schedule.createdBy !== user.id) {
@@ -131,7 +131,7 @@ export class SchedulesService {
 
   async remove(id: string, user: AuthenticatedUser): Promise<void> {
     const schedule = await this.schedules.findOneBy({ id });
-    if (!schedule) {
+    if (!schedule || !isScheduleVisibleTo(schedule, user)) {
       throw new NotFoundException('Schedule not found.');
     }
     if (schedule.createdBy !== user.id) {
