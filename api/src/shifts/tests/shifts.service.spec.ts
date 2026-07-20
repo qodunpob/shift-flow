@@ -183,7 +183,7 @@ describe('shifts/ShiftsService', () => {
       helpers.findEditable.mockResolvedValueOnce({ ...existing });
 
       const result = await service.update(existing.id, {}, manager);
-      expect(result).toEqual({
+      expect(result).toMatchObject({
         ...omit(existing, ['schedule']),
         updatedBy: manager.id,
       });

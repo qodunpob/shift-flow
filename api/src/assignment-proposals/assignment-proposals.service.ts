@@ -103,7 +103,7 @@ export class AssignmentProposalsService {
         createdBy: user.id,
         updatedBy: user.id,
       });
-      await entityManager.save(AssignmentProposal, assignment);
+      await entityManager.save(Assignment, assignment);
       await softDelete(AssignmentProposal, proposal, user.id)(entityManager);
     });
   }
@@ -135,7 +135,7 @@ export class AssignmentProposalsService {
 
   private async findEditable(id: string, user: AuthenticatedUser) {
     const proposal = await this.findVisible(id, user);
-    if (isEditable(proposal.shift.schedule.status)) {
+    if (!isEditable(proposal.shift.schedule.status)) {
       throw new ConflictException(
         `A schedule in status ${proposal.shift.schedule.status} cannot be edited.`,
       );
