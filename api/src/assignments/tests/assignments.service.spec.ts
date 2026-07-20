@@ -171,49 +171,14 @@ describe('assignments/AssignmentsService', () => {
     });
   });
 
-  describe('findAll', () => {
-    it('should return the assignments of a shift the user may see', async () => {
-      const found = [{ id: 'assignment-1' }] as Assignment[];
-      assignments.find.mockResolvedValue(found);
-
-      const result = await service.findAll(shiftId, manager);
-
-      expect(shiftsHelpers.findVisible).toHaveBeenCalledWith(shiftId, manager);
-      expect(assignments.find).toHaveBeenCalledWith({ where: { shiftId } });
-      expect(result).toBe(found);
-    });
-
-    it('should not return assignments when the shift is not visible', async () => {
-      shiftsHelpers.findVisible.mockRejectedValue(new NotFoundException());
-
-      await expect(service.findAll(shiftId, manager)).rejects.toBeInstanceOf(
-        NotFoundException,
-      );
-      expect(assignments.find).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('findOne', () => {
-    it('should return a visible assignment without its relations', async () => {
-      assignments.findOne.mockResolvedValue(storedAssignment());
-
-      const result = await service.findOne('assignment-1', manager);
-
-      expect(assignments.findOne).toHaveBeenCalledWith({
-        where: { id: 'assignment-1' },
-        relations: { shift: { schedule: true } },
-      });
-      expect(result).toMatchObject({ id: 'assignment-1' });
-      expect(result).not.toHaveProperty('shift');
-      expect(result).not.toHaveProperty('employee');
-    });
-
+  describe('remove', () => {
     it('should throw NotFound when the assignment does not exist', async () => {
       assignments.findOne.mockResolvedValue(null);
 
-      await expect(service.findOne('missing', manager)).rejects.toBeInstanceOf(
+      await expect(service.remove('missing', manager)).rejects.toBeInstanceOf(
         NotFoundException,
       );
+      expect(dataSource.transaction).not.toHaveBeenCalled();
     });
 
     it('should hide an assignment whose schedule the user may not see', async () => {
@@ -227,12 +192,11 @@ describe('assignments/AssignmentsService', () => {
       );
 
       await expect(
-        service.findOne('assignment-1', employee),
+        service.remove('assignment-1', employee),
       ).rejects.toBeInstanceOf(NotFoundException);
+      expect(dataSource.transaction).not.toHaveBeenCalled();
     });
-  });
 
-  describe('remove', () => {
     it('should forbid deleting an assignment on a schedule owned by someone else', async () => {
       assignments.findOne.mockResolvedValue(
         storedAssignment({

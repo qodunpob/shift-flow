@@ -22,8 +22,8 @@ describe('assignments controllers', () => {
   /**
    * Exercises the real RolesGuard against the actual controller handlers,
    * asserting the access matrix declared by the `@Roles(...)` decorators.
-   * Creating and deleting assignments is a manager task; listing, reading and
-   * responding (accept/decline) are open to any authenticated user.
+   * Creating and deleting assignments is a manager task; responding
+   * (accept/decline) is open to any authenticated user.
    */
   describe('Access control', () => {
     let guard: RolesGuard;
@@ -63,8 +63,6 @@ describe('assignments controllers', () => {
       { controller: AssignmentsController, handler: 'remove' },
     ];
     const openToAny: Endpoint[] = [
-      { controller: ShiftAssignmentsController, handler: 'findAll' },
-      { controller: AssignmentsController, handler: 'findOne' },
       { controller: AssignmentsController, handler: 'accept' },
       { controller: AssignmentsController, handler: 'decline' },
     ];
@@ -116,10 +114,7 @@ describe('assignments controllers', () => {
     let shiftAssignments: ShiftAssignmentsController;
     let assignmentsController: AssignmentsController;
     let assignments: jest.Mocked<
-      Pick<
-        AssignmentsService,
-        'create' | 'findAll' | 'findOne' | 'remove' | 'accept' | 'decline'
-      >
+      Pick<AssignmentsService, 'create' | 'remove' | 'accept' | 'decline'>
     >;
 
     const user: AuthenticatedUser = {
@@ -134,8 +129,6 @@ describe('assignments controllers', () => {
     beforeEach(async () => {
       assignments = {
         create: jest.fn().mockResolvedValue(assignment),
-        findAll: jest.fn().mockResolvedValue([assignment]),
-        findOne: jest.fn().mockResolvedValue(assignment),
         remove: jest.fn().mockResolvedValue(undefined),
         accept: jest.fn().mockResolvedValue(assignment),
         decline: jest.fn().mockResolvedValue(assignment),
@@ -157,23 +150,6 @@ describe('assignments controllers', () => {
         assignment,
       );
       expect(assignments.create).toHaveBeenCalledWith(shiftId, dto, user);
-    });
-
-    it("should list a shift's assignments for the current user", async () => {
-      const result = [assignment];
-      assignments.findAll.mockResolvedValue(result);
-
-      await expect(shiftAssignments.findAll(shiftId, user)).resolves.toBe(
-        result,
-      );
-      expect(assignments.findAll).toHaveBeenCalledWith(shiftId, user);
-    });
-
-    it('should return a single assignment by its id for the current user', async () => {
-      await expect(
-        assignmentsController.findOne(assignmentId, user),
-      ).resolves.toBe(assignment);
-      expect(assignments.findOne).toHaveBeenCalledWith(assignmentId, user);
     });
 
     it('should delete an assignment for the current user without returning a body', async () => {

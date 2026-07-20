@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Delete,
-  Get,
   HttpCode,
   HttpStatus,
   Param,
@@ -32,27 +31,11 @@ export class ShiftAssignmentsController {
   ) {
     return this.assignments.create(shiftId, dto, user);
   }
-
-  @Get()
-  findAll(
-    @Param('shiftId', ParseUUIDPipe) shiftId: string,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
-    return this.assignments.findAll(shiftId, user);
-  }
 }
 
 @Controller('assignments/:id')
 export class AssignmentsController {
   constructor(private readonly assignments: AssignmentsService) {}
-
-  @Get()
-  findOne(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
-    return this.assignments.findOne(id, user);
-  }
 
   @Roles([UserRole.MANAGER])
   @Delete()

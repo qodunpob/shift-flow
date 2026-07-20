@@ -52,17 +52,6 @@ export class AssignmentsService {
     return this.cleanResult(await this.assignments.save(assignment));
   }
 
-  async findAll(shiftId: string, user: AuthenticatedUser) {
-    const shift = await this.shiftsHelpers.findVisible(shiftId, user);
-    return this.assignments.find({
-      where: { shiftId: shift.id },
-    });
-  }
-
-  async findOne(id: string, user: AuthenticatedUser) {
-    return this.cleanResult(await this.findVisible(id, user));
-  }
-
   async remove(id: string, user: AuthenticatedUser) {
     const assignment = await this.findEditable(id, user);
     if (assignment.shift.schedule.createdBy !== user.id) {

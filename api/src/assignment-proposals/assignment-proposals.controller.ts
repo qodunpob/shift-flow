@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Delete,
-  Get,
   Param,
   ParseUUIDPipe,
   Post,
@@ -12,8 +11,6 @@ import {
   CreateAssignmentProposalDto,
   UpdateAssignmentProposalDto,
 } from '@/assignment-proposals/assignment-proposal.dto';
-import { Roles } from '@/auth/roles.decorator';
-import { UserRole } from '@/entities';
 import { CurrentUser } from '@/auth/current-user.decorator';
 import type { AuthenticatedUser } from '@/auth/authenticated-request';
 
@@ -23,13 +20,6 @@ export class ShiftAssignmentProposalsController {
   create(
     @Param('shiftId', ParseUUIDPipe) shiftId: string,
     @Body() dto: CreateAssignmentProposalDto,
-  ) {}
-
-  @Get()
-  @Roles([UserRole.MANAGER])
-  indAll(
-    @Param('shiftId', ParseUUIDPipe) shiftId: string,
-    @CurrentUser() user: AuthenticatedUser,
   ) {}
 }
 
