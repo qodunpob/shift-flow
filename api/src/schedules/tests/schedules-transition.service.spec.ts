@@ -1,5 +1,5 @@
 import { AuthenticatedUser } from '@/auth/authenticated-request';
-import { Schedule, ScheduleStatus, UserRole } from '@/entities';
+import { Schedule, ScheduleStatus, Shift, UserRole } from '@/entities';
 import {
   ConflictException,
   ForbiddenException,
@@ -15,6 +15,16 @@ describe('schedules/SchedulesTransitionService', () => {
     save: jest.Mock;
     findOneBy: jest.Mock;
   };
+  // Chainable query-builder stub backing the unfilled-shift guard. `getExists`
+  // resolves to `false` (schedule fully staffed) unless a test overrides it.
+  let shiftsQueryBuilder: {
+    leftJoin: jest.Mock;
+    where: jest.Mock;
+    groupBy: jest.Mock;
+    having: jest.Mock;
+    getExists: jest.Mock;
+  };
+  let shifts: { createQueryBuilder: jest.Mock };
 
   beforeEach(async () => {
     repository = {
@@ -24,10 +34,22 @@ describe('schedules/SchedulesTransitionService', () => {
       findOneBy: jest.fn(),
     };
 
+    shiftsQueryBuilder = {
+      leftJoin: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      groupBy: jest.fn().mockReturnThis(),
+      having: jest.fn().mockReturnThis(),
+      getExists: jest.fn().mockResolvedValue(false),
+    };
+    shifts = {
+      createQueryBuilder: jest.fn(() => shiftsQueryBuilder),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SchedulesTransitionService,
         { provide: getRepositoryToken(Schedule), useValue: repository },
+        { provide: getRepositoryToken(Shift), useValue: shifts },
       ],
     }).compile();
 
@@ -156,5 +178,33 @@ describe('schedules/SchedulesTransitionService', () => {
       status: ScheduleStatus.AWAITING_APPROVAL,
       rejectionReason: null,
     });
+  });
+
+  it('should let the owning manager submit a fully staffed schedule for approval', async () => {
+    repository.findOneBy.mockResolvedValueOnce(
+      scheduleIn(ScheduleStatus.IN_REVIEW),
+    );
+    shiftsQueryBuilder.getExists.mockResolvedValueOnce(false);
+
+    const result = await service.submitForApproval('schedule-1', manager);
+
+    expect(result).toMatchObject({ status: ScheduleStatus.AWAITING_APPROVAL });
+    expect(shifts.createQueryBuilder).toHaveBeenCalledTimes(1);
+    expect(shiftsQueryBuilder.where).toHaveBeenCalledWith(
+      'shift.scheduleId = :scheduleId',
+      { scheduleId: 'schedule-1' },
+    );
+  });
+
+  it('should refuse to submit for approval when a shift is unfilled', async () => {
+    repository.findOneBy.mockResolvedValueOnce(
+      scheduleIn(ScheduleStatus.IN_REVIEW),
+    );
+    shiftsQueryBuilder.getExists.mockResolvedValueOnce(true);
+
+    await expect(
+      service.submitForApproval('schedule-1', manager),
+    ).rejects.toBeInstanceOf(ConflictException);
+    expect(repository.save).not.toHaveBeenCalled();
   });
 });

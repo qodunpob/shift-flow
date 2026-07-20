@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Schedule, UserRole } from '@/entities';
+import { AssignmentStatus, Schedule, Shift, UserRole } from '@/entities';
 import { Repository } from 'typeorm';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
 import {
@@ -20,6 +20,8 @@ export class SchedulesTransitionService {
   constructor(
     @InjectRepository(Schedule)
     private readonly schedules: Repository<Schedule>,
+    @InjectRepository(Shift)
+    private readonly shifts: Repository<Shift>,
   ) {}
 
   publish(id: string, user: AuthenticatedUser): Promise<Schedule> {
@@ -27,7 +29,9 @@ export class SchedulesTransitionService {
   }
 
   submitForApproval(id: string, user: AuthenticatedUser): Promise<Schedule> {
-    return this.applyTransition(id, user, ScheduleAction.SubmitForApproval);
+    return this.applyTransition(id, user, ScheduleAction.SubmitForApproval, {
+      guard: (schedule) => this.assertNoUnfilledShifts(schedule),
+    });
   }
 
   unpublish(id: string, user: AuthenticatedUser): Promise<Schedule> {
@@ -43,8 +47,10 @@ export class SchedulesTransitionService {
     dto: RejectScheduleDto,
     user: AuthenticatedUser,
   ): Promise<Schedule> {
-    return this.applyTransition(id, user, ScheduleAction.Reject, (schedule) => {
-      schedule.rejectionReason = dto.rejectionReason;
+    return this.applyTransition(id, user, ScheduleAction.Reject, {
+      mutate: (schedule) => {
+        schedule.rejectionReason = dto.rejectionReason;
+      },
     });
   }
 
@@ -54,15 +60,19 @@ export class SchedulesTransitionService {
 
   /**
    * Loads a schedule, validates the requested lifecycle action against the
-   * state machine, enforces the actor allowed to perform it, applies the new
-   * status, and persists. `mutate` sets any action-specific fields (e.g. the
-   * rejection reason) before saving.
+   * state machine, enforces the actor allowed to perform it, runs any
+   * action-specific precondition `guard`, applies the new status, and
+   * persists. `mutate` sets any action-specific fields (e.g. the rejection
+   * reason) before saving.
    */
   private async applyTransition(
     id: string,
     user: AuthenticatedUser,
     action: ScheduleAction,
-    mutate?: (schedule: Schedule) => void,
+    options: {
+      guard?: (schedule: Schedule) => Promise<void>;
+      mutate?: (schedule: Schedule) => void;
+    } = {},
   ): Promise<Schedule> {
     const schedule = await this.schedules.findOneBy({ id });
     if (!schedule) {
@@ -78,13 +88,42 @@ export class SchedulesTransitionService {
 
     this.assertActor(transition.actor, user, schedule);
 
+    await options.guard?.(schedule);
+
     schedule.status = transition.to;
     schedule.updatedBy = user.id;
     // Clear any stale rejection reason; `mutate` re-sets it for a reject.
     schedule.rejectionReason = null;
-    mutate?.(schedule);
+    options.mutate?.(schedule);
 
     return this.schedules.save(schedule);
+  }
+
+  /**
+   * Blocks submission while any shift is understaffed. A slot counts as
+   * filled by any assignment that has not been declined (matching the board's
+   * `filledCount`), so a shift is unfilled when its non-declined assignment
+   * count is below its `requiredHeadcount`.
+   */
+  private async assertNoUnfilledShifts(schedule: Schedule): Promise<void> {
+    const hasUnfilledShift = await this.shifts
+      .createQueryBuilder('shift')
+      .leftJoin(
+        'shift.assignments',
+        'assignment',
+        'assignment.status != :declined',
+        { declined: AssignmentStatus.DECLINED },
+      )
+      .where('shift.scheduleId = :scheduleId', { scheduleId: schedule.id })
+      .groupBy('shift.id')
+      .having('COUNT(assignment.id) < shift.requiredHeadcount')
+      .getExists();
+
+    if (hasUnfilledShift) {
+      throw new ConflictException(
+        'Cannot submit for approval while the schedule has unfilled shifts.',
+      );
+    }
   }
 
   /** Enforces that `user` is allowed to act as `actor` on `schedule`. */
