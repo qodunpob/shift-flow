@@ -1,5 +1,9 @@
 import 'reflect-metadata';
-import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import {
+  ExecutionContext,
+  ForbiddenException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ShiftsController } from '../shifts.controller';
@@ -64,7 +68,7 @@ describe('shifts/ShiftsController', () => {
         'should reject an approver calling %s',
         (handler) => {
           expect(() => canAccess(handler, approver)).toThrow(
-            UnauthorizedException,
+            ForbiddenException,
           );
         },
       );
@@ -72,9 +76,7 @@ describe('shifts/ShiftsController', () => {
       it.each(managerOnly)(
         'should reject a user without roles calling %s',
         (handler) => {
-          expect(() => canAccess(handler, noRoles)).toThrow(
-            UnauthorizedException,
-          );
+          expect(() => canAccess(handler, noRoles)).toThrow(ForbiddenException);
         },
       );
 
