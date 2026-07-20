@@ -1,6 +1,7 @@
 import { Column, Entity, ManyToOne } from 'typeorm';
 import { AuditableEntity } from './auditable.entity';
 import { Shift } from './shift';
+import { User } from '@/entities/user';
 
 @Entity('assignment_proposals')
 export class AssignmentProposal extends AuditableEntity {
@@ -13,7 +14,12 @@ export class AssignmentProposal extends AuditableEntity {
   shift: Shift;
 
   @Column({ type: 'uuid' })
-  userId: string;
+  employeeId: string;
+
+  @ManyToOne(() => User, (user) => user.assignments, {
+    onDelete: 'RESTRICT',
+  })
+  employee: Shift;
 
   @Column({ type: 'text', nullable: true })
   message: string | null;
