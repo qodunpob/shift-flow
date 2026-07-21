@@ -21,6 +21,7 @@ import { AssignmentProposalsService } from '@/assignment-proposals/assignment-pr
 export class ShiftAssignmentProposalsController {
   constructor(private readonly proposals: AssignmentProposalsService) {}
 
+  @Roles([UserRole.EMPLOYEE])
   @Post()
   create(
     @Param('shiftId', ParseUUIDPipe) shiftId: string,
@@ -35,6 +36,7 @@ export class ShiftAssignmentProposalsController {
 export class AssignmentProposalsController {
   constructor(private readonly proposals: AssignmentProposalsService) {}
 
+  @Roles([UserRole.EMPLOYEE])
   @Put()
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -44,6 +46,7 @@ export class AssignmentProposalsController {
     return this.proposals.update(id, dto, user);
   }
 
+  @Roles([UserRole.EMPLOYEE])
   @Delete()
   delete(
     @Param('id', ParseUUIDPipe) id: string,

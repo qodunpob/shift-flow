@@ -28,6 +28,10 @@ describe('assignments controllers', () => {
   describe('Access control', () => {
     let guard: RolesGuard;
 
+    const employee: AuthenticatedUser = {
+      id: 'u-employee',
+      roles: [UserRole.EMPLOYEE],
+    };
     const manager: AuthenticatedUser = {
       id: 'u-manager',
       roles: [UserRole.MANAGER],
@@ -62,12 +66,19 @@ describe('assignments controllers', () => {
       { controller: ShiftAssignmentsController, handler: 'create' },
       { controller: AssignmentsController, handler: 'remove' },
     ];
-    const openToAny: Endpoint[] = [
+    const employeeOnly: Endpoint[] = [
       { controller: AssignmentsController, handler: 'accept' },
       { controller: AssignmentsController, handler: 'decline' },
     ];
 
     describe('manager-only endpoints', () => {
+      it.each(managerOnly)(
+        'should reject an employee calling $handler',
+        (ep) => {
+          expect(() => canAccess(ep, employee)).toThrow(ForbiddenException);
+        },
+      );
+
       it.each(managerOnly)('should allow a manager to call $handler', (ep) => {
         expect(canAccess(ep, manager)).toBe(true);
       });
@@ -88,18 +99,31 @@ describe('assignments controllers', () => {
     });
 
     describe('endpoints open to any authenticated user', () => {
-      it.each(openToAny)('should allow a manager to call $handler', (ep) => {
-        expect(canAccess(ep, manager)).toBe(true);
-      });
-
-      it.each(openToAny)('should allow an approver to call $handler', (ep) => {
-        expect(canAccess(ep, approver)).toBe(true);
-      });
-
-      it.each(openToAny)(
-        'should allow a user without roles to call $handler',
+      it.each(employeeOnly)(
+        'should allow an employee to call $handler',
         (ep) => {
-          expect(canAccess(ep, noRoles)).toBe(true);
+          expect(canAccess(ep, employee)).toBe(true);
+        },
+      );
+
+      it.each(employeeOnly)(
+        'should reject a manager calling $handler',
+        (ep) => {
+          expect(() => canAccess(ep, manager)).toThrow(ForbiddenException);
+        },
+      );
+
+      it.each(employeeOnly)(
+        'should reject an approver calling $handler',
+        (ep) => {
+          expect(() => canAccess(ep, approver)).toThrow(ForbiddenException);
+        },
+      );
+
+      it.each(employeeOnly)(
+        'should reject a user without roles calling $handler',
+        (ep) => {
+          expect(() => canAccess(ep, noRoles)).toThrow(ForbiddenException);
         },
       );
     });

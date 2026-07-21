@@ -10,7 +10,6 @@ describe('schedules/SchedulesHelpersService', () => {
   let repository: {
     findOneBy: jest.Mock;
   };
-  const user: AuthenticatedUser = { id: 'user-1', roles: [] };
   const manager: AuthenticatedUser = {
     id: 'manager-1',
     roles: [UserRole.MANAGER],
@@ -41,7 +40,7 @@ describe('schedules/SchedulesHelpersService', () => {
       repository.findOneBy.mockResolvedValueOnce(schedule);
 
       await expect(
-        service.findVisible('schedule-1', user),
+        service.findVisible('schedule-1', { id: 'user-1', roles: [] }),
       ).resolves.toStrictEqual(schedule);
     });
 

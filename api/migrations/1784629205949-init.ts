@@ -1,11 +1,11 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class Init1784529363456 implements MigrationInterface {
-    name = 'Init1784529363456'
+export class Init1784629205949 implements MigrationInterface {
+    name = 'Init1784629205949'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`CREATE TYPE "public"."users_roles_enum" AS ENUM('MANAGER', 'APPROVER')`);
-        await queryRunner.query(`CREATE TABLE "users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "createdBy" uuid NOT NULL, "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updatedBy" uuid NOT NULL, "deletedAt" TIMESTAMP WITH TIME ZONE, "password" text NOT NULL, "firstName" text NOT NULL, "lastName" text NOT NULL, "emailAddress" text NOT NULL, "avatarUrl" text, "roles" "public"."users_roles_enum" array NOT NULL, CONSTRAINT "UQ_0a15e52405edda3ea73124ab407" UNIQUE ("emailAddress"), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TYPE "public"."users_roles_enum" AS ENUM('EMPLOYEE', 'MANAGER', 'APPROVER')`);
+        await queryRunner.query(`CREATE TABLE "users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "createdBy" uuid NOT NULL, "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updatedBy" uuid NOT NULL, "deletedAt" TIMESTAMP WITH TIME ZONE, "password" text NOT NULL, "firstName" text NOT NULL, "lastName" text NOT NULL, "emailAddress" text NOT NULL, "roles" "public"."users_roles_enum" array NOT NULL, CONSTRAINT "UQ_0a15e52405edda3ea73124ab407" UNIQUE ("emailAddress"), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "assignment_proposals" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "createdBy" uuid NOT NULL, "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updatedBy" uuid NOT NULL, "deletedAt" TIMESTAMP WITH TIME ZONE, "shiftId" uuid NOT NULL, "employeeId" uuid NOT NULL, "message" text, CONSTRAINT "PK_bc4b12ae086c2c5a499dd1fb7de" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TYPE "public"."schedules_status_enum" AS ENUM('DRAFT', 'IN_REVIEW', 'AWAITING_APPROVAL', 'APPROVED', 'REJECTED')`);
         await queryRunner.query(`CREATE TABLE "schedules" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "createdBy" uuid NOT NULL, "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updatedBy" uuid NOT NULL, "deletedAt" TIMESTAMP WITH TIME ZONE, "label" text, "startsAt" TIMESTAMP WITH TIME ZONE NOT NULL, "endsAt" TIMESTAMP WITH TIME ZONE NOT NULL, "status" "public"."schedules_status_enum" NOT NULL DEFAULT 'DRAFT', "rejectionReason" text, CONSTRAINT "PK_7e33fc2ea755a5765e3564e66dd" PRIMARY KEY ("id"))`);

@@ -47,6 +47,7 @@ export class AssignmentsController {
     return this.assignments.remove(id, user);
   }
 
+  @Roles([UserRole.EMPLOYEE])
   @Post('accept')
   accept(
     @Param('id', ParseUUIDPipe) id: string,
@@ -55,6 +56,7 @@ export class AssignmentsController {
     return this.assignments.accept(id, user);
   }
 
+  @Roles([UserRole.EMPLOYEE])
   @Post('decline')
   decline(
     @Param('id', ParseUUIDPipe) id: string,

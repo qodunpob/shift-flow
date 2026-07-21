@@ -25,6 +25,10 @@ describe('schedules/SchedulesController', () => {
   describe('Access control', () => {
     let guard: RolesGuard;
 
+    const employee: AuthenticatedUser = {
+      id: 'u-employee',
+      roles: [UserRole.EMPLOYEE],
+    };
     const manager: AuthenticatedUser = {
       id: 'u-manager',
       roles: [UserRole.MANAGER],
@@ -76,16 +80,18 @@ describe('schedules/SchedulesController', () => {
     const openToAny: HandlerName[] = ['findAll', 'findOne'];
 
     describe('manager-only endpoints', () => {
+      it.each(managerOnly)(
+        'should reject an employee calling %s',
+        (handler) => {
+          expect(() => canAccess(handler, employee)).toThrow(
+            ForbiddenException,
+          );
+        },
+      );
+
       it.each(managerOnly)('allows a manager to call %s', (handler) => {
         expect(canAccess(handler, manager)).toBe(true);
       });
-
-      it.each(managerOnly)(
-        'should allow a user holding both roles to call %s',
-        (handler) => {
-          expect(canAccess(handler, both)).toBe(true);
-        },
-      );
 
       it.each(managerOnly)(
         'should reject an approver calling %s',
@@ -106,16 +112,18 @@ describe('schedules/SchedulesController', () => {
 
     describe('approver-only endpoints', () => {
       it.each(approverOnly)(
-        'should allow an approver to call %s',
+        'should reject an employee calling %s',
         (handler) => {
-          expect(canAccess(handler, approver)).toBe(true);
+          expect(() => canAccess(handler, employee)).toThrow(
+            ForbiddenException,
+          );
         },
       );
 
       it.each(approverOnly)(
-        'should allow a user holding both roles to call %s',
+        'should allow an approver to call %s',
         (handler) => {
-          expect(canAccess(handler, both)).toBe(true);
+          expect(canAccess(handler, approver)).toBe(true);
         },
       );
 
@@ -132,6 +140,10 @@ describe('schedules/SchedulesController', () => {
     });
 
     describe('endpoints open to any authenticated user', () => {
+      it.each(openToAny)('allows an employee to call %s', (handler) => {
+        expect(canAccess(handler, employee)).toBe(true);
+      });
+
       it.each(openToAny)('allows a manager to call %s', (handler) => {
         expect(canAccess(handler, manager)).toBe(true);
       });

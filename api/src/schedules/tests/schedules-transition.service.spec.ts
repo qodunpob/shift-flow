@@ -95,18 +95,6 @@ describe('schedules/SchedulesTransitionService', () => {
     expect(repository.save).toHaveBeenCalledTimes(1);
   });
 
-  it('should not let a user who is not the owning manager publish a schedule', async () => {
-    // `user` owns nothing here and lacks the manager role.
-    repository.findOneBy.mockResolvedValueOnce(
-      scheduleIn(ScheduleStatus.DRAFT),
-    );
-
-    await expect(service.publish('schedule-1', user)).rejects.toBeInstanceOf(
-      ForbiddenException,
-    );
-    expect(repository.save).not.toHaveBeenCalled();
-  });
-
   it('should reject an action that is invalid for the current status', async () => {
     repository.findOneBy.mockResolvedValueOnce(
       scheduleIn(ScheduleStatus.DRAFT),

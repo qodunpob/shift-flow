@@ -4,6 +4,7 @@ import { AssignmentEntity } from '@/entities/assignment.entity';
 import { AssignmentProposalEntity } from '@/entities/assignment-proposal.entity';
 
 export enum UserRole {
+  EMPLOYEE = 'EMPLOYEE',
   MANAGER = 'MANAGER',
   APPROVER = 'APPROVER',
 }
@@ -19,11 +20,8 @@ export class UserEntity extends AuditableEntity {
   @Column({ type: 'text' })
   lastName: string;
 
-  @Column({ type: 'text', unique: true })
+  @Column({ type: 'text', unique: true, select: false })
   emailAddress: string;
-
-  @Column({ type: 'text', nullable: true })
-  avatarUrl: string | null;
 
   @Column({ type: 'enum', enum: UserRole, array: true })
   roles: UserRole[];

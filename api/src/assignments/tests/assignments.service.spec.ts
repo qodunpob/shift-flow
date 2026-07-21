@@ -43,7 +43,10 @@ describe('assignments/AssignmentsService', () => {
     id: 'manager-1',
     roles: [UserRole.MANAGER],
   };
-  const employee: AuthenticatedUser = { id: 'employee-1', roles: [] };
+  const employee: AuthenticatedUser = {
+    id: 'employee-1',
+    roles: [UserRole.EMPLOYEE],
+  };
   const shiftId = 'shift-1';
 
   // A shift whose schedule the manager owns and can still edit. IN_REVIEW is

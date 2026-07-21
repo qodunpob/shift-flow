@@ -19,7 +19,6 @@ export interface EmployeeRef {
   id: string;
   firstName: string;
   lastName: string;
-  avatarUrl: string | null;
 }
 
 export interface AssignmentView {
@@ -160,7 +159,6 @@ export class ShiftsBoardService {
       id: employee.id,
       firstName: employee.firstName,
       lastName: employee.lastName,
-      avatarUrl: employee.avatarUrl,
     };
   }
 }

@@ -51,7 +51,6 @@ describe('schedules/SchedulesService', () => {
     totalAcceptedCount: 0,
   };
 
-  const user: AuthenticatedUser = { id: 'user-1', roles: [] };
   const manager: AuthenticatedUser = {
     id: 'manager-1',
     roles: [UserRole.MANAGER],
@@ -311,7 +310,7 @@ describe('schedules/SchedulesService', () => {
     const pagination = { page: 1, limit: 20 };
 
     it('should hide draft schedules from non-managers', async () => {
-      await service.findAll(pagination, user);
+      await service.findAll(pagination, { id: 'user-1', roles: [] });
 
       expect(queryBuilder.andWhere).toHaveBeenCalledWith(
         'schedule.status != :visibilityDraft',

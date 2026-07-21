@@ -34,36 +34,36 @@ type SeedUser = {
 const SEED_USERS: SeedUser[] = [
   // Employees
   {
-    id: 'caffe836-3198-4e55-9a46-a1e8d8e49f9e',
+    id: '00000000-0000-4000-8000-000000000000',
     firstName: 'Emma',
     lastName: 'Employee',
     emailAddress: 'test-employee@example.com',
-    roles: [],
+    roles: [UserRole.EMPLOYEE],
   },
   {
     id: '11111111-1111-4111-8111-111111111111',
     firstName: 'Ethan',
     lastName: 'Employee',
     emailAddress: 'test-employee2@example.com',
-    roles: [],
+    roles: [UserRole.EMPLOYEE],
   },
   {
     id: '22222222-2222-4222-8222-222222222222',
     firstName: 'Ava',
     lastName: 'Employee',
     emailAddress: 'test-employee3@example.com',
-    roles: [],
+    roles: [UserRole.EMPLOYEE],
   },
   // Managers
   {
-    id: 'cde9a7fe-d70a-4af7-bdb1-0444ef03231b',
+    id: '33333333-3333-4333-8333-333333333333',
     firstName: 'Mia',
     lastName: 'Manager',
     emailAddress: 'test-manager@example.com',
     roles: [UserRole.MANAGER],
   },
   {
-    id: '33333333-3333-4333-8333-333333333333',
+    id: '44444444-4444-4444-8444-444444444444',
     firstName: 'Max',
     lastName: 'Manager',
     emailAddress: 'test-manager2@example.com',
@@ -71,7 +71,7 @@ const SEED_USERS: SeedUser[] = [
   },
   // Approver
   {
-    id: 'a7d3e30b-1362-499f-96d5-1efbf8c07b5f',
+    id: '55555555-5555-4555-8555-555555555555',
     firstName: 'Aiden',
     lastName: 'Approver',
     emailAddress: 'test-approver@example.com',
@@ -101,7 +101,6 @@ async function seed() {
         SEED_USERS.map(async (u) =>
           users.create({
             ...u,
-            avatarUrl: null,
             password: await hashPassword(u.emailAddress),
             createdBy: u.id,
             updatedBy: u.id,
