@@ -1,18 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import { UsersService } from '@/users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
 import { verifyPassword } from '@/utils/password';
+import { UsersHelpersService } from '@/users/users-helpers.service';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private usersService: UsersService,
+    private usersHelpers: UsersHelpersService,
     private jwtService: JwtService,
   ) {}
 
   async validateUser(username: string, password: string) {
-    const user = await this.usersService.findOne(username);
+    const user = await this.usersHelpers.findOne(username);
     if (user && (await verifyPassword(password, user.password))) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password, ...result } = user;

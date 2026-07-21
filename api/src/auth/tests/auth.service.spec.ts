@@ -1,14 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from '../auth.service';
-import { UsersService } from '@/users/users.service';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
 import { UserRole } from '@/entities';
 import { hashPassword } from '@/utils/password';
+import { UsersHelpersService } from '@/users/users-helpers.service';
 
 describe('auth/AuthService', () => {
   let service: AuthService;
-  let usersService: { findOne: jest.Mock };
+  let usersHelpers: { findOne: jest.Mock };
   let jwtService: { sign: jest.Mock };
 
   const storedUser = {
@@ -23,13 +23,13 @@ describe('auth/AuthService', () => {
   });
 
   beforeEach(async () => {
-    usersService = { findOne: jest.fn() };
+    usersHelpers = { findOne: jest.fn() };
     jwtService = { sign: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
-        { provide: UsersService, useValue: usersService },
+        { provide: UsersHelpersService, useValue: usersHelpers },
         { provide: JwtService, useValue: jwtService },
       ],
     }).compile();
@@ -45,7 +45,7 @@ describe('auth/AuthService', () => {
 
   describe('validateUser', () => {
     it('should return the user without the password when credentials match', async () => {
-      usersService.findOne.mockResolvedValueOnce({ ...storedUser });
+      usersHelpers.findOne.mockResolvedValueOnce({ ...storedUser });
 
       const result = await service.validateUser(
         storedUser.emailAddress,
@@ -61,7 +61,7 @@ describe('auth/AuthService', () => {
     });
 
     it('should return null when the password does not match', async () => {
-      usersService.findOne.mockResolvedValueOnce({ ...storedUser });
+      usersHelpers.findOne.mockResolvedValueOnce({ ...storedUser });
 
       const result = await service.validateUser(
         storedUser.emailAddress,
@@ -72,7 +72,7 @@ describe('auth/AuthService', () => {
     });
 
     it('should return null when the user does not exist', async () => {
-      usersService.findOne.mockResolvedValueOnce(undefined);
+      usersHelpers.findOne.mockResolvedValueOnce(undefined);
 
       const result = await service.validateUser('nobody@example.com', 'secret');
 

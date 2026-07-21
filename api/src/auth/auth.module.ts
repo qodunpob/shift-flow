@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { PassportModule } from '@nestjs/passport';
 import { RolesGuard } from '@/auth/roles.guard';
-import { UsersModule } from '@/users/users.module';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { LocalStrategy } from './local.strategy';
@@ -11,10 +10,11 @@ import { ConfigType } from '@nestjs/config';
 import authConfig from '@/config/auth.config';
 import { JwtStrategy } from '@/auth/jwt.strategy';
 import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
+import { UsersHelpersModule } from '@/users/users-helpers.module';
 
 @Module({
   imports: [
-    UsersModule,
+    UsersHelpersModule,
     PassportModule,
     JwtModule.registerAsync({
       inject: [authConfig.KEY],

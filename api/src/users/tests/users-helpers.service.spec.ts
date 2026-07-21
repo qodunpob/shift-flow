@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { UsersService } from '../users.service';
 import { UserEntity, UserRole } from '@/entities';
+import { UsersHelpersService } from '@/users/users-helpers.service';
 
-describe('users/UsersService', () => {
-  let service: UsersService;
+describe('users/UsersHelpersService', () => {
+  let service: UsersHelpersService;
   let queryBuilder: {
     addSelect: jest.Mock;
     where: jest.Mock;
@@ -29,12 +29,12 @@ describe('users/UsersService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        UsersService,
+        UsersHelpersService,
         { provide: getRepositoryToken(UserEntity), useValue: users },
       ],
     }).compile();
 
-    service = module.get<UsersService>(UsersService);
+    service = module.get<UsersHelpersService>(UsersHelpersService);
   });
 
   afterEach(() => jest.clearAllMocks());

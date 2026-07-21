@@ -16,7 +16,10 @@ import type { AuthenticatedUser } from '@/auth/authenticated-request';
 import { UserRole } from '@/entities';
 import { Roles } from '@/auth/roles.decorator';
 import { AssignmentProposalsService } from '@/assignment-proposals/assignment-proposals.service';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('assignment-proposals')
+@ApiBearerAuth()
 @Controller('shifts/:shiftId/assignment-proposals')
 export class ShiftAssignmentProposalsController {
   constructor(private readonly proposals: AssignmentProposalsService) {}
@@ -32,6 +35,8 @@ export class ShiftAssignmentProposalsController {
   }
 }
 
+@ApiTags('assignment-proposals')
+@ApiBearerAuth()
 @Controller('assignment-proposals/:id')
 export class AssignmentProposalsController {
   constructor(private readonly proposals: AssignmentProposalsService) {}

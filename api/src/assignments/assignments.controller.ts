@@ -17,7 +17,10 @@ import {
 } from '@/assignments/assignments.dto';
 import { CurrentUser } from '@/auth/current-user.decorator';
 import type { AuthenticatedUser } from '@/auth/authenticated-request';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('assignments')
+@ApiBearerAuth()
 @Controller('shifts/:shiftId/assignments')
 export class ShiftAssignmentsController {
   constructor(private readonly assignments: AssignmentsService) {}
@@ -33,6 +36,8 @@ export class ShiftAssignmentsController {
   }
 }
 
+@ApiTags('assignments')
+@ApiBearerAuth()
 @Controller('assignments/:id')
 export class AssignmentsController {
   constructor(private readonly assignments: AssignmentsService) {}

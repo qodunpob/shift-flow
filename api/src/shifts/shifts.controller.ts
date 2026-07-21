@@ -17,7 +17,10 @@ import { ShiftsBoardService } from '@/shifts/shifts-board.service';
 import { CreateShiftDto, UpdateShiftDto } from '@/shifts/shifts.dto';
 import type { AuthenticatedUser } from '@/auth/authenticated-request';
 import { CurrentUser } from '@/auth/current-user.decorator';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('shifts')
+@ApiBearerAuth()
 @Controller('schedules/:scheduleId/shifts')
 export class ScheduleShiftsController {
   constructor(
@@ -45,6 +48,8 @@ export class ScheduleShiftsController {
   }
 }
 
+@ApiTags('shifts')
+@ApiBearerAuth()
 @Controller('shifts/:id')
 export class ShiftsController {
   constructor(
