@@ -4,10 +4,12 @@ import { useState } from 'react'
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import Visibility from '@mui/icons-material/Visibility'
 import VisibilityOff from '@mui/icons-material/VisibilityOff'
+import { useTranslations } from 'next-intl'
 import { Avatar, Box, Button, IconButton, InputAdornment, Paper, Stack, TextField, Typography, } from '@mui/material'
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const t = useTranslations("LoginPage");
 
   return (
     <Box
@@ -42,23 +44,23 @@ export default function LoginPage() {
             <LockOutlinedIcon />
           </Avatar>
           <Typography variant="h5" component="h1" sx={{ fontWeight: 600 }}>
-            Welcome back
+            {t("title")}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Sign in to Shift Flow
+            {t("subtitle")}
           </Typography>
         </Stack>
 
         <Stack component="form" spacing={2.5}>
           <TextField
-            label="Email"
+            label={t("email")}
             name="email"
             type="email"
             autoComplete="email"
             fullWidth
           />
           <TextField
-            label="Password"
+            label={t("password")}
             name="password"
             type={showPassword ? "text" : "password"}
             autoComplete="current-password"
@@ -68,7 +70,7 @@ export default function LoginPage() {
                 endAdornment: (
                   <InputAdornment position="end">
                     <IconButton
-                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      aria-label={showPassword ? t("hidePassword") : t("showPassword")}
                       onClick={() => setShowPassword((value) => !value)}
                       edge="end"
                     >
@@ -80,7 +82,7 @@ export default function LoginPage() {
             }}
           />
           <Button type="submit" variant="contained" size="large" fullWidth>
-            Sign in
+            {t("submit")}
           </Button>
         </Stack>
       </Paper>

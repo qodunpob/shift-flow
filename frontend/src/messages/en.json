@@ -1,0 +1,18 @@
+{
+  "LoginPage": {
+    "title": "Welcome back",
+    "subtitle": "Sign in to Shift Flow",
+    "email": "Email",
+    "password": "Password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "submit": "Sign in"
+  },
+  "SchedulesPage": {
+    "title": "Schedules",
+    "page": "Page {page}"
+  },
+  "ScheduleDetailsPage": {
+    "title": "Schedule {id}"
+  }
+}
