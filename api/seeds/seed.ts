@@ -117,7 +117,7 @@ async function seed() {
       schedules.create({
         label: 'Week 30 — Draft',
         startsAt: at('2026-07-20T00:00:00.000Z'),
-        endsAt: at('2026-07-26T23:59:59.000Z'),
+        endsAt: at('2026-07-26T23:59:59.999Z'),
         status: ScheduleStatus.DRAFT,
         createdBy: mia,
         updatedBy: mia,
@@ -127,7 +127,7 @@ async function seed() {
       schedules.create({
         label: 'Week 31 — In Review',
         startsAt: at('2026-07-27T00:00:00.000Z'),
-        endsAt: at('2026-08-02T23:59:59.000Z'),
+        endsAt: at('2026-08-02T23:59:59.999Z'),
         status: ScheduleStatus.IN_REVIEW,
         createdBy: mia,
         updatedBy: mia,
@@ -137,7 +137,7 @@ async function seed() {
       schedules.create({
         label: 'Week 32 — Awaiting Approval',
         startsAt: at('2026-08-03T00:00:00.000Z'),
-        endsAt: at('2026-08-09T23:59:59.000Z'),
+        endsAt: at('2026-08-09T23:59:59.999Z'),
         status: ScheduleStatus.AWAITING_APPROVAL,
         createdBy: max,
         updatedBy: max,
@@ -147,7 +147,7 @@ async function seed() {
       schedules.create({
         label: 'Week 33 — Approved',
         startsAt: at('2026-08-10T00:00:00.000Z'),
-        endsAt: at('2026-08-16T23:59:59.000Z'),
+        endsAt: at('2026-08-16T23:59:59.999Z'),
         status: ScheduleStatus.APPROVED,
         createdBy: max,
         updatedBy: max,
@@ -157,7 +157,7 @@ async function seed() {
       schedules.create({
         label: 'Week 29 — Rejected',
         startsAt: at('2026-07-13T00:00:00.000Z'),
-        endsAt: at('2026-07-19T23:59:59.000Z'),
+        endsAt: at('2026-07-19T23:59:59.999Z'),
         status: ScheduleStatus.REJECTED,
         rejectionReason: 'Not enough weekend coverage — please revise.',
         createdBy: mia,
