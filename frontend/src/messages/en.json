@@ -6,7 +6,9 @@
     "password": "Password",
     "showPassword": "Show password",
     "hidePassword": "Hide password",
-    "submit": "Sign in"
+    "submit": "Sign in",
+    "invalidCredentials": "Invalid email or password",
+    "genericError": "Something went wrong. Please try again."
   },
   "SchedulesPage": {
     "title": "Schedules",
