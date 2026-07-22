@@ -31,4 +31,8 @@ export class UsersService {
       .andWhere('assignment.id IS NULL')
       .getMany();
   }
+
+  findOne(id: string) {
+    return this.users.findOneBy({ id });
+  }
 }
