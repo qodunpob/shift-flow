@@ -1,9 +1,9 @@
-import React, { useState } from 'react'
-import { DEFAULT_ROUTE } from '@/routes'
-import { useRouter } from '@/i18n/navigation'
-import { useTranslations } from 'next-intl'
-import { requestSignIn } from '@/features/login-form/api'
-import { StatusCodes } from 'http-status-codes'
+import React, { useState } from 'react';
+import { DEFAULT_ROUTE } from '@/routes';
+import { useRouter } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
+import { requestSignIn } from '@/features/login-form/api';
+import { StatusCodes } from 'http-status-codes';
 
 export const useSignIn = (t: ReturnType<typeof useTranslations>) => {
   const [error, setError] = useState<string | null>(null);
@@ -18,14 +18,16 @@ export const useSignIn = (t: ReturnType<typeof useTranslations>) => {
     const formData = new FormData(event.currentTarget);
 
     try {
-      const emailAddress = formData.get("emailAddress")?.toString();
-      const password = formData.get("password")?.toString();
+      const emailAddress = formData.get('emailAddress')?.toString();
+      const password = formData.get('password')?.toString();
 
       const result = await requestSignIn({ emailAddress, password });
 
       if (!result.success) {
         setError(
-          result.status === StatusCodes.UNAUTHORIZED ? t("invalidCredentials") : t("genericError"),
+          result.status === StatusCodes.UNAUTHORIZED
+            ? t('invalidCredentials')
+            : t('genericError'),
         );
         return;
       }
@@ -33,7 +35,7 @@ export const useSignIn = (t: ReturnType<typeof useTranslations>) => {
       router.push(DEFAULT_ROUTE);
       router.refresh();
     } catch {
-      setError(t("genericError"));
+      setError(t('genericError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -43,5 +45,5 @@ export const useSignIn = (t: ReturnType<typeof useTranslations>) => {
     error,
     isSubmitting,
     handleSubmit,
-  }
-}
+  };
+};

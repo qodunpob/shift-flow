@@ -1,5 +1,5 @@
-import { redirect } from "@/i18n/navigation";
-import { DEFAULT_ROUTE } from "@/routes";
+import { redirect } from '@/i18n/navigation';
+import { DEFAULT_ROUTE } from '@/routes';
 
 export default async function Home({
   params,

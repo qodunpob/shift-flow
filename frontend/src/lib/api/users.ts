@@ -1,4 +1,4 @@
-import { apiFetch } from '@/lib/api/apiFetch'
+import { apiFetch } from '@/lib/api/apiFetch';
 
 export interface CurrentUser {
   id: string;
