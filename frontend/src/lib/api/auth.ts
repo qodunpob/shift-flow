@@ -3,7 +3,7 @@ import { errorMessages } from '@/constants/error-messages'
 import { AuthError } from '@/lib/errors/AuthError'
 
 export interface SignInArgs {
-  email: string;
+  emailAddress: string;
   password: string;
 }
 
@@ -11,12 +11,12 @@ export type SignInResult = {
   accessToken: string;
 }
 
-export const signIn = async ({ email, password }: SignInArgs): Promise<SignInResult> => {
+export const signIn = async ({ emailAddress, password }: SignInArgs): Promise<SignInResult> => {
   try {
     const response = await fetch(`${process.env.API_URL}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: email, password }),
+      body: JSON.stringify({ username: emailAddress, password }),
     });
 
     if (!response.ok) {
@@ -28,11 +28,11 @@ export const signIn = async ({ email, password }: SignInArgs): Promise<SignInRes
       throw new AuthError(message, status);
     }
 
-    const body = await response.json() as { access_token: string };
-    if (!body.access_token) {
+    const data = await response.json() as { access_token: string };
+    if (!data.access_token) {
       throw new AuthError(errorMessages.auth.serviceUnavailable, StatusCodes.BAD_GATEWAY);
     }
-    return { accessToken: body.access_token };
+    return { accessToken: data.access_token };
   } catch (error) {
     if (error instanceof AuthError) {
       throw error;

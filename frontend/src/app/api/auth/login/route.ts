@@ -6,14 +6,14 @@ import { errorMessages } from '@/constants/error-messages'
 import { AuthError } from '@/lib/errors/AuthError'
 
 export interface LoginRequestArgs {
-  email?: string;
+  emailAddress?: string;
   password?: string;
 }
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = validateCredentials(await parseCredentials(request));
-    const { accessToken } = await signIn({ email, password });
+    const { emailAddress, password } = validateCredentials(await parseCredentials(request));
+    const { accessToken } = await signIn({ emailAddress, password });
 
     const response = NextResponse.json({ success: true });
     response.cookies.set(AUTH_COOKIE, accessToken, {
@@ -41,10 +41,10 @@ const parseCredentials = async  (request: Request) => {
   }
 }
 
-const validateCredentials = ({ email, password }: LoginRequestArgs) => {
-  if (!email || !password) {
+const validateCredentials = ({ emailAddress, password }: LoginRequestArgs) => {
+  if (!emailAddress || !password) {
     throw new AuthError(errorMessages.auth.missingCredentials, StatusCodes.BAD_REQUEST);
   }
-  return { email, password };
+  return { emailAddress, password };
 }
 

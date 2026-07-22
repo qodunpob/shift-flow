@@ -18,7 +18,10 @@ export const useSignIn = (t: ReturnType<typeof useTranslations>) => {
     const formData = new FormData(event.currentTarget);
 
     try {
-      const result = await requestSignIn(formData.get("email"), formData.get("password"));
+      const emailAddress = formData.get("emailAddress")?.toString();
+      const password = formData.get("password")?.toString();
+
+      const result = await requestSignIn({ emailAddress, password });
 
       if (!result.success) {
         setError(

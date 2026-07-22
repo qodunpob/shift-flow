@@ -66,7 +66,7 @@ export const LoginForm: React.FC = () => {
         <Stack component="form" spacing={2.5} onSubmit={handleSubmit}>
           <TextField
             label={t("email")}
-            name="email"
+            name="emailAddress"
             type="email"
             autoComplete="email"
             required
