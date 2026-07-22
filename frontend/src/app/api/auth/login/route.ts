@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { AUTH_COOKIE, getJwtMaxAgeSeconds } from '@/lib/auth'
+import { AUTH_COOKIE, getJwtMaxAgeSeconds } from '@/lib/session'
 import { signIn } from '@/lib/api/auth'
 import { StatusCodes } from 'http-status-codes'
 import { errorMessages } from '@/constants/error-messages'
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
 const parseCredentials = async  (request: Request) => {
   try {
     return (await request.json()) as LoginRequestArgs;
-  } catch (error) {
+  } catch {
     throw new AuthError(errorMessages.auth.missingCredentials, StatusCodes.BAD_REQUEST);
   }
 }

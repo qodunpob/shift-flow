@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import { DEFAULT_ROUTE } from '@/routes'
 import { useRouter } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
+import { requestSignIn } from '@/features/login-form/api'
+import { StatusCodes } from 'http-status-codes'
 
 export const useSignIn = (t: ReturnType<typeof useTranslations>) => {
   const [error, setError] = useState<string | null>(null);
@@ -14,19 +16,13 @@ export const useSignIn = (t: ReturnType<typeof useTranslations>) => {
     setIsSubmitting(true);
 
     const formData = new FormData(event.currentTarget);
-    const email = formData.get("email");
-    const password = formData.get("password");
 
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      const result = await requestSignIn(formData.get("email"), formData.get("password"));
 
-      if (!response.ok) {
+      if (!result.success) {
         setError(
-          response.status === 401 ? t("invalidCredentials") : t("genericError"),
+          result.status === StatusCodes.UNAUTHORIZED ? t("invalidCredentials") : t("genericError"),
         );
         return;
       }
