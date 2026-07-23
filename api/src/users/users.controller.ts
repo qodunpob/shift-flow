@@ -1,9 +1,10 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { UsersService } from '@/users/users.service';
 import { FindUsersQueryDto } from '@/users/users.dto';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '@/auth/current-user.decorator';
 import type { AuthenticatedUser } from '@/auth/authenticated-request';
+import { UserResponseDto } from '@/users/users-response.dto';
 
 @ApiTags('users')
 @ApiBearerAuth()
@@ -12,12 +13,16 @@ export class UsersController {
   constructor(private readonly users: UsersService) {}
 
   @Get()
-  findAll(@Query() query: FindUsersQueryDto) {
+  @ApiOkResponse({ type: [UserResponseDto] })
+  findAll(@Query() query: FindUsersQueryDto): Promise<UserResponseDto[]> {
     return this.users.findAll(query);
   }
 
   @Get('me')
-  findMe(@CurrentUser() user: AuthenticatedUser) {
+  @ApiOkResponse({ type: UserResponseDto })
+  findMe(
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<UserResponseDto | null> {
     return this.users.findOne(user.id);
   }
 }

@@ -1,11 +1,7 @@
 import { apiFetchFromServer } from '@/lib/api/server';
+import type { components } from '@/lib/api/schema';
 
-export interface CurrentUser {
-  id: string;
-  firstName: string;
-  lastName: string;
-  roles: string[];
-}
+export type CurrentUser = components['schemas']['UserResponseDto'];
 
 export const getCurrentUserFromServer = () =>
   apiFetchFromServer<CurrentUser>('/users/me');
