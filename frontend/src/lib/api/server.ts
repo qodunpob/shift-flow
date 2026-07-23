@@ -6,10 +6,10 @@ export interface ApiFetchInit extends RequestInit {
   params?: Record<string, any>;
 }
 
-export const apiFetchFromServer = async <T>(
+export const apiFetchFromServer = async <Result>(
   path: string,
   { params, ...init }: ApiFetchInit = {},
-): Promise<T> => {
+): Promise<Result> => {
   const token = (await cookies()).get(AUTH_COOKIE)?.value;
 
   const headers = new Headers(init.headers);

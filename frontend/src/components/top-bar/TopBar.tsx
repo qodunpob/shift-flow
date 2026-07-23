@@ -1,10 +1,10 @@
 'use client';
 
 import React from 'react';
-import type { CurrentUser } from '@/lib/api/users';
 import { AppBar, Box, styled, Toolbar, Typography } from '@mui/material';
 import { UserAvatar } from '@/components/user-avatar/UserAvatar';
 import { FlexBox } from '@/components/box/box';
+import { CurrentUser } from '@/lib/api/type-aliases';
 
 export interface TopBarProps {
   title: string;

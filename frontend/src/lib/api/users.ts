@@ -1,7 +1,5 @@
 import { apiFetchFromServer } from '@/lib/api/server';
-import type { components } from '@/lib/api/schema';
-
-export type CurrentUser = components['schemas']['UserResponseDto'];
+import { CurrentUser } from '@/lib/api/type-aliases';
 
 export const getCurrentUserFromServer = () =>
   apiFetchFromServer<CurrentUser>('/users/me');
