@@ -13,18 +13,17 @@ export interface ScheduleCardProps {
 
 export const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule }) => {
   const locale = useLocale();
+  const formatDate = (date: string) =>
+    format(date, dateFormat(locale).scheduleBoundaryDate);
   return (
     <Card>
       <CardContent>
         <FlexBox justifyContent="space-between">
           <FlexBox alignItems="baseline">
             <Typography variant="subtitle2" component="div">
-              {format(
-                schedule.startsAt,
-                dateFormat(locale).scheduleBoundaryDate,
-              )}
+              {formatDate(schedule.startsAt)}
               {' – '}
-              {format(schedule.endsAt, dateFormat(locale).scheduleBoundaryDate)}
+              {formatDate(schedule.endsAt)}
             </Typography>
             <Typography variant="h5" component="div">
               {schedule.label}
