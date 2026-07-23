@@ -1,4 +1,4 @@
-import { apiFetch } from '@/lib/api/apiFetch';
+import { apiFetchFromServer } from '@/lib/api/server';
 
 export interface CurrentUser {
   id: string;
@@ -7,4 +7,5 @@ export interface CurrentUser {
   roles: string[];
 }
 
-export const getCurrentUser = () => apiFetch<CurrentUser>('/users/me');
+export const getCurrentUserFromServer = () =>
+  apiFetchFromServer<CurrentUser>('/users/me');

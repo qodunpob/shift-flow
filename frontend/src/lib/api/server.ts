@@ -6,7 +6,7 @@ export interface ApiFetchInit extends RequestInit {
   params?: Record<string, any>;
 }
 
-export const apiFetch = async <T>(
+export const apiFetchFromServer = async <T>(
   path: string,
   { params, ...init }: ApiFetchInit = {},
 ): Promise<T> => {

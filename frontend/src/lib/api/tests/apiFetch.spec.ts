@@ -1,4 +1,4 @@
-import { combineUrl } from '@/lib/api/apiFetch';
+import { combineUrl } from '@/lib/api/server';
 
 describe('lib/api/apiFetch', () => {
   describe('combineUrl', () => {

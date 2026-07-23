@@ -1,21 +1,23 @@
 import type { PropsWithChildren } from 'react';
 import React from 'react';
-import { CurrentUser } from '@/lib/api/users';
+import { Box, Container } from '@mui/material';
+import { TopBar, TopBarProps } from '@/components/top-bar/TopBar';
 
-export interface AppShellProps {
-  user: CurrentUser;
-}
+export interface AppShellProps extends TopBarProps, PropsWithChildren {}
 
-export const AppShell: React.FC<PropsWithChildren<AppShellProps>> = ({
+export const AppShell: React.FC<AppShellProps> = ({
+  title,
   user,
   children,
 }) => {
   return (
-    <>
-      <h1>
-        Welcome {user.firstName} {user.lastName}
-      </h1>
-      {children}
-    </>
+    <Container
+      maxWidth="lg"
+      component="main"
+      sx={{ display: 'flex', flexDirection: 'column', my: 8, gap: 4 }}
+    >
+      <TopBar title={title} user={user} />
+      <Box>{children}</Box>
+    </Container>
   );
 };
