@@ -1,7 +1,7 @@
 import { QueryClient } from '@tanstack/react-query';
 
-function makeQueryClient() {
-  return new QueryClient({
+const makeQueryClient = () =>
+  new QueryClient({
     defaultOptions: {
       queries: {
         staleTime: 30 * 1000,
@@ -9,11 +9,10 @@ function makeQueryClient() {
       },
     },
   });
-}
 
 let browserQueryClient: QueryClient | undefined;
 
-export function getQueryClient() {
+export const getQueryClient = () => {
   if (typeof window === 'undefined') {
     // Server: always return a new client so requests never share state.
     return makeQueryClient();
@@ -24,4 +23,4 @@ export function getQueryClient() {
     browserQueryClient = makeQueryClient();
   }
   return browserQueryClient;
-}
+};
