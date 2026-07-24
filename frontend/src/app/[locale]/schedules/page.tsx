@@ -9,9 +9,11 @@ export default async function SchedulesPage({
 }: {
   searchParams: Promise<{ page?: string }>;
 }) {
-  const user = await getCurrentUserFromServer();
   const { page = '1' } = await searchParams;
-  const schedules = await getSchedulesFromServer(page);
+  const [user, schedules] = await Promise.all([
+    getCurrentUserFromServer(),
+    getSchedulesFromServer(page),
+  ]);
   const t = await getTranslations('SchedulesPage');
 
   return (
