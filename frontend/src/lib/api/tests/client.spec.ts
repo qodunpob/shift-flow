@@ -1,5 +1,4 @@
 import { apiFetchFromClient } from '@/lib/api/client';
-import { routes } from '@/routes';
 import { StatusCodes } from 'http-status-codes';
 
 describe('lib/api/client', () => {
