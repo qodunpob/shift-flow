@@ -30,7 +30,9 @@ describe('lib/api/client', () => {
       }) as unknown as typeof fetch;
 
       // Suppress console errors for navigation not implemented
-      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleError = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
 
       await expect(apiFetchFromClient('/some/path')).rejects.toThrow(
         'Session expired',
