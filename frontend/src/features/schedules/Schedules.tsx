@@ -26,7 +26,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
   return (
     <>
       <ScheduleList items={schedules.items} />
-      {schedules.meta.total > 1 && (
+      {schedules.meta.totalPages > 1 && (
         <FlexBox justifyContent="center">
           <Pagination
             count={schedules.meta.totalPages}
