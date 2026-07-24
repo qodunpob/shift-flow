@@ -4,8 +4,10 @@ import { apiFetchFromClient } from '@/lib/api/client';
 import { DEFAULT_PAGE_SIZE } from '@/constants/common';
 import { PaginatedSchedules } from '@/lib/api/type-aliases';
 
+export const schedulesQueryPrefix = ['schedules'] as const;
+
 export const schedulesQueryKey = (page: number) =>
-  ['schedules', { page }] as const;
+  [...schedulesQueryPrefix, { page }] as const;
 
 export const useSchedulesQuery = (
   page: number,

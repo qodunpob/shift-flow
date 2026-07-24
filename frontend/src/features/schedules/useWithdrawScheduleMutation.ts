@@ -2,8 +2,9 @@ import 'client-only';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetchFromClient } from '@/lib/api/client';
 import { PaginatedSchedules } from '@/lib/api/type-aliases';
+import { schedulesQueryPrefix } from '@/features/schedules/useSchedulesQuery';
 
-const schedulesQueryFilter = { queryKey: ['schedules'] } as const;
+const schedulesQueryFilter = { queryKey: schedulesQueryPrefix } as const;
 
 type WithdrawContext = {
   previousQueries: [readonly unknown[], PaginatedSchedules | undefined][];
