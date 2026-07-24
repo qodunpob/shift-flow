@@ -1,5 +1,9 @@
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { AUTH_COOKIE } from '@/lib/session';
+import { routes } from '@/routes';
+import { StatusCodes } from 'http-status-codes';
+import { combineUrl } from '@/utils/combineUrl';
 
 export interface ApiFetchInit extends RequestInit {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -21,19 +25,10 @@ export const apiFetchFromServer = async <Result>(
   }
   const url = combineUrl(`${process.env.API_URL}${path}`, params);
   const response = await fetch(url, { ...init, headers });
-  return response.json();
-};
 
-export const combineUrl = (
-  url: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  params: Record<string, any> = {},
-): string => {
-  const searchParams = new URLSearchParams(params);
-  if (searchParams.size > 0) {
-    return url.indexOf('?') > -1
-      ? `${url}&${searchParams.toString()}`
-      : `${url}?${searchParams.toString()}`;
+  if (response.status === StatusCodes.UNAUTHORIZED) {
+    redirect(routes.login);
   }
-  return url;
+
+  return response.json();
 };
