@@ -18,10 +18,10 @@ export const Schedules: React.FC<SchedulesProps> = ({
   page: initialPage,
 }) => {
   const [page, setPage] = usePage();
-  const { data: schedules } = useSchedulesQuery(
+  const { data: schedules = initialSchedules } = useSchedulesQuery(
     page,
     page === initialPage ? initialSchedules : undefined,
-  ) as { data: PaginatedSchedules };
+  );
 
   return (
     <>
