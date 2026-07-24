@@ -9,7 +9,8 @@ export default async function SchedulesPage({
 }: {
   searchParams: Promise<{ page?: string }>;
 }) {
-  const { page = '1' } = await searchParams;
+  const { page: pageParam = '1' } = await searchParams;
+  const page = Number(pageParam);
   const [user, schedules] = await Promise.all([
     getCurrentUserFromServer(),
     getSchedulesFromServer(page),
@@ -18,7 +19,7 @@ export default async function SchedulesPage({
 
   return (
     <AppShell title={t('title')} user={user}>
-      <Schedules schedules={schedules} />
+      <Schedules schedules={schedules} page={page} />
     </AppShell>
   );
 }
