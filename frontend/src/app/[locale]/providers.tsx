@@ -2,19 +2,25 @@
 
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v16-appRouter';
 import { CssBaseline, ThemeProvider } from '@mui/material';
+import { QueryClientProvider } from '@tanstack/react-query';
 import theme from '@/theme';
 import { NuqsAdapter } from 'nuqs/adapters/next';
+import { getQueryClient } from '@/lib/query-client';
 import React from 'react';
 
 export default function Providers({ children }: { children: React.ReactNode }) {
+  const queryClient = getQueryClient();
+
   return (
-    <NuqsAdapter>
-      <AppRouterCacheProvider>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
-          {children}
-        </ThemeProvider>
-      </AppRouterCacheProvider>
-    </NuqsAdapter>
+    <QueryClientProvider client={queryClient}>
+      <NuqsAdapter>
+        <AppRouterCacheProvider>
+          <ThemeProvider theme={theme}>
+            <CssBaseline />
+            {children}
+          </ThemeProvider>
+        </AppRouterCacheProvider>
+      </NuqsAdapter>
+    </QueryClientProvider>
   );
 }
