@@ -23,6 +23,7 @@
     "http-status-codes": "^2.3.0",
     "next": "16.2.10",
     "next-intl": "^4.13.3",
+    "nuqs": "^2.9.1",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
@@ -35,6 +36,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
+    "client-only": "^0.0.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "eslint-config-prettier": "^10.1.8",
@@ -43,6 +45,7 @@
     "jest-environment-jsdom": "^30.4.1",
     "openapi-typescript": "^7.13.0",
     "prettier": "^3.9.6",
+    "server-only": "^0.0.1",
     "ts-node": "^10.9.2",
     "typescript": "^5"
   }

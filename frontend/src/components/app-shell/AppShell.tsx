@@ -1,6 +1,6 @@
 import type { PropsWithChildren } from 'react';
 import React from 'react';
-import { Box, Container } from '@mui/material';
+import { Container } from '@mui/material';
 import { TopBar, TopBarProps } from '@/components/top-bar/TopBar';
 
 export interface AppShellProps extends TopBarProps, PropsWithChildren {}
@@ -17,7 +17,7 @@ export const AppShell: React.FC<AppShellProps> = ({
       sx={{ display: 'flex', flexDirection: 'column', my: 8, gap: 4 }}
     >
       <TopBar title={title} user={user} />
-      <Box>{children}</Box>
+      {children}
     </Container>
   );
 };

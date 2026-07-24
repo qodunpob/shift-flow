@@ -1,3 +1,4 @@
+import 'server-only';
 import { StatusCodes } from 'http-status-codes';
 import { errorMessages } from '@/constants/error-messages';
 import { AuthError } from '@/lib/errors/AuthError';
