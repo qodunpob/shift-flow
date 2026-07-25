@@ -7,7 +7,10 @@ export interface DateRange {
 
 const RANGE_SEPARATOR = ' – ';
 
-export const formatRange = (range: DateRange | null, format: string): string => {
+export const formatRange = (
+  range: DateRange | null,
+  format: string,
+): string => {
   if (!range) return '';
   return [
     DateTime.fromJSDate(range.startsAt).toFormat(format),
