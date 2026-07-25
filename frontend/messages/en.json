@@ -1,7 +1,8 @@
 {
   "common": {
     "cancel": "Cancel",
-    "create": "Create"
+    "create": "Create",
+    "close": "Close"
   },
   "LoginPage": {
     "title": "Welcome back",

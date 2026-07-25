@@ -3,6 +3,8 @@
 import React, { MouseEvent, useState } from 'react';
 import { IMaskInput } from 'react-imask';
 import {
+  Box,
+  Button,
   FormControl,
   InputLabel,
   OutlinedInput,
@@ -12,7 +14,7 @@ import {
 } from '@mui/material';
 import { DateRange as RdpDateRange, DayPicker } from '@daypicker/react';
 import '@daypicker/react/style.css';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { dateFormat } from '@/constants/dates';
 import { DateRange, formatRange, parseRangeText } from './utils';
 
@@ -57,38 +59,39 @@ export interface DateRangePickerProps extends Omit<
 export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   label,
   required,
-  value,
+  value: givenValue,
   onChange,
   ...restProps
 }) => {
   const locale = useLocale();
   const format = dateFormat(locale).dateRangeInput;
+  const t = useTranslations();
 
   const [anchorEl, setAnchorEl] = useState<HTMLInputElement | null>(null);
   const [calendarRange, setCalendarRange] = useState<RdpDateRange | undefined>(
-    value ? { from: value.startsAt, to: value.endsAt } : undefined,
+    givenValue
+      ? { from: givenValue.startsAt, to: givenValue.endsAt }
+      : undefined,
   );
-  const [text, setText] = useState(() => formatRange(value, format));
+  const [text, setText] = useState(() => formatRange(givenValue, format));
 
-  // Distinguishes our own onChange echoes from real external value changes,
-  // so the sync below doesn't clobber in-progress typing (useState, not
-  // useRef: this is read during render).
-  const [lastEmittedValue, setLastEmittedValue] = useState(value);
+  const [value, setValue] = useState(givenValue);
 
   const emitChange = (next: DateRange | null) => {
-    setLastEmittedValue(next);
+    setValue(next);
     onChange(next);
   };
 
-  // Mirror external value changes (e.g. a Formik reset) into local state.
-  const [prevValue, setPrevValue] = useState(value);
-  if (value !== prevValue) {
-    setPrevValue(value);
-    if (value !== lastEmittedValue) {
+  const [prevGivenValue, setPrevGivenValue] = useState(givenValue);
+  if (givenValue !== prevGivenValue) {
+    setPrevGivenValue(givenValue);
+    if (givenValue !== value) {
       setCalendarRange(
-        value ? { from: value.startsAt, to: value.endsAt } : undefined,
+        givenValue
+          ? { from: givenValue.startsAt, to: givenValue.endsAt }
+          : undefined,
       );
-      setText(formatRange(value, format));
+      setText(formatRange(givenValue, format));
     }
   }
 
@@ -96,13 +99,15 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
     setAnchorEl(event.currentTarget);
   };
 
+  const handleClose = () => setAnchorEl(null);
+
   const handleCalendarSelect = (range: RdpDateRange | undefined) => {
     setCalendarRange(range);
     if (range?.from && range?.to) {
       const selected: DateRange = { startsAt: range.from, endsAt: range.to };
       setText(formatRange(selected, format));
       emitChange(selected);
-      setAnchorEl(null);
+      handleClose();
     }
   };
 
@@ -125,7 +130,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
       <Popover
         open={!!anchorEl}
         anchorEl={anchorEl}
-        onClose={() => setAnchorEl(null)}
+        onClose={handleClose}
         anchorOrigin={{
           vertical: 'bottom',
           horizontal: 'left',
@@ -153,6 +158,9 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
             selected={calendarRange}
             onSelect={handleCalendarSelect}
           />
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+            <Button onClick={handleClose}>{t('common.close')}</Button>
+          </Box>
         </Paper>
       </Popover>
     </>
