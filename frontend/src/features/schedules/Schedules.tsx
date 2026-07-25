@@ -10,7 +10,11 @@ import {
 import { Button, Pagination } from '@mui/material';
 import { FlexBox } from '@/components/box/box';
 import { useSchedulesQuery } from '@/features/schedules/api/client';
-import { CurrentUser, PaginatedSchedules, Schedule } from '@/lib/api/types';
+import {
+  CurrentUser,
+  PaginatedSchedules,
+  ScheduleStatus,
+} from '@/lib/api/types';
 import { useTranslations } from 'next-intl';
 import { CreateScheduleModal } from '@/features/create-schedule/CreateScheduleModal';
 import { ScheduleFilters } from '@/features/schedules/ScheduleFilters';
@@ -20,7 +24,7 @@ export interface SchedulesProps {
   user: CurrentUser;
   schedules: PaginatedSchedules;
   page: number;
-  status: Schedule['status'] | null;
+  status: ScheduleStatus | null;
   mine: boolean;
 }
 

@@ -2,7 +2,8 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { apiFetchFromClient } from '@/lib/api/client/apiFetch';
 import { DEFAULT_PAGE_SIZE } from '@/constants/common';
 
-import { PaginatedSchedules, SchedulesFilter } from '@/lib/api/types';
+import { PaginatedSchedules } from '@/lib/api/types';
+import { SchedulesFilter } from '@/features/schedules/api/types';
 
 export const schedulesQueryPrefix = ['schedules'] as const;
 

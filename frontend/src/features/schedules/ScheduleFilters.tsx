@@ -11,12 +11,12 @@ import {
 import { useTranslations } from 'next-intl';
 import { FlexBox } from '@/components/box/box';
 import {
-  scheduleStatuses,
   useMineFilter,
   usePage,
   useStatusFilter,
 } from '@/hooks/useSearchParams';
-import { Schedule } from '@/lib/api/types';
+import { ScheduleStatus } from '@/lib/api/types';
+import { scheduleStatuses } from '@/constants/common';
 
 export interface ScheduleFiltersProps {
   isMineFilterVisible?: boolean;
@@ -33,7 +33,7 @@ export const ScheduleFilters: React.FC<ScheduleFiltersProps> = ({
 
   const handleStatusChange = (event: SelectChangeEvent) => {
     const value = event.target.value;
-    void setStatus(value === '' ? null : (value as Schedule['status']));
+    void setStatus(value === '' ? null : (value as ScheduleStatus));
     void setPage(1);
   };
 

@@ -1,10 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { withNuqsTestingAdapter } from 'nuqs/adapters/testing';
-import {
-  scheduleStatuses,
-  useMineFilter,
-  useStatusFilter,
-} from '@/hooks/useSearchParams';
+import { useMineFilter, useStatusFilter } from '@/hooks/useSearchParams';
+import { scheduleStatuses } from '@/constants/common';
 
 describe('hooks/useSearchParams', () => {
   describe('useStatusFilter', () => {

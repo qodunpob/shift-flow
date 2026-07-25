@@ -11,6 +11,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
+    "type-check": "npx tsc --noEmit",
     "generate:api-types": "openapi-typescript ../api/generated/openapi.json -o src/lib/api/schema.d.ts"
   },
   "dependencies": {

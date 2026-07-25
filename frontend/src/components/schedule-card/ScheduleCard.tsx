@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, styled, Typography } from '@mui/material';
 import { FlexBox } from '@/components/box/box';
-import { ScheduleStatus } from '@/components/schedule-status/ScheduleStatus';
+import { ScheduleStatusChip } from '@/components/schedule-status-chip/ScheduleStatusChip';
 import { DateTime } from 'luxon';
 import { dateFormat } from '@/constants/dates';
 import { useLocale } from 'next-intl';
@@ -29,7 +29,7 @@ export const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule }) => {
               {schedule.label}
             </Typography>
           </FlexBox>
-          <ScheduleStatus status={schedule.status} />
+          <ScheduleStatusChip status={schedule.status} />
         </FlexBox>
       </CardContent>
     </StyledCard>
