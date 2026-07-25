@@ -6,11 +6,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
-import { endOfDay, startOfDay } from 'date-fns';
 import { SchedulesService } from '../schedules.service';
 import { ScheduleEntity, ScheduleStatus, UserRole } from '@/entities';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
 import { CreateScheduleDto } from '@/schedules/schedules.dto';
+import { endOfDayWithTz, startOfDayWithTz } from '@/utils/timezone';
 import { SchedulesHelpersService } from '@/schedules/schedules-helpers.service';
 import {
   ScheduleStats,
@@ -117,6 +117,7 @@ describe('schedules/SchedulesService', () => {
       label: 'Week 1',
       startsAt: new Date('2026-01-01T10:00:00.000Z'),
       endsAt: new Date('2026-01-07T10:00:00.000Z'),
+      timeZone: 'UTC',
     };
 
     it('should create the schedule when it does not overlap an existing one', async () => {
@@ -138,16 +139,31 @@ describe('schedules/SchedulesService', () => {
 
       expect(queryBuilder.where).toHaveBeenCalledWith(
         'schedule.startsAt <= :endsAt',
-        { endsAt: endOfDay(dto.endsAt) },
+        { endsAt: endOfDayWithTz(dto.endsAt, dto.timeZone) },
       );
       expect(queryBuilder.andWhere).toHaveBeenCalledWith(
         'schedule.endsAt >= :startsAt',
-        { startsAt: startOfDay(dto.startsAt) },
+        { startsAt: startOfDayWithTz(dto.startsAt, dto.timeZone) },
       );
       // A brand-new schedule has no id, so nothing is excluded from the check.
       expect(queryBuilder.andWhere).not.toHaveBeenCalledWith(
         'schedule.id != :excludeId',
         expect.anything(),
+      );
+    });
+
+    it('should compute the UTC day boundary relative to the given time zone', async () => {
+      const jstDto: CreateScheduleDto = {
+        startsAt: new Date('2026-07-25T05:02:25.714Z'),
+        endsAt: new Date('2026-07-25T05:02:25.714Z'),
+        timeZone: 'Asia/Tokyo',
+      };
+
+      await service.create(jstDto, manager);
+
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'schedule.endsAt >= :startsAt',
+        { startsAt: new Date('2026-07-24T15:00:00.000Z') },
       );
     });
 
@@ -166,8 +182,8 @@ describe('schedules/SchedulesService', () => {
       id: 'schedule-1',
       createdBy: manager.id,
       status: ScheduleStatus.DRAFT,
-      startsAt: startOfDay(new Date('2026-01-01T00:00:00.000Z')),
-      endsAt: endOfDay(new Date('2026-01-07T00:00:00.000Z')),
+      startsAt: new Date('2026-01-01T00:00:00.000Z'),
+      endsAt: new Date('2026-01-07T23:59:59.999Z'),
     } as ScheduleEntity;
 
     it('should not update a schedule that is not editable', async () => {
@@ -199,6 +215,7 @@ describe('schedules/SchedulesService', () => {
         existing.id,
         {
           startsAt: new Date('2026-01-02T00:00:00.000Z'),
+          timeZone: 'UTC',
         },
         manager,
       );
@@ -233,6 +250,7 @@ describe('schedules/SchedulesService', () => {
           existing.id,
           {
             endsAt: new Date('2026-01-20T00:00:00.000Z'),
+            timeZone: 'UTC',
           },
           manager,
         ),
@@ -248,6 +266,7 @@ describe('schedules/SchedulesService', () => {
         existing.id,
         {
           endsAt: new Date('2026-01-10T00:00:00.000Z'),
+          timeZone: 'UTC',
         },
         manager,
       );
@@ -262,8 +281,8 @@ describe('schedules/SchedulesService', () => {
       id: 'schedule-1',
       createdBy: manager.id,
       status: ScheduleStatus.DRAFT,
-      startsAt: startOfDay(new Date('2026-01-01T00:00:00.000Z')),
-      endsAt: endOfDay(new Date('2026-01-07T00:00:00.000Z')),
+      startsAt: new Date('2026-01-01T00:00:00.000Z'),
+      endsAt: new Date('2026-01-07T23:59:59.999Z'),
     } as ScheduleEntity;
 
     it('should not delete a schedule that is not editable', async () => {

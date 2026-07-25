@@ -12,7 +12,7 @@ import {
   FindSchedulesQueryDto,
   UpdateScheduleDto,
 } from '@/schedules/schedules.dto';
-import { endOfDay, startOfDay } from 'date-fns';
+import { endOfDayWithTz, startOfDayWithTz } from '@/utils/timezone';
 import { paginate, Paginated } from '@/common/pagination/paginate';
 import { applyScheduleVisibility } from '@/schedules/schedule-visibility';
 import { SchedulesHelpersService } from '@/schedules/schedules-helpers.service';
@@ -37,8 +37,8 @@ export class SchedulesService {
     dto: CreateScheduleDto,
     user: AuthenticatedUser,
   ): Promise<ScheduleEntity> {
-    const startsAt = startOfDay(dto.startsAt);
-    const endsAt = endOfDay(dto.endsAt);
+    const startsAt = startOfDayWithTz(dto.startsAt, dto.timeZone);
+    const endsAt = endOfDayWithTz(dto.endsAt, dto.timeZone);
 
     await this.assertNoOverlap(startsAt, endsAt);
 
@@ -98,10 +98,14 @@ export class SchedulesService {
       throw new ForbiddenException('You can only modify your own schedules.');
     }
 
+    // dto.timeZone is guaranteed defined here whenever dto.startsAt/endsAt is,
+    // enforced by RequireTimeZone on UpdateScheduleDto.
     const startsAt = dto.startsAt
-      ? startOfDay(dto.startsAt)
+      ? startOfDayWithTz(dto.startsAt, dto.timeZone!)
       : schedule.startsAt;
-    const endsAt = dto.endsAt ? endOfDay(dto.endsAt) : schedule.endsAt;
+    const endsAt = dto.endsAt
+      ? endOfDayWithTz(dto.endsAt, dto.timeZone!)
+      : schedule.endsAt;
 
     await this.assertNoOverlap(startsAt, endsAt, id);
 
