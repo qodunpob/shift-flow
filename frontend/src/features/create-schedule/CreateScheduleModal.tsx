@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Autocomplete,
   Button,
@@ -14,44 +14,78 @@ import {
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { DateRangePicker } from '@/components/date-range-picker/DateRangePicker';
-import { DateRange } from '@/components/date-range-picker/utils';
+import { useCreateScheduleForm } from '@/features/create-schedule/useCreateScheduleForm';
 
 export interface CreateScheduleProps {
   open: boolean;
   onClose: () => void;
 }
 
+const FORM_ID = 'create-schedule-form';
+const TIME_ZONES = Intl.supportedValuesOf('timeZone');
+
 export const CreateScheduleModal: React.FC<CreateScheduleProps> = ({
   open,
   onClose,
 }) => {
   const t = useTranslations();
-  const timeZones = Intl.supportedValuesOf('timeZone');
-  console.log('timeZones', timeZones);
-  // Temporary local state until this form is wired up to Formik.
-  const [dates, setDates] = useState<DateRange | null>(null);
+  const formik = useCreateScheduleForm(() => {
+    onClose();
+  });
+
   return (
     <Dialog open={open} maxWidth="sm" fullWidth>
       <DialogTitle>{t('CreateSchedule.title')}</DialogTitle>
       <DialogContent dividers>
-        <Stack component="form" spacing={2}>
+        <Stack
+          id={FORM_ID}
+          component="form"
+          spacing={2}
+          onSubmit={formik.handleSubmit}
+        >
           <FormControl>
-            <TextField label={t('labels.label')} />
+            <TextField
+              label={t('labels.label')}
+              name="label"
+              value={formik.values.label}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              helperText=" "
+            />
           </FormControl>
           <DateRangePicker
             label={t('labels.dates')}
             name="dates"
             required
-            value={dates}
-            onChange={setDates}
+            value={formik.values.dates}
+            onChange={(value) => formik.setFieldValue('dates', value)}
+            onBlur={() => formik.setFieldTouched('dates', true)}
+            error={!!(formik.touched.dates && formik.errors.dates)}
+            helperText={
+              formik.touched.dates && formik.errors.dates
+                ? t('CreateSchedule.errors.datesRequired')
+                : ' '
+            }
           />
           <FormControl required>
             <Autocomplete
-              options={timeZones}
-              // value={timeZone}
-              // onChange={(_, value) => setTimeZone(value ?? 'UTC')}
+              options={TIME_ZONES}
+              value={formik.values.timeZone || null}
+              onChange={(_, selected) =>
+                formik.setFieldValue('timeZone', selected ?? '')
+              }
+              onBlur={() => formik.setFieldTouched('timeZone', true)}
               renderInput={(params) => (
-                <TextField {...params} label={t('labels.timeZone')} />
+                <TextField
+                  {...params}
+                  label={t('labels.timeZone')}
+                  error={!!(formik.touched.timeZone && formik.errors.timeZone)}
+                  helperText={
+                    formik.touched.timeZone && formik.errors.timeZone
+                      ? t('CreateSchedule.errors.timeZoneRequired')
+                      : ' '
+                  }
+                />
               )}
             />
           </FormControl>
@@ -61,7 +95,7 @@ export const CreateScheduleModal: React.FC<CreateScheduleProps> = ({
         <Button onClick={onClose} variant="outlined">
           {t('common.cancel')}
         </Button>
-        <Button type="submit" variant="contained">
+        <Button type="submit" form={FORM_ID} variant="contained">
           {t('common.create')}
         </Button>
       </DialogActions>

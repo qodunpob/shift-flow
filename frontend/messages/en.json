@@ -26,7 +26,11 @@
     "title": "Schedule {id}"
   },
   "CreateSchedule": {
-    "title": "Create a schedule"
+    "title": "Create a schedule",
+    "errors": {
+      "datesRequired": "Please select a date range",
+      "timeZoneRequired": "Please select a time zone"
+    }
   },
   "Schedule": {
     "status": {
