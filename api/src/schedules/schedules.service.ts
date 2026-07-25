@@ -21,6 +21,7 @@ import {
   ScheduleView,
 } from '@/schedules/schedule-stats.service';
 import { softDelete } from '@/utils/soft-delete';
+import { UnavailableDatesDto } from '@/schedules/schedules-response.dto';
 
 @Injectable()
 export class SchedulesService {
@@ -122,6 +123,10 @@ export class SchedulesService {
     return this.dataSource.transaction(
       softDelete(ScheduleEntity, schedule, user.id),
     );
+  }
+
+  async findUnavailableDates(): Promise<UnavailableDatesDto[]> {
+    return this.schedules.find({ select: { startsAt: true, endsAt: true } });
   }
 
   /**

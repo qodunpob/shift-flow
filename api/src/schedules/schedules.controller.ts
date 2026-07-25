@@ -29,6 +29,7 @@ import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import {
   PaginatedSchedulesDto,
   ScheduleViewDto,
+  UnavailableDatesDto,
 } from '@/schedules/schedules-response.dto';
 
 @ApiTags('schedules')
@@ -56,6 +57,12 @@ export class SchedulesController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<Paginated<ScheduleView>> {
     return this.schedules.findAll(query, user);
+  }
+
+  @Roles([UserRole.MANAGER])
+  @Get('unavailable-dates')
+  findUnavailableDates(): Promise<UnavailableDatesDto[]> {
+    return this.schedules.findUnavailableDates();
   }
 
   @Get(':id')
