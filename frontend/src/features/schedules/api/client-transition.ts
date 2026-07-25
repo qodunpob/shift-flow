@@ -1,10 +1,8 @@
 import 'client-only';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetchFromClient } from '@/lib/api/client/apiFetch';
-import { schedulesQueryPrefix } from '@/features/schedules/api/client';
+import { schedulesQueryFilter } from '@/features/schedules/api/client';
 import { PaginatedSchedules, ScheduleStatus } from '@/lib/api/types';
-
-const schedulesQueryFilter = { queryKey: schedulesQueryPrefix } as const;
 
 type TransitionContext = {
   previousQueries: [readonly unknown[], PaginatedSchedules | undefined][];

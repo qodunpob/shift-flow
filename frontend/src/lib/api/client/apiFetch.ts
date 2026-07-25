@@ -3,6 +3,7 @@ import { routes } from '@/routes';
 import { StatusCodes } from 'http-status-codes';
 import { combineUrl } from '@/utils/combineUrl';
 import { ApiFetchInit } from '@/lib/api/types';
+import { ApiError } from '@/lib/errors/ApiError';
 
 export const apiFetchFromClient = async <Result>(
   path: string,
@@ -21,7 +22,10 @@ export const apiFetchFromClient = async <Result>(
   }
 
   if (!response.ok) {
-    throw new Error(`Request to ${path} failed with status ${response.status}`);
+    throw new ApiError(
+      `Request to ${path} failed with status ${response.status}`,
+      response.status,
+    );
   }
 
   return response.json();

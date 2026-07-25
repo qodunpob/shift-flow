@@ -20,13 +20,22 @@ export const useCreateScheduleForm = (
     onSubmit,
   });
 
-  useEffect(() => {
+  const applyDefaultTimeZone = () =>
     formik.setFieldValue(
       'timeZone',
       Intl.DateTimeFormat().resolvedOptions().timeZone,
     );
+
+  useEffect(() => {
+    applyDefaultTimeZone();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return formik;
+  return {
+    ...formik,
+    resetForm: () => {
+      formik.resetForm();
+      applyDefaultTimeZone();
+    },
+  };
 };

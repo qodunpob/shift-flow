@@ -3,10 +3,13 @@ import { renderHook, waitFor } from '@testing-library/react';
 import React from 'react';
 import { DEFAULT_PAGE_SIZE } from '@/constants/common';
 import {
+  CreateScheduleInput,
   schedulesQueryKey,
+  useCreateScheduleMutation,
   useSchedulesQuery,
 } from '@/features/schedules/api/client';
 import { apiFetchFromClient } from '@/lib/api/client/apiFetch';
+import { ApiError } from '@/lib/errors/ApiError';
 import { PaginatedSchedules } from '@/lib/api/types';
 
 jest.mock('@/lib/api/client/apiFetch', () => ({
@@ -121,5 +124,88 @@ describe('features/schedules/api/client', () => {
       'schedules',
       { page: 3, status: 'APPROVED', mine: true },
     ]);
+  });
+
+  describe('useCreateScheduleMutation', () => {
+    const input: CreateScheduleInput = {
+      label: 'Week 32',
+      startsAt: new Date('2026-08-03T00:00:00.000Z'),
+      endsAt: new Date('2026-08-09T23:59:59.999Z'),
+      timeZone: 'Asia/Tokyo',
+    };
+
+    const createWrapperWithClient = (queryClient: QueryClient) =>
+      function Wrapper({ children }: { children: React.ReactNode }) {
+        return (
+          <QueryClientProvider client={queryClient}>
+            {children}
+          </QueryClientProvider>
+        );
+      };
+
+    it('should send schedule create request', async () => {
+      mockedApiFetchFromClient.mockResolvedValue({ id: 'schedule-9' });
+
+      const { result } = renderHook(() => useCreateScheduleMutation(), {
+        wrapper: createWrapper(),
+      });
+
+      result.current.mutate(input);
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+      expect(mockedApiFetchFromClient).toHaveBeenCalledWith('/schedules', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      });
+    });
+
+    it('should refresh the schedules list after creating a schedule', async () => {
+      mockedApiFetchFromClient.mockResolvedValue({ id: 'schedule-9' });
+      const queryClient = new QueryClient({
+        defaultOptions: {
+          queries: { retry: false },
+          mutations: { retry: false },
+        },
+      });
+      queryClient.setQueryData(schedulesQueryKey(1), makeSchedules(1));
+
+      const { result } = renderHook(() => useCreateScheduleMutation(), {
+        wrapper: createWrapperWithClient(queryClient),
+      });
+
+      result.current.mutate(input);
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+      expect(
+        queryClient.getQueryState(schedulesQueryKey(1))?.isInvalidated,
+      ).toBe(true);
+    });
+
+    it('should refresh the schedules list even if creating the schedule fails', async () => {
+      mockedApiFetchFromClient.mockRejectedValue(
+        new ApiError('Request to /schedules failed with status 409', 409),
+      );
+      const queryClient = new QueryClient({
+        defaultOptions: {
+          queries: { retry: false },
+          mutations: { retry: false },
+        },
+      });
+      queryClient.setQueryData(schedulesQueryKey(1), makeSchedules(1));
+
+      const { result } = renderHook(() => useCreateScheduleMutation(), {
+        wrapper: createWrapperWithClient(queryClient),
+      });
+
+      result.current.mutate(input);
+
+      await waitFor(() => expect(result.current.isError).toBe(true));
+
+      expect(
+        queryClient.getQueryState(schedulesQueryKey(1))?.isInvalidated,
+      ).toBe(true);
+    });
   });
 });

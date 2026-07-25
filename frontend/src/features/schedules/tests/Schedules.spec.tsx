@@ -1,10 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { withNuqsTestingAdapter } from 'nuqs/adapters/testing';
 import React from 'react';
 import { Schedules } from '@/features/schedules/Schedules';
 import { apiFetchFromClient } from '@/lib/api/client/apiFetch';
 import { CurrentUser, PaginatedSchedules } from '@/lib/api/types';
+import { DEFAULT_PAGE_SIZE } from '@/constants/common';
 
 jest.mock('@/lib/api/client/apiFetch', () => ({
   apiFetchFromClient: jest.fn(),
@@ -18,8 +19,17 @@ jest.mock('@/components/schedule-list/ScheduleList', () => ({
   ScheduleList: () => <div data-testid="schedule-list" />,
 }));
 
+let capturedResetFiltersAndPage: (() => void) | undefined;
+
 jest.mock('@/features/create-schedule/CreateScheduleModal', () => ({
-  CreateScheduleModal: () => <div data-testid="create-schedule-modal" />,
+  CreateScheduleModal: ({
+    resetFiltersAndPage,
+  }: {
+    resetFiltersAndPage: () => void;
+  }) => {
+    capturedResetFiltersAndPage = resetFiltersAndPage;
+    return <div data-testid="create-schedule-modal" />;
+  },
 }));
 
 const mockedApiFetchFromClient = apiFetchFromClient as jest.MockedFunction<
@@ -72,6 +82,7 @@ const renderSchedules = (user: CurrentUser, searchParams?: string) => {
 describe('features/schedules/Schedules', () => {
   beforeEach(() => {
     mockedApiFetchFromClient.mockReset();
+    capturedResetFiltersAndPage = undefined;
   });
 
   it('should show the create button when the user is a manager', () => {
@@ -84,5 +95,31 @@ describe('features/schedules/Schedules', () => {
     renderSchedules(employeeUser);
 
     expect(screen.queryByText('common.create')).not.toBeInTheDocument();
+  });
+
+  it('should reset the page, status, and mine filters when resetFiltersAndPage is invoked', async () => {
+    mockedApiFetchFromClient.mockResolvedValue(emptySchedules);
+    renderSchedules(managerUser, '?page=3&status=APPROVED&mine=true');
+
+    await waitFor(() =>
+      expect(mockedApiFetchFromClient).toHaveBeenCalledWith('/schedules', {
+        params: {
+          page: 3,
+          limit: DEFAULT_PAGE_SIZE,
+          status: 'APPROVED',
+          mine: true,
+        },
+      }),
+    );
+
+    await act(async () => {
+      capturedResetFiltersAndPage?.();
+    });
+
+    await waitFor(() =>
+      expect(mockedApiFetchFromClient).toHaveBeenCalledWith('/schedules', {
+        params: { page: 1, limit: DEFAULT_PAGE_SIZE },
+      }),
+    );
   });
 });

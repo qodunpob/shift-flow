@@ -11,7 +11,7 @@ const TIME_ZONES = Intl.supportedValuesOf('timeZone');
 
 export const createScheduleSchema: yup.ObjectSchema<CreateScheduleFormValues> =
   yup.object({
-    label: yup.string().defined(),
+    label: yup.string().default('').defined(),
     dates: yup
       .object({
         startsAt: yup.date().defined(),
