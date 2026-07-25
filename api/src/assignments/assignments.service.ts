@@ -10,6 +10,7 @@ import {
   AssignmentProposalEntity,
   AssignmentStatus,
   UserEntity,
+  UserRole,
 } from '@/entities';
 import { DataSource, Repository } from 'typeorm';
 import {
@@ -46,6 +47,9 @@ export class AssignmentsService {
     const employee = await this.users.findOneBy({ id: employeeId });
     if (!employee) {
       throw new NotFoundException('Employee not found');
+    }
+    if (!employee.roles.includes(UserRole.EMPLOYEE)) {
+      throw new ForbiddenException('Assignee must have the EMPLOYEE role.');
     }
     const existingAssignment = await this.assignments.findOneBy({
       shiftId: shift.id,

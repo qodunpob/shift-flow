@@ -6,7 +6,7 @@ import {
 import { AuthenticatedUser } from '@/auth/authenticated-request';
 import { CreateShiftDto, UpdateShiftDto } from '@/shifts/shifts.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { AssignmentEntity, ShiftEntity } from '@/entities';
+import { AssignmentEntity, ScheduleEntity, ShiftEntity } from '@/entities';
 import { DataSource, Repository } from 'typeorm';
 import { DateTime } from 'luxon';
 import { SchedulesHelpersService } from '@/schedules/schedules-helpers.service';
@@ -43,6 +43,7 @@ export class ShiftsService {
       .toUTC()
       .toJSDate();
 
+    this.assertWithinSchedule(startsAt, endsAt, schedule);
     await this.assertNoOverlap(startsAt, endsAt);
 
     const shift = this.shifts.create({
@@ -70,6 +71,7 @@ export class ShiftsService {
       ? DateTime.fromJSDate(dto.endsAt).startOf('minute').toUTC().toJSDate()
       : shift.endsAt;
 
+    this.assertWithinSchedule(startsAt, endsAt, shift.schedule);
     await this.assertNoOverlap(startsAt, endsAt, id);
 
     if (dto.requiredHeadcount) {
@@ -98,6 +100,22 @@ export class ShiftsService {
       throw new ForbiddenException('You can only modify your own schedules.');
     }
     return this.dataSource.transaction(softDelete(ShiftEntity, shift, user.id));
+  }
+
+  /**
+   * Ensures the shift's [startsAt, endsAt] range falls within its parent
+   * schedule's own boundaries.
+   */
+  private assertWithinSchedule(
+    startsAt: Date,
+    endsAt: Date,
+    schedule: ScheduleEntity,
+  ): void {
+    if (startsAt < schedule.startsAt || endsAt > schedule.endsAt) {
+      throw new ConflictException(
+        'Shift must fall within its schedule boundaries.',
+      );
+    }
   }
 
   /**

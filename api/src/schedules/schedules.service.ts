@@ -6,7 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
-import { ScheduleEntity } from '@/entities';
+import { ScheduleEntity, ShiftEntity } from '@/entities';
 import {
   CreateScheduleDto,
   FindSchedulesQueryDto,
@@ -28,6 +28,8 @@ export class SchedulesService {
   constructor(
     @InjectRepository(ScheduleEntity)
     private readonly schedules: Repository<ScheduleEntity>,
+    @InjectRepository(ShiftEntity)
+    private readonly shifts: Repository<ShiftEntity>,
     private readonly dataSource: DataSource,
     private readonly helpers: SchedulesHelpersService,
     private readonly stats: ScheduleStatsService,
@@ -110,6 +112,7 @@ export class SchedulesService {
       : schedule.endsAt;
 
     await this.assertNoOverlap(startsAt, endsAt, id);
+    await this.assertContainsExistingShifts(id, startsAt, endsAt);
 
     Object.assign(schedule, {
       ...rest,
@@ -158,6 +161,30 @@ export class SchedulesService {
     if (await query.getExists()) {
       throw new ConflictException(
         'Schedule overlaps with an existing schedule.',
+      );
+    }
+  }
+
+  /**
+   * Ensures every non-deleted shift belonging to this schedule still falls
+   * within the schedule's new [startsAt, endsAt] boundaries.
+   */
+  private async assertContainsExistingShifts(
+    scheduleId: string,
+    startsAt: Date,
+    endsAt: Date,
+  ): Promise<void> {
+    const query = this.shifts
+      .createQueryBuilder('shift')
+      .where('shift.scheduleId = :scheduleId', { scheduleId })
+      .andWhere('(shift.startsAt < :startsAt OR shift.endsAt > :endsAt)', {
+        startsAt,
+        endsAt,
+      });
+
+    if (await query.getExists()) {
+      throw new ConflictException(
+        'The new schedule boundaries no longer contain all of its shifts.',
       );
     }
   }

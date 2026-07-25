@@ -92,7 +92,12 @@ describe('assignments/AssignmentsService', () => {
       findOne: jest.fn(),
       findOneBy: jest.fn().mockResolvedValue(null),
     };
-    users = { findOneBy: jest.fn().mockResolvedValue({ id: employee.id }) };
+    users = {
+      findOneBy: jest.fn().mockResolvedValue({
+        id: employee.id,
+        roles: [UserRole.EMPLOYEE],
+      }),
+    };
     entityManager = {
       findOneBy: jest.fn().mockResolvedValue(null),
       // eslint-disable-next-line @typescript-eslint/no-unsafe-return
@@ -163,6 +168,18 @@ describe('assignments/AssignmentsService', () => {
       await expect(
         service.create(shiftId, dto, manager),
       ).rejects.toBeInstanceOf(NotFoundException);
+      expect(dataSource.transaction).not.toHaveBeenCalled();
+    });
+
+    it('should reject an employeeId that does not have the EMPLOYEE role', async () => {
+      users.findOneBy.mockResolvedValue({
+        id: 'manager-2',
+        roles: [UserRole.MANAGER],
+      });
+
+      await expect(
+        service.create(shiftId, dto, manager),
+      ).rejects.toBeInstanceOf(ForbiddenException);
       expect(dataSource.transaction).not.toHaveBeenCalled();
     });
 
