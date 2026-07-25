@@ -21,9 +21,7 @@ type DateRangeInputProps = React.ComponentProps<'input'> & {
   onAccept?: (value: string) => void;
 };
 
-// react-imask's IMaskInput props are a discriminated union keyed on `mask`;
-// spreading a generic props bag defeats that discrimination, so the
-// pattern-mask shape we actually use is asserted explicitly here.
+// IMaskInput's props are a discriminated union on `mask`; assert the shape we use.
 const MaskedPatternInput = IMaskInput as unknown as React.ComponentType<
   React.ComponentProps<'input'> & {
     mask: string;
@@ -72,22 +70,9 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   );
   const [text, setText] = useState(() => formatRange(value, format));
 
-  // Tracks the value this component itself last reported via `onChange`, so
-  // the sync block below can tell "value became null/changed because our
-  // own onChange reported an in-progress edit" (skip resync) apart from
-  // "value changed for an external reason, e.g. a parent/Formik reset"
-  // (do resync).
-  //
-  // This is intentionally useState rather than useRef: the sync block below
-  // needs to read this value during render, and the "react-hooks/refs" rule
-  // (part of the Rules of React enforced by the React Compiler lint plugin)
-  // disallows reading ref.current during render, since a component may
-  // render without its refs reflecting the values from that same render
-  // pass (e.g. under Strict Mode double-rendering or concurrent features).
-  // Reading state during render is exactly what state is for, and updating
-  // it here is batched with the onChange call below, so it lands in the
-  // same commit as the resulting `value` prop update — no extra render
-  // pass is introduced beyond the one already caused by that prop change.
+  // Distinguishes our own onChange echoes from real external value changes,
+  // so the sync below doesn't clobber in-progress typing (useState, not
+  // useRef: this is read during render).
   const [lastEmittedValue, setLastEmittedValue] = useState(value);
 
   const emitChange = (next: DateRange | null) => {
@@ -95,19 +80,11 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
     onChange(next);
   };
 
-  // Keep the calendar and displayed text in sync when the controlled value
-  // (or the resolved format) changes from outside (e.g. a Formik form
-  // reset). Adjusted during render rather than in a useEffect, per React's
-  // guidance on syncing state to props without an extra render pass.
+  // Mirror external value changes (e.g. a Formik reset) into local state.
   const [prevValue, setPrevValue] = useState(value);
-  const [prevFormat, setPrevFormat] = useState(format);
-  const valueChangedExternally =
-    value !== prevValue && value !== lastEmittedValue;
-  const formatChanged = format !== prevFormat;
-  if (value !== prevValue || formatChanged) {
+  if (value !== prevValue) {
     setPrevValue(value);
-    setPrevFormat(format);
-    if (valueChangedExternally || formatChanged) {
+    if (value !== lastEmittedValue) {
       setCalendarRange(
         value ? { from: value.startsAt, to: value.endsAt } : undefined,
       );
