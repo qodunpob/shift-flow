@@ -48,7 +48,12 @@ describe('shifts/ShiftsService', () => {
     roles: [UserRole.MANAGER],
   };
   const scheduleId = 'schedule-1';
-  const schedule = { id: scheduleId, createdBy: manager.id } as ScheduleEntity;
+  const schedule = {
+    id: scheduleId,
+    createdBy: manager.id,
+    startsAt: new Date('2026-01-01T00:00:00.000Z'),
+    endsAt: new Date('2026-01-02T00:00:00.000Z'),
+  } as ScheduleEntity;
 
   beforeEach(async () => {
     queryBuilder = {
@@ -162,6 +167,28 @@ describe('shifts/ShiftsService', () => {
       ).rejects.toBeInstanceOf(ConflictException);
       expect(shifts.save).not.toHaveBeenCalled();
     });
+
+    it('should not create a shift that starts before its schedule begins', async () => {
+      await expect(
+        service.create(
+          scheduleId,
+          { ...dto, startsAt: new Date('2025-12-31T23:00:00.000Z') },
+          manager,
+        ),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(shifts.save).not.toHaveBeenCalled();
+    });
+
+    it('should not create a shift that ends after its schedule ends', async () => {
+      await expect(
+        service.create(
+          scheduleId,
+          { ...dto, endsAt: new Date('2026-01-02T01:00:00.000Z') },
+          manager,
+        ),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(shifts.save).not.toHaveBeenCalled();
+    });
   });
 
   describe('update', () => {
@@ -262,6 +289,32 @@ describe('shifts/ShiftsService', () => {
         service.update(
           existing.id,
           { endsAt: new Date('2026-01-01T20:00:00.000Z') },
+          manager,
+        ),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(shifts.save).not.toHaveBeenCalled();
+    });
+
+    it('should not update a shift to start before its schedule begins', async () => {
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
+
+      await expect(
+        service.update(
+          existing.id,
+          { startsAt: new Date('2025-12-31T23:00:00.000Z') },
+          manager,
+        ),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(shifts.save).not.toHaveBeenCalled();
+    });
+
+    it('should not update a shift to end after its schedule ends', async () => {
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
+
+      await expect(
+        service.update(
+          existing.id,
+          { endsAt: new Date('2026-01-02T01:00:00.000Z') },
           manager,
         ),
       ).rejects.toBeInstanceOf(ConflictException);

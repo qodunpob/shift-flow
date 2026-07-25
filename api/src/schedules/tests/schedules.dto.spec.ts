@@ -39,6 +39,18 @@ describe('schedules/schedules.dto', () => {
 
       expect(errors.map((e) => e.property)).toContain('timeZone');
     });
+
+    it('should fail when startsAt is not before endsAt', async () => {
+      const dto = plainToInstance(CreateScheduleDto, {
+        startsAt: '2026-01-07T00:00:00.000Z',
+        endsAt: '2026-01-01T00:00:00.000Z',
+        timeZone: 'Asia/Tokyo',
+      });
+
+      const errors = await validate(dto);
+
+      expect(errors.map((e) => e.property)).toContain('startsAt');
+    });
   });
 
   describe('UpdateScheduleDto', () => {

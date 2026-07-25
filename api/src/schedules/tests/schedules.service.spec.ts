@@ -7,7 +7,12 @@ import {
 } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { SchedulesService } from '../schedules.service';
-import { ScheduleEntity, ScheduleStatus, UserRole } from '@/entities';
+import {
+  ScheduleEntity,
+  ScheduleStatus,
+  ShiftEntity,
+  UserRole,
+} from '@/entities';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
 import { CreateScheduleDto } from '@/schedules/schedules.dto';
 import { endOfDayWithTz, startOfDayWithTz } from '@/utils/timezone';
@@ -32,6 +37,14 @@ describe('schedules/SchedulesService', () => {
     create: jest.Mock;
     save: jest.Mock;
     findOneBy: jest.Mock;
+    createQueryBuilder: jest.Mock;
+  };
+  let shiftsQueryBuilder: {
+    where: jest.Mock;
+    andWhere: jest.Mock;
+    getExists: jest.Mock;
+  };
+  let shiftsRepository: {
     createQueryBuilder: jest.Mock;
   };
   let entityManager: { save: jest.Mock; softDelete: jest.Mock };
@@ -75,6 +88,14 @@ describe('schedules/SchedulesService', () => {
       findOneBy: jest.fn(),
       createQueryBuilder: jest.fn(() => queryBuilder),
     };
+    shiftsQueryBuilder = {
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      getExists: jest.fn().mockResolvedValue(false),
+    };
+    shiftsRepository = {
+      createQueryBuilder: jest.fn(() => shiftsQueryBuilder),
+    };
     entityManager = {
       save: jest.fn().mockResolvedValue(undefined),
       softDelete: jest.fn().mockResolvedValue(undefined),
@@ -101,6 +122,10 @@ describe('schedules/SchedulesService', () => {
       providers: [
         SchedulesService,
         { provide: getRepositoryToken(ScheduleEntity), useValue: repository },
+        {
+          provide: getRepositoryToken(ShiftEntity),
+          useValue: shiftsRepository,
+        },
         { provide: DataSource, useValue: dataSource },
         { provide: SchedulesHelpersService, useValue: helpers },
         { provide: ScheduleStatsService, useValue: stats },
@@ -261,6 +286,63 @@ describe('schedules/SchedulesService', () => {
     it('should update the schedule when the new dates do not overlap another one', async () => {
       helpers.findEditable.mockResolvedValueOnce({ ...existing });
       queryBuilder.getExists.mockResolvedValueOnce(false);
+
+      const result = await service.update(
+        existing.id,
+        {
+          endsAt: new Date('2026-01-10T00:00:00.000Z'),
+          timeZone: 'UTC',
+        },
+        manager,
+      );
+
+      expect(repository.save).toHaveBeenCalledTimes(1);
+      expect(result).toMatchObject({ updatedBy: manager.id });
+    });
+
+    it('should not shrink a schedule so that it no longer contains one of its shifts', async () => {
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
+      shiftsQueryBuilder.getExists.mockResolvedValueOnce(true);
+
+      await expect(
+        service.update(
+          existing.id,
+          {
+            endsAt: new Date('2026-01-03T23:59:59.999Z'),
+            timeZone: 'UTC',
+          },
+          manager,
+        ),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(repository.save).not.toHaveBeenCalled();
+    });
+
+    it('should check shift containment scoped to the schedule being updated', async () => {
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
+
+      const newEndsAt = new Date('2026-01-10T00:00:00.000Z');
+      await service.update(
+        existing.id,
+        { endsAt: newEndsAt, timeZone: 'UTC' },
+        manager,
+      );
+
+      expect(shiftsQueryBuilder.where).toHaveBeenCalledWith(
+        'shift.scheduleId = :scheduleId',
+        { scheduleId: existing.id },
+      );
+      expect(shiftsQueryBuilder.andWhere).toHaveBeenCalledWith(
+        '(shift.startsAt < :startsAt OR shift.endsAt > :endsAt)',
+        {
+          startsAt: existing.startsAt,
+          endsAt: endOfDayWithTz(newEndsAt, 'UTC'),
+        },
+      );
+    });
+
+    it('should update the schedule when its shifts still fit within the new boundaries', async () => {
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
+      shiftsQueryBuilder.getExists.mockResolvedValueOnce(false);
 
       const result = await service.update(
         existing.id,

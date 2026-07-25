@@ -11,6 +11,7 @@ import { ScheduleStatus } from '@/entities';
 import { PaginationQueryDto } from '@/common/pagination/pagination-query.dto';
 import { IsValidTimeZone } from '@/common/validators/is-valid-timezone.validator';
 import { RequireTimeZone } from '@/common/validators/require-timezone.validator';
+import { IsBeforeEndsAt } from '@/common/validators/is-before-ends-at.validator';
 
 export class CreateScheduleDto {
   @IsOptional()
@@ -19,6 +20,7 @@ export class CreateScheduleDto {
 
   @Type(() => Date)
   @IsDate()
+  @IsBeforeEndsAt()
   startsAt: Date;
 
   @Type(() => Date)
