@@ -43,7 +43,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
   useEffect(() => {
     // Disable the set-state-in-effect rule as this is an intentional pattern
     // to ensure initialData is only used on the first render
-    // eslint-disable-next-line
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsInitialMount(false);
   }, []);
 

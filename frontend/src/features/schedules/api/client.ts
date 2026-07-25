@@ -9,7 +9,6 @@ import { DEFAULT_PAGE_SIZE } from '@/constants/common';
 
 import { CreatedSchedule, PaginatedSchedules } from '@/lib/api/types';
 import { SchedulesFilter } from '@/features/schedules/api/types';
-import { ApiError } from '@/lib/errors/ApiError';
 
 export const schedulesQueryPrefix = ['schedules'] as const;
 
@@ -50,7 +49,7 @@ export interface CreateScheduleInput {
 export const useCreateScheduleMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<CreatedSchedule, ApiError, CreateScheduleInput>({
+  return useMutation<CreatedSchedule, Error, CreateScheduleInput>({
     mutationFn: (input) =>
       apiFetchFromClient('/schedules', {
         method: 'POST',
