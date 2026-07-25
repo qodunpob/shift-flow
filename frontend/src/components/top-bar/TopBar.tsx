@@ -2,20 +2,36 @@
 
 import React from 'react';
 import { AppBar, Box, styled, Toolbar, Typography } from '@mui/material';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import { UserAvatar } from '@/components/user-avatar/UserAvatar';
 import { FlexBox } from '@/components/box/box';
 
 import { CurrentUser } from '@/lib/api/types';
+import Link from 'next/link';
 
 export interface TopBarProps {
   title: string;
   user: Pick<CurrentUser, 'id' | 'firstName' | 'lastName'>;
+  breadcrumbs?: {
+    route: string;
+    title: string;
+  };
 }
 
-export const TopBar: React.FC<TopBarProps> = ({ title, user }) => {
+export const TopBar: React.FC<TopBarProps> = ({ title, user, breadcrumbs }) => {
   return (
     <StylessAppBar position="static">
-      <StyledToolbar>
+      <StyledToolbar sx={{ gap: 1 }}>
+        {breadcrumbs && (
+          <>
+            <Link href={breadcrumbs.route}>
+              <Typography variant="body2" component="div">
+                {breadcrumbs.title}
+              </Typography>
+            </Link>
+            <ArrowForwardIosIcon fontSize="small" />
+          </>
+        )}
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
           {title}
         </Typography>

@@ -23,7 +23,7 @@
     }
   },
   "ScheduleDetailsPage": {
-    "title": "Schedule {id}"
+    "title": "Schedule {label}"
   },
   "CreateSchedule": {
     "title": "Create a schedule",

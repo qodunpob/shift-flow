@@ -1,5 +1,11 @@
-import { Container, Typography } from '@mui/material';
 import { getTranslations } from 'next-intl/server';
+import { AppShell } from '@/components/app-shell/AppShell';
+import { getCurrentUserFromServer } from '@/lib/api/server/users';
+import { ScheduleDetails } from '@/features/schedule-details/ScheduleDetails';
+import { getScheduleFromServer } from '@/features/schedule-details/api/server';
+import { scheduleRange } from '@/utils/scheduleRange';
+import { DEFAULT_LOCALE } from '@/constants/common';
+import { routes } from '@/routes';
 
 export default async function ScheduleDetailsPage({
   params,
@@ -7,13 +13,22 @@ export default async function ScheduleDetailsPage({
   params: Promise<{ locale: string; id: string }>;
 }) {
   const { id } = await params;
-  const t = await getTranslations('ScheduleDetailsPage');
-
+  const t = await getTranslations();
+  const [user, schedule] = await Promise.all([
+    getCurrentUserFromServer(),
+    getScheduleFromServer(id),
+  ]);
+  const label = schedule.label ?? scheduleRange(schedule, DEFAULT_LOCALE);
   return (
-    <Container sx={{ mt: 4 }}>
-      <Typography variant="h4" component="h1">
-        {t('title', { id })}
-      </Typography>
-    </Container>
+    <AppShell
+      title={t('ScheduleDetailsPage.title', { label })}
+      user={user}
+      breadcrumbs={{
+        route: routes.schedules,
+        title: t('SchedulesPage.title'),
+      }}
+    >
+      <ScheduleDetails />
+    </AppShell>
   );
 }
