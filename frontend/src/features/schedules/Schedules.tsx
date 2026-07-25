@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScheduleList } from '@/components/schedule-list/ScheduleList';
 import {
   useMineFilter,
@@ -36,18 +36,33 @@ export const Schedules: React.FC<SchedulesProps> = ({
   mine: initialMine,
 }) => {
   const [page, setPage] = usePage();
-  const [status] = useStatusFilter();
-  const [mine] = useMineFilter();
+  const [status, setStatus] = useStatusFilter();
+  const [mine, setMine] = useMineFilter();
+  const [isInitialMount, setIsInitialMount] = useState(true);
+
+  useEffect(() => {
+    // Disable the set-state-in-effect rule as this is an intentional pattern
+    // to ensure initialData is only used on the first render
+    // eslint-disable-next-line
+    setIsInitialMount(false);
+  }, []);
+
   const isInitialFilter =
     page === initialPage && status === initialStatus && mine === initialMine;
   const { data: schedules = initialSchedules } = useSchedulesQuery(
     page,
     { status, mine },
-    isInitialFilter ? initialSchedules : undefined,
+    isInitialMount && isInitialFilter ? initialSchedules : undefined,
   );
   const t = useTranslations();
   const [openCreateModal, setOpenCreateModal] = useState(false);
   const isManager = getIsManager(user.roles);
+
+  const resetFiltersAndPage = () => {
+    setPage(1);
+    setStatus(null);
+    setMine(false);
+  };
 
   return (
     <>
@@ -73,6 +88,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
         <CreateScheduleModal
           open={openCreateModal}
           onClose={() => setOpenCreateModal(false)}
+          resetFiltersAndPage={resetFiltersAndPage}
         />
       )}
     </>
