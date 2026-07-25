@@ -18,6 +18,18 @@ export const formatRange = (
   ].join(RANGE_SEPARATOR);
 };
 
+export const isSameDateRange = (
+  a: DateRange | null,
+  b: DateRange | null,
+): boolean => {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return (
+    a.startsAt.getTime() === b.startsAt.getTime() &&
+    a.endsAt.getTime() === b.endsAt.getTime()
+  );
+};
+
 export const parseRangeText = (
   text: string,
   format: string,

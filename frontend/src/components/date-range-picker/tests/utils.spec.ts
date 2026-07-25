@@ -1,5 +1,10 @@
 import { dateFormatMap } from '@/constants/dates';
-import { DateRange, formatRange, parseRangeText } from '../utils';
+import {
+  DateRange,
+  formatRange,
+  isSameDateRange,
+  parseRangeText,
+} from '../utils';
 
 const FORMAT = dateFormatMap.fallback.dateRangeInput;
 
@@ -48,6 +53,49 @@ describe('components/date-range-picker/utils', () => {
         startsAt: new Date(2026, 6, 25),
         endsAt: new Date(2026, 6, 25),
       });
+    });
+  });
+
+  describe('isSameDateRange', () => {
+    it('should return true when both ranges are null', () => {
+      expect(isSameDateRange(null, null)).toBe(true);
+    });
+
+    it('should return false when only one range is null', () => {
+      const range: DateRange = {
+        startsAt: new Date(2026, 6, 25),
+        endsAt: new Date(2026, 7, 2),
+      };
+
+      expect(isSameDateRange(range, null)).toBe(false);
+      expect(isSameDateRange(null, range)).toBe(false);
+    });
+
+    it('should return true for different object instances with the same dates', () => {
+      const a: DateRange = {
+        startsAt: new Date(2026, 6, 25),
+        endsAt: new Date(2026, 7, 2),
+      };
+      const b: DateRange = {
+        startsAt: new Date(2026, 6, 25),
+        endsAt: new Date(2026, 7, 2),
+      };
+
+      expect(isSameDateRange(a, b)).toBe(true);
+    });
+
+    it('should return false when either date differs', () => {
+      const a: DateRange = {
+        startsAt: new Date(2026, 6, 25),
+        endsAt: new Date(2026, 7, 2),
+      };
+
+      expect(
+        isSameDateRange(a, { ...a, startsAt: new Date(2026, 6, 26) }),
+      ).toBe(false);
+      expect(isSameDateRange(a, { ...a, endsAt: new Date(2026, 7, 3) })).toBe(
+        false,
+      );
     });
   });
 });

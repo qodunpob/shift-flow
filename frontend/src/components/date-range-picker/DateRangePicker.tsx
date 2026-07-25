@@ -16,7 +16,12 @@ import '@daypicker/react/style.css';
 import { useLocale, useTranslations } from 'next-intl';
 import { FlexBox } from '@/components/box/box';
 import { dateFormat } from '@/constants/dates';
-import { DateRange, formatRange, parseRangeText } from './utils';
+import {
+  DateRange,
+  formatRange,
+  isSameDateRange,
+  parseRangeText,
+} from './utils';
 
 type DateRangeInputProps = React.ComponentProps<'input'> & {
   ref?: React.Ref<HTMLInputElement>;
@@ -82,7 +87,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
     onChange(next);
   };
 
-  if (givenValue !== value) {
+  if (!isSameDateRange(givenValue, value)) {
     setValue(givenValue);
     setCalendarRange(
       givenValue
