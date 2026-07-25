@@ -21,6 +21,9 @@ export class ScheduleEntity extends AuditableEntity {
   @Column({ type: 'timestamptz' })
   endsAt: Date;
 
+  @Column({ type: 'text' })
+  timeZone: string;
+
   @Column({ type: 'enum', enum: ScheduleStatus, default: ScheduleStatus.DRAFT })
   status: ScheduleStatus;
 
