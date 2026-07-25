@@ -44,7 +44,7 @@ const createWrapper = (queryClient: QueryClient) =>
     );
   };
 
-describe('features/schedules/api/client-tarnsition', () => {
+describe('features/schedules/api/client-transition', () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {
