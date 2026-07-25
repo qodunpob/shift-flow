@@ -16,9 +16,8 @@ export const RequireTimeZone = (validationOptions?: ValidationOptions) => {
       propertyName,
       options: validationOptions,
       validator: {
-        validate(_value: unknown, args: ValidationArguments): boolean {
-          // If the decorated field is undefined, skip validation
-          if (_value === undefined) {
+        validate(value: unknown, args: ValidationArguments): boolean {
+          if (value === undefined) {
             return true;
           }
           const dto = args.object as DtoWithTimeZone;

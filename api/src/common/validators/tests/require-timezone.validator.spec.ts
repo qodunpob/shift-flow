@@ -36,8 +36,7 @@ describe('common/validators/RequireTimeZone', () => {
 
     expect(errors).toHaveLength(1);
     expect(errors[0].constraints).toMatchObject({
-      requireTimeZone:
-        'timeZone is required when startsAt is provided',
+      requireTimeZone: 'timeZone is required when startsAt is provided',
     });
   });
 
