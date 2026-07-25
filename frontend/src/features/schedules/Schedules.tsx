@@ -48,7 +48,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
   return (
     <>
       <FlexBox justifyContent="space-between">
-        <ScheduleFilters />
+        <ScheduleFilters isMineFilterVisible={isManager} />
         {isManager && (
           <Button variant="contained" onClick={() => setOpenCreateModal(true)}>
             {t('common.create')}

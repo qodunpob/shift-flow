@@ -18,7 +18,13 @@ import {
 } from '@/hooks/useSearchParams';
 import { Schedule } from '@/lib/api/types';
 
-export const ScheduleFilters: React.FC = () => {
+export interface ScheduleFiltersProps {
+  isMineFilterVisible?: boolean;
+}
+
+export const ScheduleFilters: React.FC<ScheduleFiltersProps> = ({
+  isMineFilterVisible,
+}) => {
   const t = useTranslations('SchedulesPage.filters');
   const tStatus = useTranslations('Schedule.status');
   const [, setPage] = usePage();
@@ -51,10 +57,12 @@ export const ScheduleFilters: React.FC = () => {
           </MenuItem>
         ))}
       </Select>
-      <FormControlLabel
-        control={<Switch checked={mine} onChange={handleMineChange} />}
-        label={t('mine')}
-      />
+      {isMineFilterVisible && (
+        <FormControlLabel
+          control={<Switch checked={mine} onChange={handleMineChange} />}
+          label={t('mine')}
+        />
+      )}
     </FlexBox>
   );
 };
