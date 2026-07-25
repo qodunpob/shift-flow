@@ -5,6 +5,7 @@ import { IMaskInput } from 'react-imask';
 import {
   Button,
   FormControl,
+  FormHelperText,
   InputLabel,
   OutlinedInput,
   OutlinedInputProps,
@@ -57,6 +58,7 @@ export interface DateRangePickerProps extends Omit<
 > {
   label?: string;
   required?: boolean;
+  helperText?: React.ReactNode;
   value: DateRange | null;
   onChange: (value: DateRange | null) => void;
 }
@@ -64,6 +66,8 @@ export interface DateRangePickerProps extends Omit<
 export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   label,
   required,
+  error,
+  helperText,
   value: givenValue,
   onChange,
   ...restProps
@@ -119,7 +123,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
 
   return (
     <>
-      <FormControl required={required} onClick={handleOnClick}>
+      <FormControl required={required} error={error} onClick={handleOnClick}>
         {label && <InputLabel>{label}</InputLabel>}
         <OutlinedInput
           {...restProps}
@@ -127,6 +131,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
           inputComponent={DateRangeMaskedInput}
           inputProps={{ onAccept: handleTextAccept }}
         />
+        {helperText && <FormHelperText>{helperText}</FormHelperText>}
       </FormControl>
       <Popover
         open={!!anchorEl}
