@@ -47,7 +47,7 @@ describe('features/schedules/api/client', () => {
   it('should use initialData without calling apiFetchFromClient on first render', async () => {
     const initialData = makeSchedules(1);
 
-    const { result } = renderHook(() => useSchedulesQuery(1, initialData), {
+    const { result } = renderHook(() => useSchedulesQuery(1, {}, initialData), {
       wrapper: createWrapper(),
     });
 
@@ -59,7 +59,7 @@ describe('features/schedules/api/client', () => {
     const pageTwoData = makeSchedules(2);
     mockedApiFetchFromClient.mockResolvedValue(pageTwoData);
 
-    const { result } = renderHook(() => useSchedulesQuery(2), {
+    const { result } = renderHook(() => useSchedulesQuery(2, {}), {
       wrapper: createWrapper(),
     });
 
@@ -70,7 +70,56 @@ describe('features/schedules/api/client', () => {
     });
   });
 
+  it('should include the status filter in the request params when provided', async () => {
+    mockedApiFetchFromClient.mockResolvedValue(makeSchedules(1));
+
+    renderHook(() => useSchedulesQuery(1, { status: 'APPROVED' }), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() =>
+      expect(mockedApiFetchFromClient).toHaveBeenCalledWith('/schedules', {
+        params: { page: 1, limit: DEFAULT_PAGE_SIZE, status: 'APPROVED' },
+      }),
+    );
+  });
+
+  it('should include the mine filter in the request params only when true', async () => {
+    mockedApiFetchFromClient.mockResolvedValue(makeSchedules(1));
+
+    renderHook(() => useSchedulesQuery(1, { mine: true }), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() =>
+      expect(mockedApiFetchFromClient).toHaveBeenCalledWith('/schedules', {
+        params: { page: 1, limit: DEFAULT_PAGE_SIZE, mine: true },
+      }),
+    );
+  });
+
+  it('should omit status and mine from the request params when not provided', async () => {
+    mockedApiFetchFromClient.mockResolvedValue(makeSchedules(1));
+
+    renderHook(() => useSchedulesQuery(1, { status: null, mine: false }), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() =>
+      expect(mockedApiFetchFromClient).toHaveBeenCalledWith('/schedules', {
+        params: { page: 1, limit: DEFAULT_PAGE_SIZE },
+      }),
+    );
+  });
+
   it('should build the query key from the page number', () => {
     expect(schedulesQueryKey(3)).toEqual(['schedules', { page: 3 }]);
+  });
+
+  it('should build the query key from the page number and filters', () => {
+    expect(schedulesQueryKey(3, { status: 'APPROVED', mine: true })).toEqual([
+      'schedules',
+      { page: 3, status: 'APPROVED', mine: true },
+    ]);
   });
 });

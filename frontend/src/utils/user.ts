@@ -6,3 +6,5 @@ export const isManager = (roles: CurrentUser['roles']) =>
   roles.includes('MANAGER');
 export const isApprover = (roles: CurrentUser['roles']) =>
   roles.includes('APPROVER');
+export const isMine = (createdBy: string, userId: string) =>
+  createdBy === userId;
