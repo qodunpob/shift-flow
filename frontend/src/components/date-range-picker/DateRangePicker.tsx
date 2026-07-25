@@ -3,7 +3,6 @@
 import React, { MouseEvent, useState } from 'react';
 import { IMaskInput } from 'react-imask';
 import {
-  Box,
   Button,
   FormControl,
   InputLabel,
@@ -15,6 +14,7 @@ import {
 import { DateRange as RdpDateRange, DayPicker } from '@daypicker/react';
 import '@daypicker/react/style.css';
 import { useLocale, useTranslations } from 'next-intl';
+import { FlexBox } from '@/components/box/box';
 import { dateFormat } from '@/constants/dates';
 import { DateRange, formatRange, parseRangeText } from './utils';
 
@@ -82,17 +82,14 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
     onChange(next);
   };
 
-  const [prevGivenValue, setPrevGivenValue] = useState(givenValue);
-  if (givenValue !== prevGivenValue) {
-    setPrevGivenValue(givenValue);
-    if (givenValue !== value) {
-      setCalendarRange(
-        givenValue
-          ? { from: givenValue.startsAt, to: givenValue.endsAt }
-          : undefined,
-      );
-      setText(formatRange(givenValue, format));
-    }
+  if (givenValue !== value) {
+    setValue(givenValue);
+    setCalendarRange(
+      givenValue
+        ? { from: givenValue.startsAt, to: givenValue.endsAt }
+        : undefined,
+    );
+    setText(formatRange(givenValue, format));
   }
 
   const handleOnClick = (event: MouseEvent<HTMLInputElement>) => {
@@ -158,9 +155,9 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
             selected={calendarRange}
             onSelect={handleCalendarSelect}
           />
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+          <FlexBox justifyContent="flex-end" sx={{ mt: 1 }}>
             <Button onClick={handleClose}>{t('common.close')}</Button>
-          </Box>
+          </FlexBox>
         </Paper>
       </Popover>
     </>
