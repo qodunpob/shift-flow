@@ -20,10 +20,6 @@ export const useCreateScheduleForm = (
     onSubmit,
   });
 
-  // Default timeZone to the browser's own zone. This can only run on the
-  // client (Intl.DateTimeFormat().resolvedOptions().timeZone would return
-  // the server's zone during SSR, not the user's), hence the effect rather
-  // than an initial value.
   useEffect(() => {
     formik.setFieldValue(
       'timeZone',

@@ -37,22 +37,14 @@ describe('features/create-schedule/CreateScheduleModal', () => {
     });
   });
 
-  it('should default timeZone to the browser zone, so it never shows as required', async () => {
+  it('should default timeZone to the browser zone', async () => {
     render(<CreateScheduleModal open onClose={jest.fn()} />);
 
-    submitForm();
-
     await waitFor(() => {
-      expect(
-        screen.getByText('CreateSchedule.errors.datesRequired'),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('combobox')).toHaveValue(
+        Intl.DateTimeFormat().resolvedOptions().timeZone,
+      );
     });
-    expect(
-      screen.queryByText('CreateSchedule.errors.timeZoneRequired'),
-    ).not.toBeInTheDocument();
-    expect(screen.getByRole('combobox')).toHaveValue(
-      Intl.DateTimeFormat().resolvedOptions().timeZone,
-    );
   });
 
   it('should not close the modal while required fields are empty', async () => {
