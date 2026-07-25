@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Autocomplete,
   Button,
@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { DateRangePicker } from '@/components/date-range-picker/DateRangePicker';
+import { DateRange } from '@/components/date-range-picker/utils';
 
 export interface CreateScheduleProps {
   open: boolean;
@@ -27,6 +28,8 @@ export const CreateScheduleModal: React.FC<CreateScheduleProps> = ({
   const t = useTranslations();
   const timeZones = Intl.supportedValuesOf('timeZone');
   console.log('timeZones', timeZones);
+  // Temporary local state until this form is wired up to Formik.
+  const [dates, setDates] = useState<DateRange | null>(null);
   return (
     <Dialog open={open} maxWidth="sm" fullWidth>
       <DialogTitle>{t('CreateSchedule.title')}</DialogTitle>
@@ -35,7 +38,13 @@ export const CreateScheduleModal: React.FC<CreateScheduleProps> = ({
           <FormControl>
             <TextField label={t('labels.label')} />
           </FormControl>
-          <DateRangePicker label={t('labels.dates')} name="dates" required />
+          <DateRangePicker
+            label={t('labels.dates')}
+            name="dates"
+            required
+            value={dates}
+            onChange={setDates}
+          />
           <FormControl required>
             <Autocomplete
               options={timeZones}
