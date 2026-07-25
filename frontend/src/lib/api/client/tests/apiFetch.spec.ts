@@ -52,5 +52,17 @@ describe('lib/api/client/apiFetch', () => {
         'Request to /some/path failed with status 500',
       );
     });
+
+    it('should throw an ApiError carrying the response status when the response is not ok', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        status: StatusCodes.CONFLICT,
+        ok: false,
+        json: jest.fn().mockResolvedValue({ message: 'Conflict' }),
+      }) as unknown as typeof fetch;
+
+      await expect(apiFetchFromClient('/some/path')).rejects.toMatchObject({
+        statusCode: StatusCodes.CONFLICT,
+      });
+    });
   });
 });
