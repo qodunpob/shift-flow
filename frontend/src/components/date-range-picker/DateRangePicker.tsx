@@ -72,6 +72,29 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   );
   const [text, setText] = useState(() => formatRange(value, format));
 
+  // Tracks the value this component itself last reported via `onChange`, so
+  // the sync block below can tell "value became null/changed because our
+  // own onChange reported an in-progress edit" (skip resync) apart from
+  // "value changed for an external reason, e.g. a parent/Formik reset"
+  // (do resync).
+  //
+  // This is intentionally useState rather than useRef: the sync block below
+  // needs to read this value during render, and the "react-hooks/refs" rule
+  // (part of the Rules of React enforced by the React Compiler lint plugin)
+  // disallows reading ref.current during render, since a component may
+  // render without its refs reflecting the values from that same render
+  // pass (e.g. under Strict Mode double-rendering or concurrent features).
+  // Reading state during render is exactly what state is for, and updating
+  // it here is batched with the onChange call below, so it lands in the
+  // same commit as the resulting `value` prop update — no extra render
+  // pass is introduced beyond the one already caused by that prop change.
+  const [lastEmittedValue, setLastEmittedValue] = useState(value);
+
+  const emitChange = (next: DateRange | null) => {
+    setLastEmittedValue(next);
+    onChange(next);
+  };
+
   // Keep the calendar and displayed text in sync when the controlled value
   // (or the resolved format) changes from outside (e.g. a Formik form
   // reset). Adjusted during render rather than in a useEffect, per React's
@@ -81,10 +104,12 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   if (value !== prevValue || format !== prevFormat) {
     setPrevValue(value);
     setPrevFormat(format);
-    setCalendarRange(
-      value ? { from: value.startsAt, to: value.endsAt } : undefined,
-    );
-    setText(formatRange(value, format));
+    if (value !== lastEmittedValue) {
+      setCalendarRange(
+        value ? { from: value.startsAt, to: value.endsAt } : undefined,
+      );
+      setText(formatRange(value, format));
+    }
   }
 
   const handleOnClick = (event: MouseEvent<HTMLInputElement>) => {
@@ -96,14 +121,14 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
     if (range?.from && range?.to) {
       const selected: DateRange = { startsAt: range.from, endsAt: range.to };
       setText(formatRange(selected, format));
-      onChange(selected);
+      emitChange(selected);
       setAnchorEl(null);
     }
   };
 
   const handleTextAccept = (typedText: string) => {
     setText(typedText);
-    onChange(parseRangeText(typedText, format));
+    emitChange(parseRangeText(typedText, format));
   };
 
   return (
