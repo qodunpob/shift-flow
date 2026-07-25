@@ -84,9 +84,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
 
   useEffect(() => {
     // One-way sync from givenValue into local state - not a two-way
-    // binding, so this can't cascade. Deps intentionally only [givenValue]:
-    // reacting to `value` too would refire this on our own setValue call,
-    // before givenValue catches up, and stomp it right back.
+    // binding, so this can't cascade.
     if (givenValue !== value) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setValue(givenValue);
@@ -97,8 +95,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
       );
       setText(formatRange(givenValue, format));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [givenValue]);
+  }, [givenValue, value, format]);
 
   const handleOnClick = (event: MouseEvent<HTMLInputElement>) => {
     setAnchorEl(event.currentTarget);
