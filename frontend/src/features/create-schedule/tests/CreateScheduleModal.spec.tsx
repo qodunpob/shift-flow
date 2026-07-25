@@ -25,7 +25,7 @@ describe('features/create-schedule/CreateScheduleModal', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('should show validation errors when submitting with empty required fields', async () => {
+  it('should show a validation error for dates when submitting with no range picked', async () => {
     render(<CreateScheduleModal open onClose={jest.fn()} />);
 
     submitForm();
@@ -34,9 +34,16 @@ describe('features/create-schedule/CreateScheduleModal', () => {
       expect(
         screen.getByText('CreateSchedule.errors.datesRequired'),
       ).toBeInTheDocument();
-      expect(
-        screen.getByText('CreateSchedule.errors.timeZoneRequired'),
-      ).toBeInTheDocument();
+    });
+  });
+
+  it('should default timeZone to the browser zone', async () => {
+    render(<CreateScheduleModal open onClose={jest.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('combobox')).toHaveValue(
+        Intl.DateTimeFormat().resolvedOptions().timeZone,
+      );
     });
   });
 

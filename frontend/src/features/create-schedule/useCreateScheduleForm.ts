@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useFormik } from 'formik';
 import {
   createScheduleSchema,
@@ -12,9 +13,20 @@ const INITIAL_VALUES: CreateScheduleFormValues = {
 
 export const useCreateScheduleForm = (
   onSubmit: (values: CreateScheduleFormValues) => void,
-) =>
-  useFormik<CreateScheduleFormValues>({
+) => {
+  const formik = useFormik<CreateScheduleFormValues>({
     initialValues: INITIAL_VALUES,
     validationSchema: createScheduleSchema,
     onSubmit,
   });
+
+  useEffect(() => {
+    formik.setFieldValue(
+      'timeZone',
+      Intl.DateTimeFormat().resolvedOptions().timeZone,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return formik;
+};
