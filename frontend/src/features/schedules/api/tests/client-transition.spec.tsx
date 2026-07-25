@@ -1,12 +1,13 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import React from 'react';
-import { useWithdrawScheduleMutation } from '@/features/schedules/useWithdrawScheduleMutation';
-import { schedulesQueryKey } from '@/features/schedules/useSchedulesQuery';
-import { apiFetchFromClient } from '@/lib/api/client';
-import { PaginatedSchedules } from '@/lib/api/type-aliases';
+import { useWithdrawScheduleMutation } from '@/features/schedules/api/client-transition';
+import { schedulesQueryKey } from '@/features/schedules/api/client';
+import { apiFetchFromClient } from '@/lib/api/client/apiFetch';
 
-jest.mock('@/lib/api/client', () => ({
+import { PaginatedSchedules } from '@/lib/api/types';
+
+jest.mock('@/lib/api/client/apiFetch', () => ({
   apiFetchFromClient: jest.fn(),
 }));
 
@@ -43,7 +44,7 @@ const createWrapper = (queryClient: QueryClient) =>
     );
   };
 
-describe('features/schedules/useWithdrawScheduleMutation', () => {
+describe('features/schedules/api/client-tarnsition', () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {

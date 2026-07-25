@@ -1,6 +1,7 @@
-import { apiFetchFromServer } from '@/lib/api/server';
+import { apiFetchFromServer } from '@/lib/api/server/apiFetch';
 import { DEFAULT_PAGE_SIZE } from '@/constants/common';
-import { PaginatedSchedules } from '@/lib/api/type-aliases';
+
+import { PaginatedSchedules } from '@/lib/api/types';
 
 export const getSchedulesFromServer = (page: number | string) =>
   apiFetchFromServer<PaginatedSchedules>('/schedules', {

@@ -1,18 +1,17 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import React from 'react';
-import { PaginatedSchedules } from '@/lib/api/type-aliases';
 import { DEFAULT_PAGE_SIZE } from '@/constants/common';
-
-jest.mock('@/lib/api/client', () => ({
-  apiFetchFromClient: jest.fn(),
-}));
-
 import {
   schedulesQueryKey,
   useSchedulesQuery,
-} from '@/features/schedules/useSchedulesQuery';
-import { apiFetchFromClient } from '@/lib/api/client';
+} from '@/features/schedules/api/client';
+import { apiFetchFromClient } from '@/lib/api/client/apiFetch';
+import { PaginatedSchedules } from '@/lib/api/types';
+
+jest.mock('@/lib/api/client/apiFetch', () => ({
+  apiFetchFromClient: jest.fn(),
+}));
 
 const mockedApiFetchFromClient = apiFetchFromClient as jest.MockedFunction<
   typeof apiFetchFromClient
@@ -40,7 +39,7 @@ const createWrapper = () => {
   };
 };
 
-describe('features/schedules/useSchedulesQuery', () => {
+describe('features/schedules/api/client', () => {
   beforeEach(() => {
     mockedApiFetchFromClient.mockReset();
   });

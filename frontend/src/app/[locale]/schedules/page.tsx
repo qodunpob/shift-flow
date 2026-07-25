@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
-import { getCurrentUserFromServer } from '@/lib/api/users';
+import { getCurrentUserFromServer } from '@/lib/api/server/users';
 import { AppShell } from '@/components/app-shell/AppShell';
-import { getSchedulesFromServer } from '@/features/schedules/api';
+import { getSchedulesFromServer } from '@/features/schedules/api/server';
 import { Schedules } from '@/features/schedules/Schedules';
 
 export default async function SchedulesPage({

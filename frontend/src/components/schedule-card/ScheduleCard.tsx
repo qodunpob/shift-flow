@@ -1,11 +1,11 @@
 import React from 'react';
-import { Schedule } from '@/lib/api/type-aliases';
 import { Card, CardContent, Typography } from '@mui/material';
 import { FlexBox } from '@/components/box/box';
 import { ScheduleStatus } from '@/components/schedule-status/ScheduleStatus';
 import { format } from 'date-fns';
 import { dateFormat } from '@/constants/dates';
 import { useLocale } from 'next-intl';
+import { Schedule } from '@/lib/api/types';
 
 export interface ScheduleCardProps {
   schedule: Schedule;

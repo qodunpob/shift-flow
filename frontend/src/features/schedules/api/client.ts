@@ -1,8 +1,8 @@
-import 'client-only';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { apiFetchFromClient } from '@/lib/api/client';
+import { apiFetchFromClient } from '@/lib/api/client/apiFetch';
 import { DEFAULT_PAGE_SIZE } from '@/constants/common';
-import { PaginatedSchedules } from '@/lib/api/type-aliases';
+
+import { PaginatedSchedules } from '@/lib/api/types';
 
 export const schedulesQueryPrefix = ['schedules'] as const;
 

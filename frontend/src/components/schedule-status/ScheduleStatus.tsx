@@ -1,7 +1,7 @@
 import React from 'react';
-import { Schedule } from '@/lib/api/type-aliases';
 import { useTranslations } from 'next-intl';
 import { Chip, ChipProps } from '@mui/material';
+import { Schedule } from '@/lib/api/types';
 
 export interface ScheduleStatusProps {
   status: Schedule['status'];

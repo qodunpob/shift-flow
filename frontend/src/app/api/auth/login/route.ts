@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { AUTH_COOKIE, getJwtMaxAgeSeconds } from '@/lib/session';
-import { signIn } from '@/lib/api/auth';
+import { signIn } from '@/lib/api/server/signIn';
 import { StatusCodes } from 'http-status-codes';
 import { errorMessages } from '@/constants/error-messages';
 import { AuthError } from '@/lib/errors/AuthError';

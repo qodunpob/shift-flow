@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { apiFetchFromServer } from '@/lib/api/server';
+import { apiFetchFromServer } from '@/lib/api/server/apiFetch';
 import { routes } from '@/routes';
 import { StatusCodes } from 'http-status-codes';
 
@@ -13,7 +13,7 @@ jest.mock('next/navigation', () => ({
   redirect: jest.fn(),
 }));
 
-describe('lib/api/server', () => {
+describe('lib/api/server/apiFetch', () => {
   describe('apiFetchFromServer', () => {
     const originalFetch = global.fetch;
 

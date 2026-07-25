@@ -1,7 +1,7 @@
 import React from 'react';
-import { Schedule } from '@/lib/api/type-aliases';
 import { ScheduleCard } from '@/components/schedule-card/ScheduleCard';
 import { Stack } from '@mui/material';
+import { Schedule } from '@/lib/api/types';
 
 export interface ScheduleListProps {
   items: Schedule[];

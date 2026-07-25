@@ -4,7 +4,8 @@ import React from 'react';
 import { AppBar, Box, styled, Toolbar, Typography } from '@mui/material';
 import { UserAvatar } from '@/components/user-avatar/UserAvatar';
 import { FlexBox } from '@/components/box/box';
-import { CurrentUser } from '@/lib/api/type-aliases';
+
+import { CurrentUser } from '@/lib/api/types';
 
 export interface TopBarProps {
   title: string;

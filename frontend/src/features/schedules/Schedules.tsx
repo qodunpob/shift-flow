@@ -2,11 +2,11 @@
 
 import React from 'react';
 import { ScheduleList } from '@/components/schedule-list/ScheduleList';
-import { PaginatedSchedules } from '@/lib/api/type-aliases';
 import { usePage } from '@/hooks/useSearchParams';
 import { Pagination } from '@mui/material';
 import { FlexBox } from '@/components/box/box';
-import { useSchedulesQuery } from '@/features/schedules/useSchedulesQuery';
+import { useSchedulesQuery } from '@/features/schedules/api/client';
+import { PaginatedSchedules } from '@/lib/api/types';
 
 export interface SchedulesProps {
   schedules: PaginatedSchedules;

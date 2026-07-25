@@ -1,7 +1,8 @@
 import { Avatar } from '@mui/material';
 import React from 'react';
 import { stringToColor } from '@/components/user-avatar/stringToColor';
-import { CurrentUser } from '@/lib/api/type-aliases';
+
+import { CurrentUser } from '@/lib/api/types';
 
 export interface UserAvatarProps {
   user: Pick<CurrentUser, 'id' | 'firstName' | 'lastName'>;

@@ -1,7 +1,7 @@
-import { apiFetchFromClient } from '@/lib/api/client';
+import { apiFetchFromClient } from '@/lib/api/client/apiFetch';
 import { StatusCodes } from 'http-status-codes';
 
-describe('lib/api/client', () => {
+describe('lib/api/client/apiFetch', () => {
   describe('apiFetchFromClient', () => {
     const originalFetch = global.fetch;
 
