@@ -27,9 +27,12 @@
   },
   "CreateSchedule": {
     "title": "Create a schedule",
+    "success": "Schedule created",
     "errors": {
       "datesRequired": "Please select a date range",
-      "timeZoneRequired": "Please select a time zone"
+      "timeZoneRequired": "Please select a time zone",
+      "overlap": "These dates overlap with an existing schedule",
+      "generic": "Something went wrong. Please try again."
     }
   },
   "Schedule": {
