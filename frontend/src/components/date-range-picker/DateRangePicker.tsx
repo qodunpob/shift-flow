@@ -109,7 +109,6 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
       const selected: DateRange = { startsAt: range.from, endsAt: range.to };
       setText(formatRange(selected, format));
       emitChange(selected);
-      handleClose();
     }
   };
 
@@ -157,6 +156,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
           <DayPicker
             animate
             mode="range"
+            min={1}
             selected={calendarRange}
             onSelect={handleCalendarSelect}
           />
