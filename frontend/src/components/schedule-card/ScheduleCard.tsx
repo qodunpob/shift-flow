@@ -1,8 +1,8 @@
 import React from 'react';
-import { Card, CardContent, Typography } from '@mui/material';
+import { Card, CardContent, styled, Typography } from '@mui/material';
 import { FlexBox } from '@/components/box/box';
 import { ScheduleStatus } from '@/components/schedule-status/ScheduleStatus';
-import { format } from 'date-fns';
+import { DateTime } from 'luxon';
 import { dateFormat } from '@/constants/dates';
 import { useLocale } from 'next-intl';
 import { Schedule } from '@/lib/api/types';
@@ -14,9 +14,9 @@ export interface ScheduleCardProps {
 export const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule }) => {
   const locale = useLocale();
   const formatDate = (date: string) =>
-    format(date, dateFormat(locale).scheduleBoundaryDate);
+    DateTime.fromISO(date).toFormat(dateFormat(locale).scheduleBoundaryDate);
   return (
-    <Card>
+    <StyledCard>
       <CardContent>
         <FlexBox justifyContent="space-between">
           <FlexBox alignItems="baseline">
@@ -32,6 +32,10 @@ export const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule }) => {
           <ScheduleStatus status={schedule.status} />
         </FlexBox>
       </CardContent>
-    </Card>
+    </StyledCard>
   );
 };
+
+const StyledCard = styled(Card)(({ theme }) => ({
+  borderRadius: `calc(${theme.shape.borderRadius}px + 8px)`,
+}));
