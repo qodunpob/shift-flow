@@ -15,7 +15,11 @@
     "genericError": "Something went wrong. Please try again."
   },
   "SchedulesPage": {
-    "title": "Schedules"
+    "title": "Schedules",
+    "filters": {
+      "allStatuses": "All statuses",
+      "mine": "Created by me"
+    }
   },
   "ScheduleDetailsPage": {
     "title": "Schedule {id}"

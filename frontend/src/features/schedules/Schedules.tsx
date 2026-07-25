@@ -2,37 +2,53 @@
 
 import React, { useState } from 'react';
 import { ScheduleList } from '@/components/schedule-list/ScheduleList';
-import { usePage } from '@/hooks/useSearchParams';
+import {
+  useMineFilter,
+  usePage,
+  useStatusFilter,
+} from '@/hooks/useSearchParams';
 import { Button, Pagination } from '@mui/material';
 import { FlexBox } from '@/components/box/box';
 import { useSchedulesQuery } from '@/features/schedules/api/client';
-import { PaginatedSchedules } from '@/lib/api/types';
+import { CurrentUser, PaginatedSchedules, Schedule } from '@/lib/api/types';
 import { useTranslations } from 'next-intl';
 import { CreateScheduleModal } from '@/features/create-schedule/CreateScheduleModal';
+import { ScheduleFilters } from '@/features/schedules/ScheduleFilters';
+import { isManager as getIsManager } from '@/utils/user';
 
 export interface SchedulesProps {
-  isManager: boolean;
+  user: CurrentUser;
   schedules: PaginatedSchedules;
   page: number;
+  status: Schedule['status'] | null;
+  mine: boolean;
 }
 
 export const Schedules: React.FC<SchedulesProps> = ({
-  isManager,
+  user,
   schedules: initialSchedules,
   page: initialPage,
+  status: initialStatus,
+  mine: initialMine,
 }) => {
   const [page, setPage] = usePage();
+  const [status] = useStatusFilter();
+  const [mine] = useMineFilter();
+  const isInitialFilter =
+    page === initialPage && status === initialStatus && mine === initialMine;
   const { data: schedules = initialSchedules } = useSchedulesQuery(
     page,
-    page === initialPage ? initialSchedules : undefined,
+    { status, mine },
+    isInitialFilter ? initialSchedules : undefined,
   );
   const t = useTranslations();
   const [openCreateModal, setOpenCreateModal] = useState(false);
+  const isManager = getIsManager(user.roles);
 
   return (
     <>
       <FlexBox justifyContent="space-between">
-        <div>Filters Placeholder</div>
+        <ScheduleFilters />
         {isManager && (
           <Button variant="contained" onClick={() => setOpenCreateModal(true)}>
             {t('common.create')}
