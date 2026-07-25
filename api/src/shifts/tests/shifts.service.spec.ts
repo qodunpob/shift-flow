@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
-import { startOfMinute } from 'date-fns';
+import { DateTime } from 'luxon';
 import { ShiftsService } from '../shifts.service';
 import { CreateShiftDto } from '../shifts.dto';
 import {
@@ -19,6 +19,9 @@ import { AuthenticatedUser } from '@/auth/authenticated-request';
 import { ShiftsHelpersService } from '@/shifts/shifts-helpers.service';
 import { SchedulesHelpersService } from '@/schedules/schedules-helpers.service';
 import { omit } from 'lodash';
+
+const startOfMinute = (date: Date): Date =>
+  DateTime.fromJSDate(date).startOf('minute').toUTC().toJSDate();
 
 describe('shifts/ShiftsService', () => {
   let service: ShiftsService;
