@@ -4,6 +4,7 @@ import {
   ExecutionContext,
   ForbiddenException,
   INestApplication,
+  ValidationPipe,
 } from '@nestjs/common';
 import { APP_GUARD, Reflector } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -244,6 +245,7 @@ describe('schedules/SchedulesController', () => {
       const dto: CreateScheduleDto = {
         startsAt: new Date('2026-01-01'),
         endsAt: new Date('2026-01-07'),
+        timeZone: 'Asia/Tokyo',
       };
 
       await expect(controller.create(dto, user)).resolves.toStrictEqual(
@@ -402,6 +404,89 @@ describe('schedules/SchedulesController', () => {
         .expect(200, { id: validScheduleId });
 
       expect(schedules.findOne).toHaveBeenCalledWith(validScheduleId, manager);
+    });
+  });
+
+  /**
+   * These tests exercise the real ValidationPipe (the same configuration
+   * registered globally in main.ts) against a real HTTP request, to prove
+   * the require-timezone-with-dates rule actually rejects bad requests at
+   * the API boundary, not just at the unit level tested in schedules.dto.spec.ts.
+   */
+  describe('Validation (HTTP)', () => {
+    let app: INestApplication<App>;
+    let schedules: jest.Mocked<Pick<SchedulesService, 'create'>>;
+
+    const manager: AuthenticatedUser = {
+      id: 'u-manager',
+      roles: [UserRole.MANAGER],
+    };
+
+    class FakeJwtAuthGuard implements CanActivate {
+      canActivate(context: ExecutionContext): boolean {
+        const req = context.switchToHttp().getRequest<AuthenticatedRequest>();
+        req.user = manager;
+        return true;
+      }
+    }
+
+    beforeEach(async () => {
+      schedules = {
+        create: jest.fn().mockResolvedValue({ id: 'schedule-1' }),
+      };
+
+      const module: TestingModule = await Test.createTestingModule({
+        controllers: [SchedulesController],
+        providers: [
+          { provide: SchedulesService, useValue: schedules },
+          { provide: SchedulesTransitionService, useValue: {} },
+          { provide: APP_GUARD, useClass: FakeJwtAuthGuard },
+          { provide: APP_GUARD, useClass: RolesGuard },
+          Reflector,
+        ],
+      }).compile();
+
+      app = module.createNestApplication();
+      app.useGlobalPipes(
+        new ValidationPipe({
+          transform: true,
+          whitelist: true,
+          forbidNonWhitelisted: true,
+        }),
+      );
+      await app.init();
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
+
+    it('should reject POST /schedules with dates but no timeZone', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/schedules')
+        .send({
+          startsAt: '2026-01-01T00:00:00.000Z',
+          endsAt: '2026-01-07T00:00:00.000Z',
+        })
+        .expect(400);
+
+      expect(response.body.message).toEqual(
+        expect.arrayContaining([expect.stringContaining('timeZone')]),
+      );
+      expect(schedules.create).not.toHaveBeenCalled();
+    });
+
+    it('should accept POST /schedules with dates and a valid timeZone', async () => {
+      await request(app.getHttpServer())
+        .post('/schedules')
+        .send({
+          startsAt: '2026-01-01T00:00:00.000Z',
+          endsAt: '2026-01-07T00:00:00.000Z',
+          timeZone: 'Asia/Tokyo',
+        })
+        .expect(201);
+
+      expect(schedules.create).toHaveBeenCalledTimes(1);
     });
   });
 });
