@@ -37,13 +37,14 @@ export class SchedulesService {
     dto: CreateScheduleDto,
     user: AuthenticatedUser,
   ): Promise<ScheduleEntity> {
-    const startsAt = startOfDayWithTz(dto.startsAt, dto.timeZone);
-    const endsAt = endOfDayWithTz(dto.endsAt, dto.timeZone);
+    const { timeZone, ...rest } = dto;
+    const startsAt = startOfDayWithTz(dto.startsAt, timeZone);
+    const endsAt = endOfDayWithTz(dto.endsAt, timeZone);
 
     await this.assertNoOverlap(startsAt, endsAt);
 
     const schedule = this.schedules.create({
-      ...dto,
+      ...rest,
       startsAt,
       endsAt,
       createdBy: user.id,
@@ -100,17 +101,18 @@ export class SchedulesService {
 
     // dto.timeZone is guaranteed defined here whenever dto.startsAt/endsAt is,
     // enforced by RequireTimeZone on UpdateScheduleDto.
+    const { timeZone, ...rest } = dto;
     const startsAt = dto.startsAt
-      ? startOfDayWithTz(dto.startsAt, dto.timeZone!)
+      ? startOfDayWithTz(dto.startsAt, timeZone!)
       : schedule.startsAt;
     const endsAt = dto.endsAt
-      ? endOfDayWithTz(dto.endsAt, dto.timeZone!)
+      ? endOfDayWithTz(dto.endsAt, timeZone!)
       : schedule.endsAt;
 
     await this.assertNoOverlap(startsAt, endsAt, id);
 
     Object.assign(schedule, {
-      ...dto,
+      ...rest,
       startsAt,
       endsAt,
       updatedBy: user.id,
