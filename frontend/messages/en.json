@@ -1,4 +1,8 @@
 {
+  "common": {
+    "cancel": "Cancel",
+    "create": "Create"
+  },
   "LoginPage": {
     "title": "Welcome back",
     "subtitle": "Sign in to Shift Flow",
@@ -11,11 +15,13 @@
     "genericError": "Something went wrong. Please try again."
   },
   "SchedulesPage": {
-    "title": "Schedules",
-    "page": "Page {page}"
+    "title": "Schedules"
   },
   "ScheduleDetailsPage": {
     "title": "Schedule {id}"
+  },
+  "CreateSchedule": {
+    "title": "Create a schedule"
   },
   "Schedule": {
     "status": {
@@ -25,5 +31,10 @@
       "APPROVED": "Approved",
       "REJECTED": "Rejected"
     }
+  },
+  "labels": {
+    "label": "Label",
+    "dates": "Dates",
+    "timeZone": "Time zone"
   }
 }

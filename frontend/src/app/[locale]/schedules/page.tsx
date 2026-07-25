@@ -3,6 +3,7 @@ import { getCurrentUserFromServer } from '@/lib/api/server/users';
 import { AppShell } from '@/components/app-shell/AppShell';
 import { getSchedulesFromServer } from '@/features/schedules/api/server';
 import { Schedules } from '@/features/schedules/Schedules';
+import { isManager } from '@/utils/user';
 
 export default async function SchedulesPage({
   searchParams,
@@ -19,7 +20,11 @@ export default async function SchedulesPage({
 
   return (
     <AppShell title={t('title')} user={user}>
-      <Schedules schedules={schedules} page={page} />
+      <Schedules
+        isManager={isManager(user.roles)}
+        schedules={schedules}
+        page={page}
+      />
     </AppShell>
   );
 }
