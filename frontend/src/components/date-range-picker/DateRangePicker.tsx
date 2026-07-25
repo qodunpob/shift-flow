@@ -101,10 +101,13 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   // guidance on syncing state to props without an extra render pass.
   const [prevValue, setPrevValue] = useState(value);
   const [prevFormat, setPrevFormat] = useState(format);
-  if (value !== prevValue || format !== prevFormat) {
+  const valueChangedExternally =
+    value !== prevValue && value !== lastEmittedValue;
+  const formatChanged = format !== prevFormat;
+  if (value !== prevValue || formatChanged) {
     setPrevValue(value);
     setPrevFormat(format);
-    if (value !== lastEmittedValue) {
+    if (valueChangedExternally || formatChanged) {
       setCalendarRange(
         value ? { from: value.startsAt, to: value.endsAt } : undefined,
       );
