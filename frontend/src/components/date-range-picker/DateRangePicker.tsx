@@ -1,6 +1,6 @@
 'use client';
 
-import React, { MouseEvent, useEffect, useState } from 'react';
+import React, { MouseEvent, useState } from 'react';
 import { IMaskInput } from 'react-imask';
 import {
   Button,
@@ -82,20 +82,15 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
     onChange(next);
   };
 
-  useEffect(() => {
-    // One-way sync from givenValue into local state - not a two-way
-    // binding, so this can't cascade.
-    if (givenValue !== value) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setValue(givenValue);
-      setCalendarRange(
-        givenValue
-          ? { from: givenValue.startsAt, to: givenValue.endsAt }
-          : undefined,
-      );
-      setText(formatRange(givenValue, format));
-    }
-  }, [givenValue, value, format]);
+  if (givenValue !== value) {
+    setValue(givenValue);
+    setCalendarRange(
+      givenValue
+        ? { from: givenValue.startsAt, to: givenValue.endsAt }
+        : undefined,
+    );
+    setText(formatRange(givenValue, format));
+  }
 
   const handleOnClick = (event: MouseEvent<HTMLInputElement>) => {
     setAnchorEl(event.currentTarget);
