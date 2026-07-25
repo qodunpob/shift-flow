@@ -1,10 +1,12 @@
 export interface DateFormatMap {
   scheduleBoundaryDate: string;
+  dateRangeInput: string;
 }
 
 export const dateFormatMap: Record<string, DateFormatMap> = {
   fallback: {
     scheduleBoundaryDate: 'MM.dd',
+    dateRangeInput: 'MM/dd/yyyy',
   },
 };
 
