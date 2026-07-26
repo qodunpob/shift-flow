@@ -127,6 +127,6 @@ describe('features/schedule-actions/useScheduleStatusActions', () => {
 
     await waitFor(() => expect(result.current.pendingAction).toBeNull());
 
-    expect(toast.error).toHaveBeenCalledWith('ScheduleActions.errors.generic');
+    expect(toast.error).toHaveBeenCalledWith('commonErrors.generic');
   });
 });

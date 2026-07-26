@@ -6,6 +6,10 @@
     "close": "Close",
     "ok": "OK"
   },
+  "commonErrors": {
+    "conflict": "This action isn't possible right now. Please refresh and try again.",
+    "generic": "Something went wrong. Please try again."
+  },
   "LoginPage": {
     "title": "Welcome back",
     "subtitle": "Sign in to Shift Flow",
@@ -14,8 +18,7 @@
     "showPassword": "Show password",
     "hidePassword": "Hide password",
     "submit": "Sign in",
-    "invalidCredentials": "Invalid email or password",
-    "genericError": "Something went wrong. Please try again."
+    "invalidCredentials": "Invalid email or password"
   },
   "SchedulesPage": {
     "title": "Schedules",
@@ -35,9 +38,7 @@
     "errors": {
       "datesRequired": "Please select a date range",
       "timeZoneRequired": "Please select a time zone",
-      "overlap": "These dates overlap with an existing schedule",
-      "conflict": "This change isn't possible right now. Please refresh and try again.",
-      "generic": "Something went wrong. Please try again."
+      "overlap": "These dates overlap with an existing schedule"
     }
   },
   "ScheduleActions": {
@@ -82,10 +83,6 @@
       "unpublish": "Schedule unpublished",
       "submitForApproval": "Schedule submitted for approval",
       "withdraw": "Schedule withdrawn"
-    },
-    "errors": {
-      "conflict": "This action isn't possible right now. Please refresh and try again.",
-      "generic": "Something went wrong. Please try again."
     }
   },
   "ShiftForm": {
@@ -94,8 +91,7 @@
     "errors": {
       "startsAtRequired": "Please provide a valid start date and time",
       "endsAtRequired": "Please provide a valid end date and time",
-      "conflict": "This shift overlaps with an existing shift or falls outside the schedule",
-      "generic": "Something went wrong. Please try again."
+      "conflict": "This shift overlaps with an existing shift or falls outside the schedule"
     }
   },
   "ShiftAssignments": {
@@ -106,11 +102,7 @@
     "assign": "Assign",
     "assignSuccess": "Employee assigned",
     "loading": "Loading…",
-    "noAvailableEmployees": "No employees available",
-    "errors": {
-      "conflict": "This action isn't possible right now. Please refresh and try again.",
-      "generic": "Something went wrong. Please try again."
-    }
+    "noAvailableEmployees": "No employees available"
   },
   "Schedule": {
     "status": {

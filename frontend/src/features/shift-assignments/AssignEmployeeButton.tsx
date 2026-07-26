@@ -47,9 +47,7 @@ export const AssignEmployeeButton: React.FC<AssignEmployeeButtonProps> = ({
             error instanceof ApiError &&
             error.statusCode === StatusCodes.CONFLICT;
           toast.error(
-            isConflict
-              ? t('ShiftAssignments.errors.conflict')
-              : t('ShiftAssignments.errors.generic'),
+            isConflict ? t('commonErrors.conflict') : t('commonErrors.generic'),
           );
         },
       },

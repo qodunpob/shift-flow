@@ -125,9 +125,7 @@ describe('features/shift-assignments/AssignEmployeeButton', () => {
     fireEvent.click(await screen.findByText('Ada Lovelace'));
 
     await waitFor(() =>
-      expect(toast.error).toHaveBeenCalledWith(
-        'ShiftAssignments.errors.conflict',
-      ),
+      expect(toast.error).toHaveBeenCalledWith('commonErrors.conflict'),
     );
   });
 
@@ -141,9 +139,7 @@ describe('features/shift-assignments/AssignEmployeeButton', () => {
     fireEvent.click(await screen.findByText('Ada Lovelace'));
 
     await waitFor(() =>
-      expect(toast.error).toHaveBeenCalledWith(
-        'ShiftAssignments.errors.generic',
-      ),
+      expect(toast.error).toHaveBeenCalledWith('commonErrors.generic'),
     );
   });
 });

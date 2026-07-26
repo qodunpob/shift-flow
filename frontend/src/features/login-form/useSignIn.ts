@@ -6,6 +6,7 @@ import { requestSignIn } from '@/features/login-form/api';
 import { StatusCodes } from 'http-status-codes';
 
 export const useSignIn = (t: ReturnType<typeof useTranslations>) => {
+  const tErrors = useTranslations('commonErrors');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
@@ -27,7 +28,7 @@ export const useSignIn = (t: ReturnType<typeof useTranslations>) => {
         setError(
           result.status === StatusCodes.UNAUTHORIZED
             ? t('invalidCredentials')
-            : t('genericError'),
+            : tErrors('generic'),
         );
         return;
       }
@@ -35,7 +36,7 @@ export const useSignIn = (t: ReturnType<typeof useTranslations>) => {
       router.push(DEFAULT_ROUTE);
       router.refresh();
     } catch {
-      setError(t('genericError'));
+      setError(tErrors('generic'));
     } finally {
       setIsSubmitting(false);
     }

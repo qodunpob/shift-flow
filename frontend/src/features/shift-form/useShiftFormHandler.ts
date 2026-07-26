@@ -54,7 +54,7 @@ export const useShiftFormHandler = ({
         toast.error(
           isConflict
             ? t('ShiftForm.errors.conflict')
-            : t('ShiftForm.errors.generic'),
+            : t('commonErrors.generic'),
         );
       };
 

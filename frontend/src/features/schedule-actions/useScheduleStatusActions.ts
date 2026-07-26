@@ -63,8 +63,8 @@ export const useScheduleStatusActions = (
       onError: (error) => {
         toast.error(
           error instanceof ApiError && error.statusCode === StatusCodes.CONFLICT
-            ? t('ScheduleActions.errors.conflict')
-            : t('ScheduleActions.errors.generic'),
+            ? t('commonErrors.conflict')
+            : t('commonErrors.generic'),
         );
         setPendingAction(null);
       },
