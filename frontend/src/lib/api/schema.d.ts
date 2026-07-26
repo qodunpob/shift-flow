@@ -68,6 +68,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/schedules/unavailable-dates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SchedulesController_findUnavailableDates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/schedules/{id}": {
         parameters: {
             query?: never;
@@ -394,6 +410,7 @@ export interface components {
             startsAt: string;
             /** Format: date-time */
             endsAt: string;
+            timeZone: string;
         };
         ScheduleEntity: {
             label: string | null;
@@ -401,6 +418,7 @@ export interface components {
             startsAt: string;
             /** Format: date-time */
             endsAt: string;
+            timeZone: string;
             /** @enum {string} */
             status: "DRAFT" | "IN_REVIEW" | "AWAITING_APPROVAL" | "APPROVED" | "REJECTED";
             rejectionReason: string | null;
@@ -502,6 +520,7 @@ export interface components {
             startsAt: string;
             /** Format: date-time */
             endsAt: string;
+            timeZone: string;
             /** @enum {string} */
             status: "DRAFT" | "IN_REVIEW" | "AWAITING_APPROVAL" | "APPROVED" | "REJECTED";
             rejectionReason: string | null;
@@ -526,12 +545,19 @@ export interface components {
             items: components["schemas"]["ScheduleViewDto"][];
             meta: components["schemas"]["PaginationMetaDto"];
         };
+        UnavailableDatesDto: {
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string;
+        };
         UpdateScheduleDto: {
             label?: string | null;
             /** Format: date-time */
             startsAt?: string;
             /** Format: date-time */
             endsAt?: string;
+            timeZone?: string;
         };
         RejectScheduleDto: {
             rejectionReason: string;
@@ -686,6 +712,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ScheduleEntity"];
+                };
+            };
+        };
+    };
+    SchedulesController_findUnavailableDates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnavailableDatesDto"][];
                 };
             };
         };

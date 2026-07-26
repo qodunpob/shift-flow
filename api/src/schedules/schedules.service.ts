@@ -39,14 +39,13 @@ export class SchedulesService {
     dto: CreateScheduleDto,
     user: AuthenticatedUser,
   ): Promise<ScheduleEntity> {
-    const { timeZone, ...rest } = dto;
-    const startsAt = startOfDayWithTz(dto.startsAt, timeZone);
-    const endsAt = endOfDayWithTz(dto.endsAt, timeZone);
+    const startsAt = startOfDayWithTz(dto.startsAt, dto.timeZone);
+    const endsAt = endOfDayWithTz(dto.endsAt, dto.timeZone);
 
     await this.assertNoOverlap(startsAt, endsAt);
 
     const schedule = this.schedules.create({
-      ...rest,
+      ...dto,
       startsAt,
       endsAt,
       createdBy: user.id,
@@ -101,14 +100,22 @@ export class SchedulesService {
       throw new ForbiddenException('You can only modify your own schedules.');
     }
 
-    // dto.timeZone is guaranteed defined here whenever dto.startsAt/endsAt is,
-    // enforced by RequireTimeZone on UpdateScheduleDto.
-    const { timeZone, ...rest } = dto;
+    // timeZone only takes effect alongside a date change — it exists to
+    // interpret startsAt/endsAt into UTC day-boundaries, so persisting a new
+    // timeZone with no accompanying date change would leave the persisted
+    // startsAt/endsAt inconsistent with the persisted timeZone that claims
+    // to describe them.
+    const { timeZone: dtoTimeZone, ...rest } = dto;
+    const datesChanging =
+      dto.startsAt !== undefined || dto.endsAt !== undefined;
+    const timeZone = datesChanging
+      ? (dtoTimeZone ?? schedule.timeZone)
+      : schedule.timeZone;
     const startsAt = dto.startsAt
-      ? startOfDayWithTz(dto.startsAt, timeZone!)
+      ? startOfDayWithTz(dto.startsAt, timeZone)
       : schedule.startsAt;
     const endsAt = dto.endsAt
-      ? endOfDayWithTz(dto.endsAt, timeZone!)
+      ? endOfDayWithTz(dto.endsAt, timeZone)
       : schedule.endsAt;
 
     await this.assertNoOverlap(startsAt, endsAt, id);
@@ -118,6 +125,7 @@ export class SchedulesService {
       ...rest,
       startsAt,
       endsAt,
+      timeZone,
       updatedBy: user.id,
     });
 

@@ -142,7 +142,7 @@ describe('schedules/SchedulesService', () => {
       label: 'Week 1',
       startsAt: new Date('2026-01-01T10:00:00.000Z'),
       endsAt: new Date('2026-01-07T10:00:00.000Z'),
-      timeZone: 'UTC',
+      timeZone: 'Asia/Tokyo',
     };
 
     it('should create the schedule when it does not overlap an existing one', async () => {
@@ -155,6 +155,12 @@ describe('schedules/SchedulesService', () => {
         createdBy: manager.id,
         updatedBy: manager.id,
       });
+    });
+
+    it('should persist the given time zone', async () => {
+      const result = await service.create(dto, manager);
+
+      expect(result).toMatchObject({ timeZone: dto.timeZone });
     });
 
     it('should treat schedules as whole days, ignoring the time of day when checking for overlaps', async () => {
@@ -209,6 +215,7 @@ describe('schedules/SchedulesService', () => {
       status: ScheduleStatus.DRAFT,
       startsAt: new Date('2026-01-01T00:00:00.000Z'),
       endsAt: new Date('2026-01-07T23:59:59.999Z'),
+      timeZone: 'Asia/Tokyo',
     } as ScheduleEntity;
 
     it('should not update a schedule that is not editable', async () => {
@@ -264,6 +271,68 @@ describe('schedules/SchedulesService', () => {
         'schedule.endsAt >= :startsAt',
         { startsAt: existing.startsAt },
       );
+    });
+
+    it("should fall back to the schedule's own time zone when updating dates without one", async () => {
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
+
+      const newStartsAt = new Date('2026-01-02T00:00:00.000Z');
+      const result = await service.update(
+        existing.id,
+        { startsAt: newStartsAt },
+        manager,
+      );
+
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'schedule.endsAt >= :startsAt',
+        { startsAt: startOfDayWithTz(newStartsAt, existing.timeZone) },
+      );
+      expect(result).toMatchObject({ timeZone: existing.timeZone });
+    });
+
+    it('should update the time zone when a new one is given', async () => {
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
+
+      const newStartsAt = new Date('2026-01-02T00:00:00.000Z');
+      const result = await service.update(
+        existing.id,
+        { startsAt: newStartsAt, timeZone: 'America/New_York' },
+        manager,
+      );
+
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'schedule.endsAt >= :startsAt',
+        { startsAt: startOfDayWithTz(newStartsAt, 'America/New_York') },
+      );
+      expect(result).toMatchObject({ timeZone: 'America/New_York' });
+    });
+
+    it('should leave the time zone unchanged when neither dates nor time zone are updated', async () => {
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
+
+      const result = await service.update(
+        existing.id,
+        { label: 'Renamed' },
+        manager,
+      );
+
+      expect(result).toMatchObject({ timeZone: existing.timeZone });
+    });
+
+    it('should ignore a supplied time zone when no dates are being updated', async () => {
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
+
+      const result = await service.update(
+        existing.id,
+        { timeZone: 'America/New_York' },
+        manager,
+      );
+
+      expect(result).toMatchObject({
+        timeZone: existing.timeZone,
+        startsAt: existing.startsAt,
+        endsAt: existing.endsAt,
+      });
     });
 
     it('should not update a schedule so that it overlaps another one', async () => {

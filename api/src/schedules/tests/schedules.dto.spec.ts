@@ -70,24 +70,24 @@ describe('schedules/schedules.dto', () => {
       expect(errors).toHaveLength(0);
     });
 
-    it('should fail when startsAt is provided without timeZone', async () => {
+    it('should pass when startsAt is provided without timeZone', async () => {
       const dto = plainToInstance(UpdateScheduleDto, {
         startsAt: '2026-01-02T00:00:00.000Z',
       });
 
       const errors = await validate(dto);
 
-      expect(errors.map((e) => e.property)).toContain('startsAt');
+      expect(errors).toHaveLength(0);
     });
 
-    it('should fail when endsAt is provided without timeZone', async () => {
+    it('should pass when endsAt is provided without timeZone', async () => {
       const dto = plainToInstance(UpdateScheduleDto, {
         endsAt: '2026-01-10T00:00:00.000Z',
       });
 
       const errors = await validate(dto);
 
-      expect(errors.map((e) => e.property)).toContain('endsAt');
+      expect(errors).toHaveLength(0);
     });
 
     it('should pass when startsAt is provided together with timeZone', async () => {
