@@ -175,6 +175,15 @@ describe('assignment-proposals/AssignmentProposalsService', () => {
         updatedBy: employee.id,
       });
     });
+
+    it('should create the proposal with no message when none is given', async () => {
+      const result = await service.create(shiftId, {}, employee);
+
+      expect(result).toMatchObject({
+        message: null,
+        employeeId: employee.id,
+      });
+    });
   });
 
   describe('update', () => {

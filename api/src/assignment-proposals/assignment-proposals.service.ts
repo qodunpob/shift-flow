@@ -57,7 +57,7 @@ export class AssignmentProposalsService {
     }
 
     const proposal = this.assignmentProposals.create({
-      message,
+      message: message ?? null,
       shift,
       employeeId: user.id,
       createdBy: user.id,

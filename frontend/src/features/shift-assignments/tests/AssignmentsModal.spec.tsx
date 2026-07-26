@@ -90,6 +90,21 @@ const managerOtherViewer: CurrentUser = {
   roles: ['MANAGER'],
 };
 
+// Not the employee-1 assignment nor the employee-2 proposal in baseShift -
+// an employee with nothing to do with this shift yet.
+const uninvolvedEmployeeViewer: CurrentUser = {
+  ...employeeViewer,
+  id: 'employee-3',
+  roles: ['EMPLOYEE'],
+};
+
+// Matches baseShift's existing proposal's employeeId.
+const proposingEmployeeViewer: CurrentUser = {
+  ...employeeViewer,
+  id: 'employee-2',
+  roles: ['EMPLOYEE'],
+};
+
 const renderModal = (
   props: Partial<{
     shift: Shift;
@@ -293,6 +308,87 @@ describe('features/shift-assignments/AssignmentsModal', () => {
       renderModal({}, managerAuthorViewer);
 
       fireEvent.click(screen.getByLabelText('ShiftAssignments.remove'));
+
+      await waitFor(() =>
+        expect(toast.error).toHaveBeenCalledWith('commonErrors.generic'),
+      );
+    });
+  });
+
+  describe('propose button visibility', () => {
+    it('should show the propose button for an employee not yet involved with the shift', () => {
+      renderModal({}, uninvolvedEmployeeViewer);
+
+      expect(screen.getByText('ShiftAssignments.propose')).toBeInTheDocument();
+    });
+
+    it('should not show the propose button for a manager', () => {
+      renderModal({}, managerAuthorViewer);
+
+      expect(
+        screen.queryByText('ShiftAssignments.propose'),
+      ).not.toBeInTheDocument();
+    });
+
+    it('should not show the propose button for an employee already assigned to the shift', () => {
+      renderModal({}, employeeViewer);
+
+      expect(
+        screen.queryByText('ShiftAssignments.propose'),
+      ).not.toBeInTheDocument();
+    });
+
+    it('should not show the propose button for an employee who already has a proposal', () => {
+      renderModal({}, proposingEmployeeViewer);
+
+      expect(
+        screen.queryByText('ShiftAssignments.propose'),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  describe('propose button behavior', () => {
+    it('should send a proposal request, notify the user, and refresh the page', async () => {
+      mockedApiFetchFromClient.mockResolvedValue({});
+      renderModal({}, uninvolvedEmployeeViewer);
+
+      fireEvent.click(screen.getByText('ShiftAssignments.propose'));
+
+      await waitFor(() =>
+        expect(mockedApiFetchFromClient).toHaveBeenCalledWith(
+          '/shifts/shift-1/assignment-proposals',
+          { method: 'POST', body: JSON.stringify({}) },
+        ),
+      );
+      await waitFor(() =>
+        expect(toast.success).toHaveBeenCalledWith(
+          'ShiftAssignments.proposeSuccess',
+        ),
+      );
+      expect(mockRouterRefresh).toHaveBeenCalled();
+    });
+
+    it('should show a distinct error when proposing conflicts with the current state', async () => {
+      mockedApiFetchFromClient.mockRejectedValue(
+        new ApiError(
+          'Request to /shifts/shift-1/assignment-proposals failed with status 409',
+          409,
+        ),
+      );
+      renderModal({}, uninvolvedEmployeeViewer);
+
+      fireEvent.click(screen.getByText('ShiftAssignments.propose'));
+
+      await waitFor(() =>
+        expect(toast.error).toHaveBeenCalledWith('commonErrors.conflict'),
+      );
+    });
+
+    it('should show a generic error when proposing fails for another reason', async () => {
+      mockedApiFetchFromClient.mockRejectedValue(new Error('network down'));
+      renderModal({}, uninvolvedEmployeeViewer);
+
+      fireEvent.click(screen.getByText('ShiftAssignments.propose'));
 
       await waitFor(() =>
         expect(toast.error).toHaveBeenCalledWith('commonErrors.generic'),
