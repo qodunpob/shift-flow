@@ -10,7 +10,7 @@ import {
 import { useLocale } from 'next-intl';
 import { usePopoverVisibility } from '@/hooks/usePopoverVisibility';
 import { MaskedTextField } from '@/components/masked-text-field/MaskedTextField';
-import { DayPicker } from '@daypicker/react';
+import { DayPicker, Matcher } from '@daypicker/react';
 import '@daypicker/react/style.css';
 import { useDatePickerValue } from '@/components/date-picker/useDatePickerValue';
 
@@ -23,6 +23,7 @@ export interface DatePickerProps extends Omit<
   helperText?: React.ReactNode;
   value: Date | null;
   onChange: (value: Date | null) => void;
+  disabledDates?: Matcher | Matcher[];
 }
 
 export const DatePicker: React.FC<DatePickerProps> = ({
@@ -33,6 +34,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   value: givenValue,
   fullWidth,
   onChange,
+  disabledDates,
   ...restProps
 }) => {
   const locale = useLocale();
@@ -93,6 +95,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
             mode="single"
             selected={value ?? undefined}
             onSelect={handleCalendarSelect}
+            disabled={disabledDates}
           />
         </Paper>
       </Popover>

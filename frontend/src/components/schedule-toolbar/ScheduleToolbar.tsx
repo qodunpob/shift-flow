@@ -126,7 +126,6 @@ export const ScheduleToolbar: React.FC = () => {
           open={openShiftFormModal}
           onClose={() => setOpenShiftFormModal(false)}
           scheduleId={schedule.id}
-          timeZone={schedule.timeZone}
         />
       )}
 
