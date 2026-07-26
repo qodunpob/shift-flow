@@ -1,6 +1,6 @@
 'use client';
 import React, { useMemo } from 'react';
-import { Box, lighten, styled } from '@mui/material';
+import { Box, lighten, styled, Typography } from '@mui/material';
 import { FlexBox } from '@/components/box/box';
 import { DateTime } from 'luxon';
 import { Schedule, Shift } from '@/lib/api/types';
@@ -19,7 +19,6 @@ const hourCellClassName = 'time-sheet-hour-cell';
 
 export const TimeSheet: React.FC<TimeSheetProps> = ({ schedule, shifts }) => {
   const locale = useLocale();
-  console.log('shifts', shifts);
 
   const scheduleStartsAt = useMemo(
     () => DateTime.fromISO(schedule.startsAt),
@@ -63,8 +62,9 @@ export const TimeSheet: React.FC<TimeSheetProps> = ({ schedule, shifts }) => {
   }, [locale, schedule.endsAt, scheduleStartsAt]);
 
   const renderedShifts = useMemo(
-    () => shifts.map((shift) => renderShift(shift, scheduleStartsAt)),
-    [shifts, scheduleStartsAt],
+    () =>
+      shifts.map((shift) => renderShift({ shift, scheduleStartsAt, locale })),
+    [shifts, scheduleStartsAt, locale],
   );
 
   return (
@@ -78,7 +78,13 @@ export const TimeSheet: React.FC<TimeSheetProps> = ({ schedule, shifts }) => {
   );
 };
 
-const renderShift = (shift: Shift, scheduleStartsAt: DateTime) => {
+interface RenderShiftArgs {
+  shift: Shift;
+  scheduleStartsAt: DateTime;
+  locale: string;
+}
+
+const renderShift = ({ shift, scheduleStartsAt, locale }: RenderShiftArgs) => {
   const startsAt = DateTime.fromISO(shift.startsAt);
   const endsAt = DateTime.fromISO(shift.endsAt);
 
@@ -106,9 +112,18 @@ const renderShift = (shift: Shift, scheduleStartsAt: DateTime) => {
   for (let i = 0; i < sectors.length; i++) {
     sectors[i].left = (diffFromBeginning + i) * columnWidth;
   }
-
+  const timeLabelFormat =
+    days > 1
+      ? dateFormat(locale).shiftBoundaryDateTime
+      : dateFormat(locale).shiftBoundaryTime;
   return sectors.map((sector, index) => (
-    <ShiftBox key={`shift-${shift.id}-${index}`} sx={sector} />
+    <ShiftBox key={`shift-${shift.id}-${index}`} sx={sector}>
+      <Typography variant="body2">
+        {startsAt.toFormat(timeLabelFormat)}
+        {' – '}
+        {endsAt.toFormat(timeLabelFormat)}
+      </Typography>
+    </ShiftBox>
   ));
 };
 
@@ -159,6 +174,7 @@ const DayLabelCell = styled(FlexBox)(({ theme }) => ({
 }));
 
 const ShiftBox = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(1),
   position: 'absolute',
   width: columnWidth,
   backgroundColor: theme.palette.primary.main,
