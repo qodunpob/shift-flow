@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
+  AssignmentEntity,
   AssignmentStatus,
   ScheduleEntity,
   ShiftEntity,
@@ -112,21 +113,32 @@ export class SchedulesTransitionService {
    * filled by any assignment that has not been declined (matching the board's
    * `filledCount`), so a shift is unfilled when its non-declined assignment
    * count is below its `requiredHeadcount`.
+   *
+   * Expressed as a correlated subquery rather than a LEFT JOIN + GROUP BY +
+   * HAVING: getExists() wraps the query in its own outer EXISTS(), and drops
+   * the GROUP BY when it does, which left `shift.requiredHeadcount` in the
+   * HAVING clause with nothing grouping it - Postgres rejects that
+   * (`must appear in the GROUP BY clause or be used in an aggregate
+   * function`). A correlated subquery has no GROUP BY to lose.
    */
   private async assertNoUnfilledShifts(
     schedule: ScheduleEntity,
   ): Promise<void> {
     const hasUnfilledShift = await this.shifts
       .createQueryBuilder('shift')
-      .leftJoin(
-        'shift.assignments',
-        'assignment',
-        'assignment.status != :declined',
+      .where('shift.scheduleId = :scheduleId', { scheduleId: schedule.id })
+      .andWhere(
+        (qb) =>
+          `${qb
+            .subQuery()
+            .select('COUNT(*)')
+            .from(AssignmentEntity, 'assignment')
+            .where('assignment.shiftId = shift.id')
+            .andWhere('assignment.status != :declined')
+            .andWhere('assignment.deletedAt IS NULL')
+            .getQuery()} < shift.requiredHeadcount`,
         { declined: AssignmentStatus.DECLINED },
       )
-      .where('shift.scheduleId = :scheduleId', { scheduleId: schedule.id })
-      .groupBy('shift.id')
-      .having('COUNT(assignment.id) < shift.requiredHeadcount')
       .getExists();
 
     if (hasUnfilledShift) {

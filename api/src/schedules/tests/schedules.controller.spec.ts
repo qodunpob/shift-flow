@@ -1,13 +1,22 @@
 import 'reflect-metadata';
-import { ExecutionContext, ForbiddenException } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
+import {
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  INestApplication,
+  ValidationPipe,
+} from '@nestjs/common';
+import { APP_GUARD, Reflector } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
+import request from 'supertest';
+import type { App } from 'supertest/types';
 import { SchedulesController } from '../schedules.controller';
 import { SchedulesService } from '../schedules.service';
 import { SchedulesTransitionService } from '../schedules-transition.service';
 import { ScheduleView } from '../schedule-stats.service';
 import { RolesGuard } from '@/auth/roles.guard';
-import { AuthenticatedUser } from '@/auth/authenticated-request';
+import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
+import { AuthenticatedRequest, AuthenticatedUser } from '@/auth/authenticated-request';
 import { ScheduleEntity, UserRole } from '@/entities';
 import {
   CreateScheduleDto,
@@ -236,6 +245,7 @@ describe('schedules/SchedulesController', () => {
       const dto: CreateScheduleDto = {
         startsAt: new Date('2026-01-01'),
         endsAt: new Date('2026-01-07'),
+        timeZone: 'Asia/Tokyo',
       };
 
       await expect(controller.create(dto, user)).resolves.toStrictEqual(
@@ -304,6 +314,179 @@ describe('schedules/SchedulesController', () => {
         controller.reject(scheduleId, dto, user),
       ).resolves.toStrictEqual(schedule);
       expect(transitions.reject).toHaveBeenCalledWith(scheduleId, dto, user);
+    });
+  });
+
+  /**
+   * These tests exercise the real HTTP router (not direct method calls like
+   * the suites above), because a route-ordering mistake between `:id` and a
+   * literal path like `unavailable-dates` can only be observed by actually
+   * matching a request against the registered routes in order.
+   */
+  describe('Route resolution (HTTP)', () => {
+    let app: INestApplication<App>;
+    let schedules: jest.Mocked<
+      Pick<SchedulesService, 'findOne' | 'findUnavailableDates'>
+    >;
+
+    const manager: AuthenticatedUser = {
+      id: 'u-manager',
+      roles: [UserRole.MANAGER],
+    };
+    const employee: AuthenticatedUser = {
+      id: 'u-employee',
+      roles: [UserRole.EMPLOYEE],
+    };
+    const validScheduleId = '11111111-1111-4111-8111-111111111111';
+
+    // Stands in for real JWT verification: attaches whichever user the test
+    // wants, so the real RolesGuard below can be exercised unmodified.
+    let currentTestUser: AuthenticatedUser;
+    class FakeJwtAuthGuard implements CanActivate {
+      canActivate(context: ExecutionContext): boolean {
+        const req = context.switchToHttp().getRequest<AuthenticatedRequest>();
+        req.user = currentTestUser;
+        return true;
+      }
+    }
+
+    beforeEach(async () => {
+      schedules = {
+        findOne: jest.fn().mockResolvedValue({ id: validScheduleId }),
+        findUnavailableDates: jest.fn().mockResolvedValue([]),
+      };
+
+      const module: TestingModule = await Test.createTestingModule({
+        controllers: [SchedulesController],
+        providers: [
+          { provide: SchedulesService, useValue: schedules },
+          { provide: SchedulesTransitionService, useValue: {} },
+          { provide: APP_GUARD, useClass: FakeJwtAuthGuard },
+          { provide: APP_GUARD, useClass: RolesGuard },
+          Reflector,
+        ],
+      }).compile();
+
+      app = module.createNestApplication();
+      await app.init();
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
+
+    it('should route GET /schedules/unavailable-dates to findUnavailableDates instead of matching it as an :id', async () => {
+      currentTestUser = manager;
+
+      await request(app.getHttpServer())
+        .get('/schedules/unavailable-dates')
+        .expect(200, []);
+
+      expect(schedules.findUnavailableDates).toHaveBeenCalled();
+      expect(schedules.findOne).not.toHaveBeenCalled();
+    });
+
+    it('should reject a non-manager requesting GET /schedules/unavailable-dates with 403, not a UUID validation error', async () => {
+      currentTestUser = employee;
+
+      const response = await request(app.getHttpServer())
+        .get('/schedules/unavailable-dates')
+        .expect(403);
+
+      expect(response.body.message).not.toMatch(/uuid/i);
+    });
+
+    it('should still route GET /schedules/:id to findOne for an actual schedule id', async () => {
+      currentTestUser = manager;
+
+      await request(app.getHttpServer())
+        .get(`/schedules/${validScheduleId}`)
+        .expect(200, { id: validScheduleId });
+
+      expect(schedules.findOne).toHaveBeenCalledWith(validScheduleId, manager);
+    });
+  });
+
+  /**
+   * These tests exercise the real ValidationPipe (the same configuration
+   * registered globally in main.ts) against a real HTTP request, to prove
+   * that validation rules are enforced at the API boundary, not just at the
+   * unit level tested in schedules.dto.spec.ts.
+   */
+  describe('Validation (HTTP)', () => {
+    let app: INestApplication<App>;
+    let schedules: jest.Mocked<Pick<SchedulesService, 'create'>>;
+
+    const manager: AuthenticatedUser = {
+      id: 'u-manager',
+      roles: [UserRole.MANAGER],
+    };
+
+    class FakeJwtAuthGuard implements CanActivate {
+      canActivate(context: ExecutionContext): boolean {
+        const req = context.switchToHttp().getRequest<AuthenticatedRequest>();
+        req.user = manager;
+        return true;
+      }
+    }
+
+    beforeEach(async () => {
+      schedules = {
+        create: jest.fn().mockResolvedValue({ id: 'schedule-1' }),
+      };
+
+      const module: TestingModule = await Test.createTestingModule({
+        controllers: [SchedulesController],
+        providers: [
+          { provide: SchedulesService, useValue: schedules },
+          { provide: SchedulesTransitionService, useValue: {} },
+          { provide: APP_GUARD, useClass: FakeJwtAuthGuard },
+          { provide: APP_GUARD, useClass: RolesGuard },
+          Reflector,
+        ],
+      }).compile();
+
+      app = module.createNestApplication();
+      app.useGlobalPipes(
+        new ValidationPipe({
+          transform: true,
+          whitelist: true,
+          forbidNonWhitelisted: true,
+        }),
+      );
+      await app.init();
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
+
+    it('should reject POST /schedules with dates but no timeZone', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/schedules')
+        .send({
+          startsAt: '2026-01-01T00:00:00.000Z',
+          endsAt: '2026-01-07T00:00:00.000Z',
+        })
+        .expect(400);
+
+      expect(response.body.message).toEqual(
+        expect.arrayContaining([expect.stringContaining('timeZone')]),
+      );
+      expect(schedules.create).not.toHaveBeenCalled();
+    });
+
+    it('should accept POST /schedules with dates and a valid timeZone', async () => {
+      await request(app.getHttpServer())
+        .post('/schedules')
+        .send({
+          startsAt: '2026-01-01T00:00:00.000Z',
+          endsAt: '2026-01-07T00:00:00.000Z',
+          timeZone: 'Asia/Tokyo',
+        })
+        .expect(201);
+
+      expect(schedules.create).toHaveBeenCalledTimes(1);
     });
   });
 });

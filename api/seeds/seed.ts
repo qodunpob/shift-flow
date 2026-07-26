@@ -116,8 +116,9 @@ async function seed() {
     const draft = await schedules.save(
       schedules.create({
         label: 'Week 30 — Draft',
-        startsAt: at('2026-07-20T00:00:00.000Z'),
-        endsAt: at('2026-07-26T23:59:59.000Z'),
+        startsAt: at('2026-07-20T00:00:00.000+09:00'),
+        endsAt: at('2026-07-26T23:59:59.999+09:00'),
+        timeZone: 'Asia/Tokyo',
         status: ScheduleStatus.DRAFT,
         createdBy: mia,
         updatedBy: mia,
@@ -126,8 +127,9 @@ async function seed() {
     const inReview = await schedules.save(
       schedules.create({
         label: 'Week 31 — In Review',
-        startsAt: at('2026-07-27T00:00:00.000Z'),
-        endsAt: at('2026-08-02T23:59:59.000Z'),
+        startsAt: at('2026-07-27T00:00:00.000+09:00'),
+        endsAt: at('2026-08-02T23:59:59.999+09:00'),
+        timeZone: 'Asia/Tokyo',
         status: ScheduleStatus.IN_REVIEW,
         createdBy: mia,
         updatedBy: mia,
@@ -136,8 +138,9 @@ async function seed() {
     const awaiting = await schedules.save(
       schedules.create({
         label: 'Week 32 — Awaiting Approval',
-        startsAt: at('2026-08-03T00:00:00.000Z'),
-        endsAt: at('2026-08-09T23:59:59.000Z'),
+        startsAt: at('2026-08-03T00:00:00.000+09:00'),
+        endsAt: at('2026-08-09T23:59:59.999+09:00'),
+        timeZone: 'Asia/Tokyo',
         status: ScheduleStatus.AWAITING_APPROVAL,
         createdBy: max,
         updatedBy: max,
@@ -146,8 +149,9 @@ async function seed() {
     const approved = await schedules.save(
       schedules.create({
         label: 'Week 33 — Approved',
-        startsAt: at('2026-08-10T00:00:00.000Z'),
-        endsAt: at('2026-08-16T23:59:59.000Z'),
+        startsAt: at('2026-08-10T00:00:00.000+09:00'),
+        endsAt: at('2026-08-16T23:59:59.999+09:00'),
+        timeZone: 'Asia/Tokyo',
         status: ScheduleStatus.APPROVED,
         createdBy: max,
         updatedBy: max,
@@ -156,8 +160,9 @@ async function seed() {
     const rejected = await schedules.save(
       schedules.create({
         label: 'Week 29 — Rejected',
-        startsAt: at('2026-07-13T00:00:00.000Z'),
-        endsAt: at('2026-07-19T23:59:59.000Z'),
+        startsAt: at('2026-07-13T00:00:00.000+09:00'),
+        endsAt: at('2026-07-19T23:59:59.999+09:00'),
+        timeZone: 'Asia/Tokyo',
         status: ScheduleStatus.REJECTED,
         rejectionReason: 'Not enough weekend coverage — please revise.',
         createdBy: mia,
@@ -187,43 +192,43 @@ async function seed() {
     const draftShift = await makeShift(
       draft.id,
       mia,
-      '2026-07-21T09:00:00.000Z',
-      '2026-07-21T17:00:00.000Z',
+      '2026-07-21T09:00:00.000+09:00',
+      '2026-07-21T17:00:00.000+09:00',
       2,
     );
     const reviewMorning = await makeShift(
       inReview.id,
       mia,
-      '2026-07-28T06:00:00.000Z',
-      '2026-07-28T14:00:00.000Z',
+      '2026-07-28T06:00:00.000+09:00',
+      '2026-07-28T14:00:00.000+09:00',
       2,
     );
     const reviewEvening = await makeShift(
       inReview.id,
       mia,
-      '2026-07-28T14:00:00.000Z',
-      '2026-07-28T22:00:00.000Z',
+      '2026-07-28T14:00:00.000+09:00',
+      '2026-07-28T22:00:00.000+09:00',
       3,
     );
     const awaitingShift = await makeShift(
       awaiting.id,
       max,
-      '2026-08-04T09:00:00.000Z',
-      '2026-08-04T17:00:00.000Z',
+      '2026-08-04T09:00:00.000+09:00',
+      '2026-08-04T17:00:00.000+09:00',
       3,
     );
     const approvedShift = await makeShift(
       approved.id,
       max,
-      '2026-08-11T09:00:00.000Z',
-      '2026-08-11T17:00:00.000Z',
+      '2026-08-11T09:00:00.000+09:00',
+      '2026-08-11T17:00:00.000+09:00',
       2,
     );
     const rejectedShift = await makeShift(
       rejected.id,
       mia,
-      '2026-07-18T09:00:00.000Z',
-      '2026-07-18T17:00:00.000Z',
+      '2026-07-18T09:00:00.000+09:00',
+      '2026-07-18T17:00:00.000+09:00',
       2,
     );
 

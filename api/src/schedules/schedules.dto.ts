@@ -9,6 +9,8 @@ import {
 import { Transform, Type } from 'class-transformer';
 import { ScheduleStatus } from '@/entities';
 import { PaginationQueryDto } from '@/common/pagination/pagination-query.dto';
+import { IsValidTimeZone } from '@/common/validators/is-valid-timezone.validator';
+import { IsBeforeEndsAt } from '@/common/validators/is-before-ends-at.validator';
 
 export class CreateScheduleDto {
   @IsOptional()
@@ -17,11 +19,17 @@ export class CreateScheduleDto {
 
   @Type(() => Date)
   @IsDate()
+  @IsBeforeEndsAt()
   startsAt: Date;
 
   @Type(() => Date)
   @IsDate()
   endsAt: Date;
+
+  @IsString()
+  @IsNotEmpty()
+  @IsValidTimeZone()
+  timeZone: string;
 }
 
 export class FindSchedulesQueryDto extends PaginationQueryDto {
@@ -59,4 +67,8 @@ export class UpdateScheduleDto {
   @IsOptional()
   @IsDate()
   endsAt?: Date;
+
+  @IsOptional()
+  @IsValidTimeZone()
+  timeZone?: string;
 }

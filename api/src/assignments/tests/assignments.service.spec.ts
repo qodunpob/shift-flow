@@ -28,6 +28,7 @@ describe('assignments/AssignmentsService', () => {
     find: jest.Mock;
     findOne: jest.Mock;
     findOneBy: jest.Mock;
+    count: jest.Mock;
   };
   let users: { findOneBy: jest.Mock };
   let entityManager: {
@@ -57,6 +58,7 @@ describe('assignments/AssignmentsService', () => {
   ): ShiftEntity =>
     ({
       id: shiftId,
+      requiredHeadcount: 2,
       schedule: {
         id: 'schedule-1',
         createdBy: manager.id,
@@ -91,8 +93,14 @@ describe('assignments/AssignmentsService', () => {
       find: jest.fn().mockResolvedValue([]),
       findOne: jest.fn(),
       findOneBy: jest.fn().mockResolvedValue(null),
+      count: jest.fn().mockResolvedValue(0),
     };
-    users = { findOneBy: jest.fn().mockResolvedValue({ id: employee.id }) };
+    users = {
+      findOneBy: jest.fn().mockResolvedValue({
+        id: employee.id,
+        roles: [UserRole.EMPLOYEE],
+      }),
+    };
     entityManager = {
       findOneBy: jest.fn().mockResolvedValue(null),
       // eslint-disable-next-line @typescript-eslint/no-unsafe-return
@@ -166,6 +174,18 @@ describe('assignments/AssignmentsService', () => {
       expect(dataSource.transaction).not.toHaveBeenCalled();
     });
 
+    it('should reject an employeeId that does not have the EMPLOYEE role', async () => {
+      users.findOneBy.mockResolvedValue({
+        id: 'manager-2',
+        roles: [UserRole.MANAGER],
+      });
+
+      await expect(
+        service.create(shiftId, dto, manager),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(dataSource.transaction).not.toHaveBeenCalled();
+    });
+
     it('should reject assigning an employee that is already assigned', async () => {
       assignments.findOneBy.mockResolvedValue({ id: 'assignment-1' });
 
@@ -173,6 +193,27 @@ describe('assignments/AssignmentsService', () => {
         service.create(shiftId, dto, manager),
       ).rejects.toBeInstanceOf(ConflictException);
       expect(dataSource.transaction).not.toHaveBeenCalled();
+    });
+
+    it('should reject assigning once the shift already has its required headcount filled', async () => {
+      // editableShift() defaults to requiredHeadcount: 2.
+      assignments.count.mockResolvedValue(2);
+
+      await expect(
+        service.create(shiftId, dto, manager),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(assignments.count).toHaveBeenCalledWith({
+        where: { shiftId },
+      });
+      expect(dataSource.transaction).not.toHaveBeenCalled();
+    });
+
+    it('should allow assigning when the filled count is below the required headcount', async () => {
+      assignments.count.mockResolvedValue(1);
+
+      await expect(
+        service.create(shiftId, dto, manager),
+      ).resolves.toMatchObject({ status: AssignmentStatus.PENDING });
     });
 
     it('should create a PENDING assignment when the employee has no proposal', async () => {

@@ -47,7 +47,7 @@ describe('users/UsersHelpersService', () => {
     it('looks up the user by email and selects the password', async () => {
       queryBuilder.getOne.mockResolvedValueOnce(storedUser);
 
-      const result = await service.findOne('manager@example.com');
+      const result = await service.findOneWithPassword('manager@example.com');
 
       expect(queryBuilder.addSelect).toHaveBeenCalledWith('user.password');
       expect(queryBuilder.where).toHaveBeenCalledWith(
@@ -60,7 +60,7 @@ describe('users/UsersHelpersService', () => {
     it('returns null when no user matches', async () => {
       queryBuilder.getOne.mockResolvedValueOnce(null);
 
-      const result = await service.findOne('nobody@example.com');
+      const result = await service.findOneWithPassword('nobody@example.com');
 
       expect(result).toBeNull();
     });

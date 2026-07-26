@@ -10,6 +10,7 @@ import {
   AssignmentProposalEntity,
   AssignmentStatus,
   UserEntity,
+  UserRole,
 } from '@/entities';
 import { DataSource, Repository } from 'typeorm';
 import {
@@ -47,12 +48,24 @@ export class AssignmentsService {
     if (!employee) {
       throw new NotFoundException('Employee not found');
     }
+    if (!employee.roles.includes(UserRole.EMPLOYEE)) {
+      throw new ForbiddenException('Assignee must have the EMPLOYEE role.');
+    }
     const existingAssignment = await this.assignments.findOneBy({
       shiftId: shift.id,
       employeeId: employee.id,
     });
     if (existingAssignment) {
       throw new ConflictException('Assignment already exists');
+    }
+
+    const filledCount = await this.assignments.count({
+      where: { shiftId: shift.id },
+    });
+    if (filledCount >= shift.requiredHeadcount) {
+      throw new ConflictException(
+        'This shift already has its required headcount.',
+      );
     }
 
     return this.dataSource.transaction(async (entityManager) => {

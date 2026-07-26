@@ -36,3 +36,11 @@ export class PaginatedSchedulesDto {
   @ApiProperty({ type: PaginationMetaDto })
   meta: PaginationMetaDto;
 }
+
+export class UnavailableDatesDto {
+  @ApiProperty({ type: Date })
+  startsAt: Date;
+
+  @ApiProperty({ type: Date })
+  endsAt: Date;
+}

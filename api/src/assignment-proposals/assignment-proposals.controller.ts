@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Delete,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Post,
@@ -53,6 +55,7 @@ export class AssignmentProposalsController {
 
   @Roles([UserRole.EMPLOYEE])
   @Delete()
+  @HttpCode(HttpStatus.NO_CONTENT)
   delete(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
@@ -62,6 +65,7 @@ export class AssignmentProposalsController {
 
   @Roles([UserRole.MANAGER])
   @Post('accept')
+  @HttpCode(HttpStatus.NO_CONTENT)
   accept(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
@@ -71,6 +75,7 @@ export class AssignmentProposalsController {
 
   @Roles([UserRole.MANAGER])
   @Post('decline')
+  @HttpCode(HttpStatus.NO_CONTENT)
   decline(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,

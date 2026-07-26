@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { UserEntity } from '@/entities';
+import { UserEntity, UserRole } from '@/entities';
+import { FindUsersQueryDto } from '@/users/users.dto';
 
 @Injectable()
 export class UsersService {
@@ -10,7 +11,28 @@ export class UsersService {
     private readonly users: Repository<UserEntity>,
   ) {}
 
-  findAll() {
-    return this.users.find();
+  findAll(filter: FindUsersQueryDto = {}) {
+    if (!filter.availableFor) {
+      return this.users.find();
+    }
+
+    // Available means: role EMPLOYEE, and no assignment record (of any
+    // status) already exists for this shift — matching the conflict check
+    // AssignmentsService.create() uses to reject double-booking.
+    return this.users
+      .createQueryBuilder('user')
+      .where(':role = ANY(user.roles)', { role: UserRole.EMPLOYEE })
+      .leftJoin(
+        'user.assignments',
+        'assignment',
+        'assignment.shiftId = :shiftId',
+        { shiftId: filter.availableFor },
+      )
+      .andWhere('assignment.id IS NULL')
+      .getMany();
+  }
+
+  findOne(id: string) {
+    return this.users.findOneBy({ id });
   }
 }

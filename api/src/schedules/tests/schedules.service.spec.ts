@@ -6,11 +6,16 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
-import { endOfDay, startOfDay } from 'date-fns';
 import { SchedulesService } from '../schedules.service';
-import { ScheduleEntity, ScheduleStatus, UserRole } from '@/entities';
+import {
+  ScheduleEntity,
+  ScheduleStatus,
+  ShiftEntity,
+  UserRole,
+} from '@/entities';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
 import { CreateScheduleDto } from '@/schedules/schedules.dto';
+import { endOfDayWithTz, startOfDayWithTz } from '@/utils/timezone';
 import { SchedulesHelpersService } from '@/schedules/schedules-helpers.service';
 import {
   ScheduleStats,
@@ -32,6 +37,14 @@ describe('schedules/SchedulesService', () => {
     create: jest.Mock;
     save: jest.Mock;
     findOneBy: jest.Mock;
+    createQueryBuilder: jest.Mock;
+  };
+  let shiftsQueryBuilder: {
+    where: jest.Mock;
+    andWhere: jest.Mock;
+    getExists: jest.Mock;
+  };
+  let shiftsRepository: {
     createQueryBuilder: jest.Mock;
   };
   let entityManager: { save: jest.Mock; softDelete: jest.Mock };
@@ -75,6 +88,14 @@ describe('schedules/SchedulesService', () => {
       findOneBy: jest.fn(),
       createQueryBuilder: jest.fn(() => queryBuilder),
     };
+    shiftsQueryBuilder = {
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      getExists: jest.fn().mockResolvedValue(false),
+    };
+    shiftsRepository = {
+      createQueryBuilder: jest.fn(() => shiftsQueryBuilder),
+    };
     entityManager = {
       save: jest.fn().mockResolvedValue(undefined),
       softDelete: jest.fn().mockResolvedValue(undefined),
@@ -101,6 +122,10 @@ describe('schedules/SchedulesService', () => {
       providers: [
         SchedulesService,
         { provide: getRepositoryToken(ScheduleEntity), useValue: repository },
+        {
+          provide: getRepositoryToken(ShiftEntity),
+          useValue: shiftsRepository,
+        },
         { provide: DataSource, useValue: dataSource },
         { provide: SchedulesHelpersService, useValue: helpers },
         { provide: ScheduleStatsService, useValue: stats },
@@ -117,6 +142,7 @@ describe('schedules/SchedulesService', () => {
       label: 'Week 1',
       startsAt: new Date('2026-01-01T10:00:00.000Z'),
       endsAt: new Date('2026-01-07T10:00:00.000Z'),
+      timeZone: 'Asia/Tokyo',
     };
 
     it('should create the schedule when it does not overlap an existing one', async () => {
@@ -131,6 +157,12 @@ describe('schedules/SchedulesService', () => {
       });
     });
 
+    it('should persist the given time zone', async () => {
+      const result = await service.create(dto, manager);
+
+      expect(result).toMatchObject({ timeZone: dto.timeZone });
+    });
+
     it('should treat schedules as whole days, ignoring the time of day when checking for overlaps', async () => {
       // dto carries a 10:00 time; a schedule occupies the entire calendar day,
       // so the overlap check must widen it to [start of day, end of day].
@@ -138,16 +170,31 @@ describe('schedules/SchedulesService', () => {
 
       expect(queryBuilder.where).toHaveBeenCalledWith(
         'schedule.startsAt <= :endsAt',
-        { endsAt: endOfDay(dto.endsAt) },
+        { endsAt: endOfDayWithTz(dto.endsAt, dto.timeZone) },
       );
       expect(queryBuilder.andWhere).toHaveBeenCalledWith(
         'schedule.endsAt >= :startsAt',
-        { startsAt: startOfDay(dto.startsAt) },
+        { startsAt: startOfDayWithTz(dto.startsAt, dto.timeZone) },
       );
       // A brand-new schedule has no id, so nothing is excluded from the check.
       expect(queryBuilder.andWhere).not.toHaveBeenCalledWith(
         'schedule.id != :excludeId',
         expect.anything(),
+      );
+    });
+
+    it('should compute the UTC day boundary relative to the given time zone', async () => {
+      const jstDto: CreateScheduleDto = {
+        startsAt: new Date('2026-07-25T05:02:25.714Z'),
+        endsAt: new Date('2026-07-25T05:02:25.714Z'),
+        timeZone: 'Asia/Tokyo',
+      };
+
+      await service.create(jstDto, manager);
+
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'schedule.endsAt >= :startsAt',
+        { startsAt: new Date('2026-07-24T15:00:00.000Z') },
       );
     });
 
@@ -166,8 +213,9 @@ describe('schedules/SchedulesService', () => {
       id: 'schedule-1',
       createdBy: manager.id,
       status: ScheduleStatus.DRAFT,
-      startsAt: startOfDay(new Date('2026-01-01T00:00:00.000Z')),
-      endsAt: endOfDay(new Date('2026-01-07T00:00:00.000Z')),
+      startsAt: new Date('2026-01-01T00:00:00.000Z'),
+      endsAt: new Date('2026-01-07T23:59:59.999Z'),
+      timeZone: 'Asia/Tokyo',
     } as ScheduleEntity;
 
     it('should not update a schedule that is not editable', async () => {
@@ -199,6 +247,7 @@ describe('schedules/SchedulesService', () => {
         existing.id,
         {
           startsAt: new Date('2026-01-02T00:00:00.000Z'),
+          timeZone: 'UTC',
         },
         manager,
       );
@@ -224,6 +273,68 @@ describe('schedules/SchedulesService', () => {
       );
     });
 
+    it("should fall back to the schedule's own time zone when updating dates without one", async () => {
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
+
+      const newStartsAt = new Date('2026-01-02T00:00:00.000Z');
+      const result = await service.update(
+        existing.id,
+        { startsAt: newStartsAt },
+        manager,
+      );
+
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'schedule.endsAt >= :startsAt',
+        { startsAt: startOfDayWithTz(newStartsAt, existing.timeZone) },
+      );
+      expect(result).toMatchObject({ timeZone: existing.timeZone });
+    });
+
+    it('should update the time zone when a new one is given', async () => {
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
+
+      const newStartsAt = new Date('2026-01-02T00:00:00.000Z');
+      const result = await service.update(
+        existing.id,
+        { startsAt: newStartsAt, timeZone: 'America/New_York' },
+        manager,
+      );
+
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'schedule.endsAt >= :startsAt',
+        { startsAt: startOfDayWithTz(newStartsAt, 'America/New_York') },
+      );
+      expect(result).toMatchObject({ timeZone: 'America/New_York' });
+    });
+
+    it('should leave the time zone unchanged when neither dates nor time zone are updated', async () => {
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
+
+      const result = await service.update(
+        existing.id,
+        { label: 'Renamed' },
+        manager,
+      );
+
+      expect(result).toMatchObject({ timeZone: existing.timeZone });
+    });
+
+    it('should ignore a supplied time zone when no dates are being updated', async () => {
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
+
+      const result = await service.update(
+        existing.id,
+        { timeZone: 'America/New_York' },
+        manager,
+      );
+
+      expect(result).toMatchObject({
+        timeZone: existing.timeZone,
+        startsAt: existing.startsAt,
+        endsAt: existing.endsAt,
+      });
+    });
+
     it('should not update a schedule so that it overlaps another one', async () => {
       helpers.findEditable.mockResolvedValueOnce({ ...existing });
       queryBuilder.getExists.mockResolvedValueOnce(true);
@@ -233,6 +344,7 @@ describe('schedules/SchedulesService', () => {
           existing.id,
           {
             endsAt: new Date('2026-01-20T00:00:00.000Z'),
+            timeZone: 'UTC',
           },
           manager,
         ),
@@ -248,6 +360,64 @@ describe('schedules/SchedulesService', () => {
         existing.id,
         {
           endsAt: new Date('2026-01-10T00:00:00.000Z'),
+          timeZone: 'UTC',
+        },
+        manager,
+      );
+
+      expect(repository.save).toHaveBeenCalledTimes(1);
+      expect(result).toMatchObject({ updatedBy: manager.id });
+    });
+
+    it('should not shrink a schedule so that it no longer contains one of its shifts', async () => {
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
+      shiftsQueryBuilder.getExists.mockResolvedValueOnce(true);
+
+      await expect(
+        service.update(
+          existing.id,
+          {
+            endsAt: new Date('2026-01-03T23:59:59.999Z'),
+            timeZone: 'UTC',
+          },
+          manager,
+        ),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(repository.save).not.toHaveBeenCalled();
+    });
+
+    it('should check shift containment scoped to the schedule being updated', async () => {
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
+
+      const newEndsAt = new Date('2026-01-10T00:00:00.000Z');
+      await service.update(
+        existing.id,
+        { endsAt: newEndsAt, timeZone: 'UTC' },
+        manager,
+      );
+
+      expect(shiftsQueryBuilder.where).toHaveBeenCalledWith(
+        'shift.scheduleId = :scheduleId',
+        { scheduleId: existing.id },
+      );
+      expect(shiftsQueryBuilder.andWhere).toHaveBeenCalledWith(
+        '(shift.startsAt < :startsAt OR shift.endsAt > :endsAt)',
+        {
+          startsAt: existing.startsAt,
+          endsAt: endOfDayWithTz(newEndsAt, 'UTC'),
+        },
+      );
+    });
+
+    it('should update the schedule when its shifts still fit within the new boundaries', async () => {
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
+      shiftsQueryBuilder.getExists.mockResolvedValueOnce(false);
+
+      const result = await service.update(
+        existing.id,
+        {
+          endsAt: new Date('2026-01-10T00:00:00.000Z'),
+          timeZone: 'UTC',
         },
         manager,
       );
@@ -262,8 +432,8 @@ describe('schedules/SchedulesService', () => {
       id: 'schedule-1',
       createdBy: manager.id,
       status: ScheduleStatus.DRAFT,
-      startsAt: startOfDay(new Date('2026-01-01T00:00:00.000Z')),
-      endsAt: endOfDay(new Date('2026-01-07T00:00:00.000Z')),
+      startsAt: new Date('2026-01-01T00:00:00.000Z'),
+      endsAt: new Date('2026-01-07T23:59:59.999Z'),
     } as ScheduleEntity;
 
     it('should not delete a schedule that is not editable', async () => {

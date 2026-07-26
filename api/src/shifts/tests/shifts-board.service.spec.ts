@@ -32,7 +32,6 @@ describe('shifts/ShiftsBoardService', () => {
       id,
       firstName: `${id}-first`,
       lastName: `${id}-last`,
-      avatarUrl: null,
       emailAddress: `${id}@example.com`,
       roles: [],
     }) as unknown as UserEntity;
@@ -187,7 +186,6 @@ describe('shifts/ShiftsBoardService', () => {
         id: 'emp-1',
         firstName: 'emp-1-first',
         lastName: 'emp-1-last',
-        avatarUrl: null,
       });
       expect(view.assignments[0].employee).not.toHaveProperty('emailAddress');
     });

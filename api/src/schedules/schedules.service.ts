@@ -6,13 +6,13 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
-import { ScheduleEntity } from '@/entities';
+import { ScheduleEntity, ShiftEntity } from '@/entities';
 import {
   CreateScheduleDto,
   FindSchedulesQueryDto,
   UpdateScheduleDto,
 } from '@/schedules/schedules.dto';
-import { endOfDay, startOfDay } from 'date-fns';
+import { endOfDayWithTz, startOfDayWithTz } from '@/utils/timezone';
 import { paginate, Paginated } from '@/common/pagination/paginate';
 import { applyScheduleVisibility } from '@/schedules/schedule-visibility';
 import { SchedulesHelpersService } from '@/schedules/schedules-helpers.service';
@@ -21,12 +21,15 @@ import {
   ScheduleView,
 } from '@/schedules/schedule-stats.service';
 import { softDelete } from '@/utils/soft-delete';
+import { UnavailableDatesDto } from '@/schedules/schedules-response.dto';
 
 @Injectable()
 export class SchedulesService {
   constructor(
     @InjectRepository(ScheduleEntity)
     private readonly schedules: Repository<ScheduleEntity>,
+    @InjectRepository(ShiftEntity)
+    private readonly shifts: Repository<ShiftEntity>,
     private readonly dataSource: DataSource,
     private readonly helpers: SchedulesHelpersService,
     private readonly stats: ScheduleStatsService,
@@ -36,8 +39,8 @@ export class SchedulesService {
     dto: CreateScheduleDto,
     user: AuthenticatedUser,
   ): Promise<ScheduleEntity> {
-    const startsAt = startOfDay(dto.startsAt);
-    const endsAt = endOfDay(dto.endsAt);
+    const startsAt = startOfDayWithTz(dto.startsAt, dto.timeZone);
+    const endsAt = endOfDayWithTz(dto.endsAt, dto.timeZone);
 
     await this.assertNoOverlap(startsAt, endsAt);
 
@@ -58,7 +61,7 @@ export class SchedulesService {
   ): Promise<Paginated<ScheduleView>> {
     const query = this.schedules
       .createQueryBuilder('schedule')
-      .orderBy('schedule.startsAt', 'ASC');
+      .orderBy('schedule.startsAt', 'DESC');
 
     applyScheduleVisibility(query, user);
 
@@ -97,17 +100,32 @@ export class SchedulesService {
       throw new ForbiddenException('You can only modify your own schedules.');
     }
 
+    // timeZone only takes effect alongside a date change — it exists to
+    // interpret startsAt/endsAt into UTC day-boundaries, so persisting a new
+    // timeZone with no accompanying date change would leave the persisted
+    // startsAt/endsAt inconsistent with the persisted timeZone that claims
+    // to describe them.
+    const { timeZone: dtoTimeZone, ...rest } = dto;
+    const datesChanging =
+      dto.startsAt !== undefined || dto.endsAt !== undefined;
+    const timeZone = datesChanging
+      ? (dtoTimeZone ?? schedule.timeZone)
+      : schedule.timeZone;
     const startsAt = dto.startsAt
-      ? startOfDay(dto.startsAt)
+      ? startOfDayWithTz(dto.startsAt, timeZone)
       : schedule.startsAt;
-    const endsAt = dto.endsAt ? endOfDay(dto.endsAt) : schedule.endsAt;
+    const endsAt = dto.endsAt
+      ? endOfDayWithTz(dto.endsAt, timeZone)
+      : schedule.endsAt;
 
     await this.assertNoOverlap(startsAt, endsAt, id);
+    await this.assertContainsExistingShifts(id, startsAt, endsAt);
 
     Object.assign(schedule, {
-      ...dto,
+      ...rest,
       startsAt,
       endsAt,
+      timeZone,
       updatedBy: user.id,
     });
 
@@ -122,6 +140,10 @@ export class SchedulesService {
     return this.dataSource.transaction(
       softDelete(ScheduleEntity, schedule, user.id),
     );
+  }
+
+  async findUnavailableDates(): Promise<UnavailableDatesDto[]> {
+    return this.schedules.find({ select: { startsAt: true, endsAt: true } });
   }
 
   /**
@@ -147,6 +169,30 @@ export class SchedulesService {
     if (await query.getExists()) {
       throw new ConflictException(
         'Schedule overlaps with an existing schedule.',
+      );
+    }
+  }
+
+  /**
+   * Ensures every non-deleted shift belonging to this schedule still falls
+   * within the schedule's new [startsAt, endsAt] boundaries.
+   */
+  private async assertContainsExistingShifts(
+    scheduleId: string,
+    startsAt: Date,
+    endsAt: Date,
+  ): Promise<void> {
+    const query = this.shifts
+      .createQueryBuilder('shift')
+      .where('shift.scheduleId = :scheduleId', { scheduleId })
+      .andWhere('(shift.startsAt < :startsAt OR shift.endsAt > :endsAt)', {
+        startsAt,
+        endsAt,
+      });
+
+    if (await query.getExists()) {
+      throw new ConflictException(
+        'The new schedule boundaries no longer contain all of its shifts.',
       );
     }
   }

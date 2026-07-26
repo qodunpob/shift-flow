@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
 import { verifyPassword } from '@/utils/password';
 import { UsersHelpersService } from '@/users/users-helpers.service';
+import { logger } from '@/utils/logger';
 
 @Injectable()
 export class AuthService {
@@ -12,12 +13,13 @@ export class AuthService {
   ) {}
 
   async validateUser(username: string, password: string) {
-    const user = await this.usersHelpers.findOne(username);
+    const user = await this.usersHelpers.findOneWithPassword(username);
     if (user && (await verifyPassword(password, user.password))) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password, ...result } = user;
       return result;
     }
+    logger.error(`Invalid username or password for user: ${username}`);
     return null;
   }
 

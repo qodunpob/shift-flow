@@ -24,7 +24,7 @@ export interface EmployeeRef {
 export interface AssignmentView {
   id: string;
   employeeId: string;
-  employee: EmployeeRef | null;
+  employee: EmployeeRef;
   status: AssignmentStatus;
   declineReason: string | null;
 }
@@ -32,7 +32,7 @@ export interface AssignmentView {
 export interface ProposalView {
   id: string;
   employeeId: string;
-  employee: EmployeeRef | null;
+  employee: EmployeeRef;
   message: string | null;
   createdAt: Date;
 }
@@ -149,12 +149,7 @@ export class ShiftsBoardService {
     };
   }
 
-  private toEmployeeRef(
-    employee: UserEntity | null | undefined,
-  ): EmployeeRef | null {
-    if (!employee) {
-      return null;
-    }
+  private toEmployeeRef(employee: UserEntity): EmployeeRef {
     return {
       id: employee.id,
       firstName: employee.firstName,

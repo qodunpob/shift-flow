@@ -1,0 +1,160 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "create": "Create",
+    "edit": "Edit",
+    "save": "Save",
+    "delete": "Delete",
+    "close": "Close",
+    "ok": "OK"
+  },
+  "commonErrors": {
+    "conflict": "This action isn't possible right now. Please refresh and try again.",
+    "generic": "Something went wrong. Please try again."
+  },
+  "LoginPage": {
+    "title": "Welcome back",
+    "subtitle": "Sign in to Shift Flow",
+    "email": "Email",
+    "password": "Password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "submit": "Sign in",
+    "invalidCredentials": "Invalid email or password"
+  },
+  "SchedulesPage": {
+    "title": "Schedules",
+    "filters": {
+      "allStatuses": "All statuses",
+      "mine": "Created by me"
+    }
+  },
+  "ScheduleDetailsPage": {
+    "title": "Schedule {label}",
+    "createShift": "Create Shift"
+  },
+  "CreateSchedule": {
+    "title": "Create a schedule",
+    "editTitle": "Edit schedule",
+    "success": "Schedule created",
+    "errors": {
+      "datesRequired": "Please select a date range",
+      "timeZoneRequired": "Please select a time zone",
+      "overlap": "These dates overlap with an existing schedule"
+    }
+  },
+  "ScheduleActions": {
+    "menu": "Schedule actions",
+    "edit": "Edit",
+    "delete": "Delete",
+    "publish": "Publish",
+    "unpublish": "Unpublish",
+    "submitForApproval": "Submit for approval",
+    "withdraw": "Withdraw",
+    "approve": "Approve",
+    "reject": "Reject",
+    "confirm": {
+      "delete": {
+        "title": "Delete this schedule?",
+        "description": "This can't be undone.",
+        "confirmLabel": "Delete"
+      },
+      "publish": {
+        "title": "Publish this schedule?",
+        "description": "It will move into review.",
+        "confirmLabel": "Publish"
+      },
+      "unpublish": {
+        "title": "Unpublish this schedule?",
+        "description": "It will move back to draft.",
+        "confirmLabel": "Unpublish"
+      },
+      "submitForApproval": {
+        "title": "Submit this schedule for approval?",
+        "description": "An approver will review it next.",
+        "confirmLabel": "Submit"
+      },
+      "withdraw": {
+        "title": "Withdraw this schedule from approval?",
+        "description": "It will move back to review.",
+        "confirmLabel": "Withdraw"
+      },
+      "approve": {
+        "title": "Approve this schedule?",
+        "description": "It will be finalized and visible to employees.",
+        "confirmLabel": "Approve"
+      },
+      "reject": {
+        "title": "Reject this schedule?",
+        "description": "The owning manager will see your reason and can resubmit it.",
+        "confirmLabel": "Reject"
+      }
+    },
+    "success": {
+      "updated": "Schedule updated",
+      "deleted": "Schedule deleted",
+      "publish": "Schedule published",
+      "unpublish": "Schedule unpublished",
+      "submitForApproval": "Schedule submitted for approval",
+      "withdraw": "Schedule withdrawn",
+      "approve": "Schedule approved",
+      "reject": "Schedule rejected"
+    }
+  },
+  "ShiftForm": {
+    "createTitle": "Create Shift",
+    "editTitle": "Edit Shift",
+    "success": "Shift created",
+    "updateSuccess": "Shift updated",
+    "deleteSuccess": "Shift deleted",
+    "errors": {
+      "startsAtRequired": "Please provide a valid start date and time",
+      "endsAtRequired": "Please provide a valid end date and time",
+      "conflict": "This shift overlaps with an existing shift or falls outside the schedule"
+    }
+  },
+  "ShiftAssignments": {
+    "title": "Shift details",
+    "assigned": "Assigned",
+    "proposals": "Proposals",
+    "noneAssigned": "No one assigned yet",
+    "assign": "Assign",
+    "assignSuccess": "Employee assigned",
+    "loading": "Loading…",
+    "noAvailableEmployees": "No employees available",
+    "remove": "Remove",
+    "removeSuccess": "Employee removed",
+    "propose": "Propose",
+    "proposeSuccess": "Proposal sent",
+    "accept": "Accept",
+    "proposalAccepted": "Proposal accepted",
+    "proposalWithdrawn": "Proposal withdrawn"
+  },
+  "ShiftActions": {
+    "confirm": {
+      "delete": {
+        "title": "Delete this shift?",
+        "description": "This can't be undone.",
+        "confirmLabel": "Delete"
+      }
+    }
+  },
+  "Schedule": {
+    "status": {
+      "DRAFT": "Draft",
+      "IN_REVIEW": "In review",
+      "AWAITING_APPROVAL": "Awaiting approval",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected"
+    }
+  },
+  "labels": {
+    "label": "Label",
+    "dates": "Dates",
+    "timeZone": "Time zone",
+    "startsAt": "Starts at",
+    "endsAt": "Ends at",
+    "requiredHeadcount": "Required headcount",
+    "rejectionReason": "Rejection reason"
+  }
+}

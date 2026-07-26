@@ -1,0 +1,54 @@
+'use client';
+
+import React from 'react';
+import { TimeSheet } from '@/components/time-sheet/TimeSheet';
+import { Schedule, Shift } from '@/lib/api/types';
+import { Alert, AlertTitle, Typography } from '@mui/material';
+import { scheduleRange } from '@/utils/scheduleRange';
+import { useLocale, useTranslations } from 'next-intl';
+import { ScheduleToolbar } from '@/components/schedule-toolbar/ScheduleToolbar';
+import { FlexBox } from '@/components/box/box';
+import { ScheduleStatusChip } from '@/components/schedule-status-chip/ScheduleStatusChip';
+import { isMine } from '@/utils/user';
+import { useCurrentUser } from '@/providers/CurrentUserProvider';
+import { ScheduleProvider } from '@/features/schedule-details/ScheduleProvider';
+
+export interface ScheduleDetailsProps {
+  schedule: Schedule;
+  shifts: Shift[];
+}
+
+export const ScheduleDetails: React.FC<ScheduleDetailsProps> = ({
+  schedule,
+  shifts,
+}) => {
+  const locale = useLocale();
+  const t = useTranslations();
+  const currentUser = useCurrentUser();
+  const isRejectionReasonVisible =
+    isMine(schedule, currentUser) &&
+    schedule.status === 'REJECTED' &&
+    schedule.rejectionReason;
+
+  return (
+    <ScheduleProvider schedule={schedule}>
+      <FlexBox>
+        <Typography variant="h6" component="div">
+          {scheduleRange(schedule, locale)}
+        </Typography>
+        <Typography variant="body2" component="div" sx={{ flexGrow: 1 }}>
+          ({t('labels.timeZone')}: {schedule.timeZone})
+        </Typography>
+        <ScheduleStatusChip status={schedule.status} />
+      </FlexBox>
+      {isRejectionReasonVisible && (
+        <Alert variant="filled" severity="warning">
+          <AlertTitle>{t('labels.rejectionReason')}</AlertTitle>
+          {schedule.rejectionReason}
+        </Alert>
+      )}
+      <ScheduleToolbar />
+      <TimeSheet shifts={shifts} />
+    </ScheduleProvider>
+  );
+};
