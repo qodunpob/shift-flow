@@ -1,4 +1,5 @@
-import { CreateScheduleFormValues, createScheduleSchema } from '../schema';
+import { createScheduleSchema } from '../validation-schema';
+import { CreateScheduleFormValues } from '@/features/schedule-form/types';
 
 const VALID_VALUES: CreateScheduleFormValues = {
   label: 'Summer schedule',
@@ -9,7 +10,7 @@ const VALID_VALUES: CreateScheduleFormValues = {
   timeZone: 'Asia/Tokyo',
 };
 
-describe('features/create-schedule/schema', () => {
+describe('features/schedule-form/validation-schema', () => {
   it('should accept a fully valid set of values', async () => {
     await expect(createScheduleSchema.isValid(VALID_VALUES)).resolves.toBe(
       true,

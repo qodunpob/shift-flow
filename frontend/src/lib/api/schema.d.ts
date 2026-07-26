@@ -583,6 +583,50 @@ export interface components {
             endsAt: string;
             requiredHeadcount: number;
         };
+        EmployeeRefDto: {
+            id: string;
+            firstName: string;
+            lastName: string;
+        };
+        AssignmentViewDto: {
+            id: string;
+            employeeId: string;
+            employee: components["schemas"]["EmployeeRefDto"] | null;
+            /** @enum {string} */
+            status: "PENDING" | "ACCEPTED" | "DECLINED";
+            declineReason: string | null;
+        };
+        ProposalViewDto: {
+            id: string;
+            employeeId: string;
+            employee: components["schemas"]["EmployeeRefDto"] | null;
+            message: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        ShiftBoardViewDto: {
+            id: string;
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: string;
+            /** Format: date-time */
+            updatedAt: string;
+            updatedBy: string;
+            /** Format: date-time */
+            deletedAt: string | null;
+            scheduleId: string;
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string;
+            requiredHeadcount: number;
+            /** @description Assignments that have not been declined. */
+            filledCount: number;
+            /** @description Number of open assignments. */
+            spotsRemaining: number;
+            assignments: components["schemas"]["AssignmentViewDto"][];
+            proposals: components["schemas"]["ProposalViewDto"][];
+        };
         UpdateShiftDto: {
             /** Format: date-time */
             startsAt?: string;
@@ -986,7 +1030,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>[];
+                    "application/json": components["schemas"]["ShiftBoardViewDto"];
                 };
             };
         };

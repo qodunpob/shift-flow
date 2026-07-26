@@ -3,7 +3,8 @@
     "cancel": "Cancel",
     "create": "Create",
     "save": "Save",
-    "close": "Close"
+    "close": "Close",
+    "ok": "OK"
   },
   "LoginPage": {
     "title": "Welcome back",
@@ -24,7 +25,8 @@
     }
   },
   "ScheduleDetailsPage": {
-    "title": "Schedule {id}"
+    "title": "Schedule {label}",
+    "createShift": "Create Shift"
   },
   "CreateSchedule": {
     "title": "Create a schedule",
@@ -85,6 +87,9 @@
       "conflict": "This action isn't possible right now. Please refresh and try again.",
       "generic": "Something went wrong. Please try again."
     }
+  },
+  "ShiftForm": {
+    "createTitle": "Create Shift"
   },
   "Schedule": {
     "status": {

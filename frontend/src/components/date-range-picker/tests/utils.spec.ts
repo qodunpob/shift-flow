@@ -1,10 +1,6 @@
 import { dateFormatMap } from '@/constants/dates';
-import {
-  DateRange,
-  formatRange,
-  isSameDateRange,
-  parseRangeText,
-} from '../utils';
+import { formatRange, isSameDateRange, parseRangeText } from '../utils';
+import { DateRange } from '@/components/date-range-picker/types';
 
 const FORMAT = dateFormatMap.fallback.dateRangeInput;
 

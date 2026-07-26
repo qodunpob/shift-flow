@@ -1,6 +1,5 @@
-import { DateTime } from 'luxon';
-import { dateFormat } from '@/constants/dates';
 import { Schedule } from '@/lib/api/types';
+import { scheduleRange } from '@/utils/scheduleRange';
 
 export const formatScheduleIdentity = (
   schedule: Schedule,
@@ -8,12 +7,5 @@ export const formatScheduleIdentity = (
 ): string => {
   if (schedule.label) return schedule.label;
 
-  const format = dateFormat(locale).scheduleBoundaryDate;
-  const start = DateTime.fromISO(schedule.startsAt, {
-    zone: schedule.timeZone,
-  }).toFormat(format);
-  const end = DateTime.fromISO(schedule.endsAt, {
-    zone: schedule.timeZone,
-  }).toFormat(format);
-  return `${start} – ${end}`;
+  return scheduleRange(schedule, locale);
 };

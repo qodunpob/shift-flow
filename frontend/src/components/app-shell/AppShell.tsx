@@ -13,6 +13,7 @@ export interface AppShellProps
 export const AppShell: React.FC<AppShellProps> = ({
   title,
   user,
+  breadcrumbs,
   children,
 }) => {
   return (
@@ -21,7 +22,7 @@ export const AppShell: React.FC<AppShellProps> = ({
       component="main"
       sx={{ display: 'flex', flexDirection: 'column', my: 8, gap: 4 }}
     >
-      <TopBar title={title} user={user} />
+      <TopBar title={title} user={user} breadcrumbs={breadcrumbs} />
       <CurrentUserProvider user={user}>{children}</CurrentUserProvider>
     </Container>
   );

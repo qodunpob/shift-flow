@@ -1,9 +1,5 @@
 import { DateTime } from 'luxon';
-
-export interface DateRange {
-  startsAt: Date;
-  endsAt: Date;
-}
+import { DateRange } from '@/components/date-range-picker/types';
 
 const RANGE_SEPARATOR = ' – ';
 

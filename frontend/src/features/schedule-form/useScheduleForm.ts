@@ -1,9 +1,7 @@
 import { useEffect } from 'react';
 import { useFormik } from 'formik';
-import {
-  createScheduleSchema,
-  CreateScheduleFormValues,
-} from '@/features/schedule-form/schema';
+import { createScheduleSchema } from '@/features/schedule-form/validation-schema';
+import { CreateScheduleFormValues } from '@/features/schedule-form/types';
 
 const DEFAULT_INITIAL_VALUES: CreateScheduleFormValues = {
   label: '',
@@ -33,7 +31,7 @@ export const useScheduleForm = (
     // real persisted zone as part of initialValues, and must not have it
     // silently overwritten by the browser's own zone.
     if (!initialValues.timeZone) {
-      applyDefaultTimeZone();
+      void applyDefaultTimeZone();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -43,7 +41,7 @@ export const useScheduleForm = (
     resetForm: () => {
       formik.resetForm();
       if (!initialValues.timeZone) {
-        applyDefaultTimeZone();
+        void applyDefaultTimeZone();
       }
     },
   };

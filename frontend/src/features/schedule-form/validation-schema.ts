@@ -1,11 +1,5 @@
 import * as yup from 'yup';
-import { DateRange } from '@/components/date-range-picker/utils';
-
-export interface CreateScheduleFormValues {
-  label: string;
-  dates: DateRange | null;
-  timeZone: string;
-}
+import { CreateScheduleFormValues } from '@/features/schedule-form/types';
 
 const TIME_ZONES = Intl.supportedValuesOf('timeZone');
 

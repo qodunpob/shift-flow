@@ -17,7 +17,8 @@ import { ShiftsBoardService } from '@/shifts/shifts-board.service';
 import { CreateShiftDto, UpdateShiftDto } from '@/shifts/shifts.dto';
 import type { AuthenticatedUser } from '@/auth/authenticated-request';
 import { CurrentUser } from '@/auth/current-user.decorator';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ShiftBoardViewDto } from '@/shifts/shift-response.dto';
 
 @ApiTags('shifts')
 @ApiBearerAuth()
@@ -40,6 +41,7 @@ export class ScheduleShiftsController {
   }
 
   @Get()
+  @ApiOkResponse({ type: ShiftBoardViewDto })
   findAll(
     @Param('scheduleId', ParseUUIDPipe) scheduleId: string,
     @CurrentUser() user: AuthenticatedUser,

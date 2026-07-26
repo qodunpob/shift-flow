@@ -17,7 +17,7 @@ import { StatusCodes } from 'http-status-codes';
 import { toast } from 'react-toastify';
 import { DateRangePicker } from '@/components/date-range-picker/DateRangePicker';
 import { useScheduleForm } from '@/features/schedule-form/useScheduleForm';
-import { CreateScheduleFormValues } from '@/features/schedule-form/schema';
+import { CreateScheduleFormValues } from '@/features/schedule-form/types';
 import {
   localDateToZonedInstant,
   zonedInstantToLocalDate,
