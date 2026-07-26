@@ -70,7 +70,7 @@ export const TimeSheet: React.FC<TimeSheetProps> = ({ schedule, shifts }) => {
           shift,
           scheduleStartsAt,
           locale,
-          zone: schedule.timeZone,
+          timeZone: schedule.timeZone,
         }),
       ),
     [shifts, scheduleStartsAt, locale, schedule.timeZone],
@@ -91,19 +91,21 @@ interface RenderShiftArgs {
   shift: Shift;
   scheduleStartsAt: DateTime;
   locale: string;
-  zone: string;
+  timeZone: string;
 }
 
 const renderShift = ({
   shift,
   scheduleStartsAt,
   locale,
-  zone,
+  timeZone,
 }: RenderShiftArgs) => {
-  const startsAt = DateTime.fromISO(shift.startsAt, { zone });
-  const endsAt = DateTime.fromISO(shift.endsAt, { zone });
+  const startsAt = DateTime.fromISO(shift.startsAt, { zone: timeZone });
+  const startDay = startsAt.startOf('day');
+  const endsAt = DateTime.fromISO(shift.endsAt, { zone: timeZone });
+  const endDay = endsAt.startOf('day');
 
-  const days = Math.ceil(endsAt.diff(startsAt, 'days').days);
+  const days = Math.ceil(endDay.diff(startDay, 'days').days);
 
   const sectors =
     days > 2 ? new Array(days - 2).fill({ top: 0, bottom: 0 }) : [];
@@ -121,9 +123,8 @@ const renderShift = ({
   }
 
   const diffFromBeginning = Math.floor(
-    startsAt.diff(scheduleStartsAt, 'days').days,
+    startDay.diff(scheduleStartsAt, 'days').days,
   );
-  console.log(diffFromBeginning);
   for (let i = 0; i < sectors.length; i++) {
     sectors[i].left = (diffFromBeginning + i) * columnWidth;
   }
