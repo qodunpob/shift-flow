@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { Settings } from 'luxon';
 import React from 'react';
@@ -54,12 +55,21 @@ const viewer: CurrentUser = {
   roles: ['EMPLOYEE'],
 };
 
-const renderTimeSheet = (shifts: Shift[]) =>
-  render(
-    <CurrentUserProvider user={viewer}>
-      <TimeSheet schedule={schedule} shifts={shifts} />
-    </CurrentUserProvider>,
+const renderTimeSheet = (shifts: Shift[]) => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <CurrentUserProvider user={viewer}>
+        <TimeSheet schedule={schedule} shifts={shifts} />
+      </CurrentUserProvider>
+    </QueryClientProvider>,
   );
+};
 
 describe('components/time-sheet/TimeSheet', () => {
   // The runtime's own zone must never influence what's displayed - the
