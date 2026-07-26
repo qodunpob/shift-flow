@@ -24,7 +24,7 @@ export const ScheduleDetails: React.FC<ScheduleDetailsProps> = ({
       <Typography variant="h6" component="div">
         {scheduleRange(schedule, locale)}
       </Typography>
-      <ScheduleToolbar />
+      <ScheduleToolbar schedule={schedule} />
       <TimeSheet schedule={schedule} shifts={shifts} />
     </>
   );

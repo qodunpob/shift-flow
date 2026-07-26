@@ -1,10 +1,17 @@
+import React, { useState } from 'react';
 import { Button } from '@mui/material';
 import { ShiftFormModal } from '@/features/shift-form/ShiftFormModal';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
 import { FlexBox } from '@/components/box/box';
+import { Schedule } from '@/lib/api/types';
 
-export const ScheduleToolbar = () => {
+export interface ScheduleToolbarProps {
+  schedule: Pick<Schedule, 'id' | 'timeZone'>;
+}
+
+export const ScheduleToolbar: React.FC<ScheduleToolbarProps> = ({
+  schedule,
+}) => {
   const t = useTranslations();
   const [openShiftFormModal, setOpenShiftFormModal] = useState(false);
   return (
@@ -17,6 +24,8 @@ export const ScheduleToolbar = () => {
       <ShiftFormModal
         open={openShiftFormModal}
         onClose={() => setOpenShiftFormModal(false)}
+        scheduleId={schedule.id}
+        timeZone={schedule.timeZone}
       />
     </>
   );

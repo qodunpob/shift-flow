@@ -89,7 +89,14 @@
     }
   },
   "ShiftForm": {
-    "createTitle": "Create Shift"
+    "createTitle": "Create Shift",
+    "success": "Shift created",
+    "errors": {
+      "startsAtRequired": "Please provide a valid start date and time",
+      "endsAtRequired": "Please provide a valid end date and time",
+      "conflict": "This shift overlaps with an existing shift or falls outside the schedule",
+      "generic": "Something went wrong. Please try again."
+    }
   },
   "Schedule": {
     "status": {

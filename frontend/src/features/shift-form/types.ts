@@ -1,5 +1,7 @@
 export interface ShiftFormValues {
-  startsAt: Date | null;
-  endsAt: Date | null;
+  startsAtDate: Date | null;
+  startsAtTime: string;
+  endsAtDate: Date | null;
+  endsAtTime: string;
   requiredHeadcount: number;
 }

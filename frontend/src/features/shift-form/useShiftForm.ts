@@ -2,9 +2,11 @@ import { useFormik } from 'formik';
 import { ShiftFormValues } from '@/features/shift-form/types';
 import { shiftFormSchema } from '@/features/shift-form/validation-schema';
 
-const INITIAL_VALUES = {
-  startsAt: null,
-  endsAt: null,
+const INITIAL_VALUES: ShiftFormValues = {
+  startsAtDate: null,
+  startsAtTime: '',
+  endsAtDate: null,
+  endsAtTime: '',
   requiredHeadcount: 1,
 };
 
