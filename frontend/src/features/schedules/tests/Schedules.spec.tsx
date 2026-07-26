@@ -21,14 +21,14 @@ jest.mock('@/components/schedule-list/ScheduleList', () => ({
 
 let capturedResetFiltersAndPage: (() => void) | undefined;
 
-jest.mock('@/features/create-schedule/CreateScheduleModal', () => ({
-  CreateScheduleModal: ({
+jest.mock('@/features/schedule-form/ScheduleFormModal', () => ({
+  ScheduleFormModal: ({
     resetFiltersAndPage,
   }: {
     resetFiltersAndPage: () => void;
   }) => {
     capturedResetFiltersAndPage = resetFiltersAndPage;
-    return <div data-testid="create-schedule-modal" />;
+    return <div data-testid="schedule-form-modal" />;
   },
 }));
 

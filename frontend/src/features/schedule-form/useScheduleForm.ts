@@ -3,19 +3,20 @@ import { useFormik } from 'formik';
 import {
   createScheduleSchema,
   CreateScheduleFormValues,
-} from '@/features/create-schedule/schema';
+} from '@/features/schedule-form/schema';
 
-const INITIAL_VALUES: CreateScheduleFormValues = {
+const DEFAULT_INITIAL_VALUES: CreateScheduleFormValues = {
   label: '',
   dates: null,
   timeZone: '',
 };
 
-export const useCreateScheduleForm = (
+export const useScheduleForm = (
   onSubmit: (values: CreateScheduleFormValues) => void,
+  initialValues: CreateScheduleFormValues = DEFAULT_INITIAL_VALUES,
 ) => {
   const formik = useFormik<CreateScheduleFormValues>({
-    initialValues: INITIAL_VALUES,
+    initialValues,
     validationSchema: createScheduleSchema,
     onSubmit,
   });
@@ -27,7 +28,13 @@ export const useCreateScheduleForm = (
     );
 
   useEffect(() => {
-    applyDefaultTimeZone();
+    // Only default to the browser's zone when no zone was supplied up
+    // front - i.e. create mode. Edit mode always supplies the schedule's
+    // real persisted zone as part of initialValues, and must not have it
+    // silently overwritten by the browser's own zone.
+    if (!initialValues.timeZone) {
+      applyDefaultTimeZone();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -35,7 +42,9 @@ export const useCreateScheduleForm = (
     ...formik,
     resetForm: () => {
       formik.resetForm();
-      applyDefaultTimeZone();
+      if (!initialValues.timeZone) {
+        applyDefaultTimeZone();
+      }
     },
   };
 };

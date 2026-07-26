@@ -2,6 +2,7 @@
   "common": {
     "cancel": "Cancel",
     "create": "Create",
+    "save": "Save",
     "close": "Close"
   },
   "LoginPage": {
@@ -27,6 +28,7 @@
   },
   "CreateSchedule": {
     "title": "Create a schedule",
+    "editTitle": "Edit schedule",
     "success": "Schedule created",
     "errors": {
       "datesRequired": "Please select a date range",
