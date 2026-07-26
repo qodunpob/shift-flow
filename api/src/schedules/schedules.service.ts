@@ -100,8 +100,17 @@ export class SchedulesService {
       throw new ForbiddenException('You can only modify your own schedules.');
     }
 
+    // timeZone only takes effect alongside a date change — it exists to
+    // interpret startsAt/endsAt into UTC day-boundaries, so persisting a new
+    // timeZone with no accompanying date change would leave the persisted
+    // startsAt/endsAt inconsistent with the persisted timeZone that claims
+    // to describe them.
     const { timeZone: dtoTimeZone, ...rest } = dto;
-    const timeZone = dtoTimeZone ?? schedule.timeZone;
+    const datesChanging =
+      dto.startsAt !== undefined || dto.endsAt !== undefined;
+    const timeZone = datesChanging
+      ? (dtoTimeZone ?? schedule.timeZone)
+      : schedule.timeZone;
     const startsAt = dto.startsAt
       ? startOfDayWithTz(dto.startsAt, timeZone)
       : schedule.startsAt;

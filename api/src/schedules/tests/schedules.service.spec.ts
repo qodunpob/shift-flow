@@ -142,7 +142,7 @@ describe('schedules/SchedulesService', () => {
       label: 'Week 1',
       startsAt: new Date('2026-01-01T10:00:00.000Z'),
       endsAt: new Date('2026-01-07T10:00:00.000Z'),
-      timeZone: 'UTC',
+      timeZone: 'Asia/Tokyo',
     };
 
     it('should create the schedule when it does not overlap an existing one', async () => {
@@ -317,6 +317,22 @@ describe('schedules/SchedulesService', () => {
       );
 
       expect(result).toMatchObject({ timeZone: existing.timeZone });
+    });
+
+    it('should ignore a supplied time zone when no dates are being updated', async () => {
+      helpers.findEditable.mockResolvedValueOnce({ ...existing });
+
+      const result = await service.update(
+        existing.id,
+        { timeZone: 'America/New_York' },
+        manager,
+      );
+
+      expect(result).toMatchObject({
+        timeZone: existing.timeZone,
+        startsAt: existing.startsAt,
+        endsAt: existing.endsAt,
+      });
     });
 
     it('should not update a schedule so that it overlaps another one', async () => {
