@@ -10,7 +10,7 @@ import {
   IconButton,
   Typography,
 } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
+import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import { DateTime } from 'luxon';
 import { useLocale, useTranslations } from 'next-intl';
 import { toast } from 'react-toastify';
@@ -163,7 +163,7 @@ const AssignmentEmployeeChip: React.FC<{
           onClick={onRemove}
           sx={{ opacity: 0, transition: 'opacity 0.15s ease' }}
         >
-          <DeleteIcon fontSize="small" />
+          <DeleteOutlineOutlinedIcon fontSize="small" />
         </IconButton>
       )}
     </FlexBox>
