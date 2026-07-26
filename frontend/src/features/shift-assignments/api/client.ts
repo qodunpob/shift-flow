@@ -41,3 +41,19 @@ export const useCreateProposalMutation = (shiftId: string) =>
         body: JSON.stringify({}),
       }),
   });
+
+export const useDeleteProposalMutation = () =>
+  useMutation<unknown, Error, string>({
+    mutationFn: (proposalId) =>
+      apiFetchFromClient(`/assignment-proposals/${proposalId}`, {
+        method: 'DELETE',
+      }),
+  });
+
+export const useAcceptProposalMutation = () =>
+  useMutation<unknown, Error, string>({
+    mutationFn: (proposalId) =>
+      apiFetchFromClient(`/assignment-proposals/${proposalId}/accept`, {
+        method: 'POST',
+      }),
+  });
