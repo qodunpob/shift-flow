@@ -7,7 +7,11 @@ import {
 import { apiFetchFromClient } from '@/lib/api/client/apiFetch';
 import { DEFAULT_PAGE_SIZE } from '@/constants/common';
 
-import { CreatedSchedule, PaginatedSchedules } from '@/lib/api/types';
+import {
+  CreatedSchedule,
+  PaginatedSchedules,
+  UnavailableDates,
+} from '@/lib/api/types';
 import { SchedulesFilter } from '@/features/schedules/api/types';
 
 export const schedulesQueryPrefix = ['schedules'] as const;
@@ -37,6 +41,22 @@ export const useSchedulesQuery = (
       }),
     initialData,
     placeholderData: keepPreviousData,
+  });
+
+export const unavailableDatesQueryKey = [
+  ...schedulesQueryPrefix,
+  'unavailable-dates',
+] as const;
+
+// Gated by `enabled` since this is only needed while a schedule form's date
+// picker is actually open - it shares the "schedules" query key prefix so a
+// create/update/delete elsewhere invalidates it along with everything else.
+export const useUnavailableDatesQuery = (enabled: boolean) =>
+  useQuery({
+    queryKey: unavailableDatesQueryKey,
+    queryFn: () =>
+      apiFetchFromClient<UnavailableDates[]>('/schedules/unavailable-dates'),
+    enabled,
   });
 
 export interface CreateScheduleInput {

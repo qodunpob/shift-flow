@@ -546,10 +546,13 @@ export interface components {
             meta: components["schemas"]["PaginationMetaDto"];
         };
         UnavailableDatesDto: {
+            /** Format: uuid */
+            id: string;
             /** Format: date-time */
             startsAt: string;
             /** Format: date-time */
             endsAt: string;
+            timeZone: string;
         };
         UpdateScheduleDto: {
             label?: string | null;
@@ -1276,7 +1279,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            200: {
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1295,7 +1298,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            201: {
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1314,7 +1317,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            201: {
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };

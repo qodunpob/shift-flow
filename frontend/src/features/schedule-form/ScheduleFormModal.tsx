@@ -17,8 +17,10 @@ import { DateRangePicker } from '@/components/date-range-picker/DateRangePicker'
 import { useScheduleForm } from '@/features/schedule-form/useScheduleForm';
 import { ScheduleFormValues } from '@/features/schedule-form/types';
 import { zonedInstantToLocalDate } from '@/features/schedule-form/zonedDate';
+import { unavailableDatesToDisabledMatcher } from '@/features/schedule-form/unavailableDates';
 import { Schedule } from '@/lib/api/types';
 import { useScheduleFormHandler } from '@/features/schedule-form/useScheduleFormHandler';
+import { useUnavailableDatesQuery } from '@/features/schedules/api/client';
 import { hasError } from '@/utils/formikHelpers';
 
 interface CommonProps {
@@ -59,6 +61,11 @@ const initialValuesFor = (
 export const ScheduleFormModal: React.FC<ScheduleFormModalProps> = (props) => {
   const { mode, open, onClose, resetFiltersAndPage } = props;
   const t = useTranslations();
+  const { data: unavailableDates } = useUnavailableDatesQuery(open);
+  const disabledDates = unavailableDatesToDisabledMatcher(
+    unavailableDates ?? [],
+    mode === 'edit' ? props.schedule.id : undefined,
+  );
   const { onSubmit, isPending } = useScheduleFormHandler({
     mode,
     schedule: mode === 'edit' ? props.schedule : undefined,
@@ -112,6 +119,7 @@ export const ScheduleFormModal: React.FC<ScheduleFormModalProps> = (props) => {
                 ? t('CreateSchedule.errors.datesRequired')
                 : ' '
             }
+            disabledDates={disabledDates}
           />
           <FormControl required>
             <Autocomplete
