@@ -1,9 +1,9 @@
 import * as yup from 'yup';
-import { CreateScheduleFormValues } from '@/features/schedule-form/types';
+import { ScheduleFormValues } from '@/features/schedule-form/types';
 
 const TIME_ZONES = Intl.supportedValuesOf('timeZone');
 
-export const createScheduleSchema: yup.ObjectSchema<CreateScheduleFormValues> =
+export const createScheduleSchema: yup.ObjectSchema<ScheduleFormValues> =
   yup.object({
     label: yup.string().default('').defined(),
     dates: yup

@@ -1,7 +1,7 @@
 import { createScheduleSchema } from '../validation-schema';
-import { CreateScheduleFormValues } from '@/features/schedule-form/types';
+import { ScheduleFormValues } from '@/features/schedule-form/types';
 
-const VALID_VALUES: CreateScheduleFormValues = {
+const VALID_VALUES: ScheduleFormValues = {
   label: 'Summer schedule',
   dates: {
     startsAt: new Date(2026, 6, 25),

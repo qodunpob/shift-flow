@@ -13,21 +13,12 @@ import {
   TextField,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
-import { StatusCodes } from 'http-status-codes';
-import { toast } from 'react-toastify';
 import { DateRangePicker } from '@/components/date-range-picker/DateRangePicker';
 import { useScheduleForm } from '@/features/schedule-form/useScheduleForm';
-import { CreateScheduleFormValues } from '@/features/schedule-form/types';
-import {
-  localDateToZonedInstant,
-  zonedInstantToLocalDate,
-} from '@/features/schedule-form/zonedDate';
-import {
-  useCreateScheduleMutation,
-  useUpdateScheduleMutation,
-} from '@/features/schedules/api/client';
-import { ApiError } from '@/lib/errors/ApiError';
+import { ScheduleFormValues } from '@/features/schedule-form/types';
+import { zonedInstantToLocalDate } from '@/features/schedule-form/zonedDate';
 import { Schedule } from '@/lib/api/types';
+import { useScheduleFormHandler } from '@/features/schedule-form/useScheduleFormHandler';
 
 interface CommonProps {
   open: boolean;
@@ -44,7 +35,7 @@ const TIME_ZONES = Intl.supportedValuesOf('timeZone');
 
 const initialValuesFor = (
   props: ScheduleFormModalProps,
-): CreateScheduleFormValues => {
+): ScheduleFormValues => {
   if (props.mode === 'edit') {
     return {
       label: props.schedule.label ?? '',
@@ -67,58 +58,21 @@ const initialValuesFor = (
 export const ScheduleFormModal: React.FC<ScheduleFormModalProps> = (props) => {
   const { mode, open, onClose, resetFiltersAndPage } = props;
   const t = useTranslations();
-  const { mutate: createSchedule, isPending: isCreating } =
-    useCreateScheduleMutation();
-  const { mutate: updateSchedule, isPending: isUpdating } =
-    useUpdateScheduleMutation();
-  const isPending = isCreating || isUpdating;
-
-  const formik = useScheduleForm((values) => {
-    const input = {
-      label: values.label,
-      startsAt: localDateToZonedInstant(
-        values.dates!.startsAt,
-        values.timeZone,
-      ),
-      endsAt: localDateToZonedInstant(values.dates!.endsAt, values.timeZone),
-      timeZone: values.timeZone,
-    };
-
-    const onSuccess = () => {
-      toast.success(
-        mode === 'create'
-          ? t('CreateSchedule.success')
-          : t('ScheduleActions.success.updated'),
-      );
-      // `formik` is fully assigned by the time this callback ever runs
-      // (only after a later user submit), so this self-reference is safe
-      // despite the React Compiler lint rule's static TDZ heuristic.
-      // eslint-disable-next-line react-hooks/immutability
-      formik.resetForm();
-      resetFiltersAndPage();
-      onClose();
-    };
-    const onError = (error: Error) => {
-      const isConflict =
-        error instanceof ApiError && error.statusCode === StatusCodes.CONFLICT;
-      toast.error(
-        isConflict
-          ? mode === 'create'
-            ? t('CreateSchedule.errors.overlap')
-            : t('CreateSchedule.errors.conflict')
-          : t('CreateSchedule.errors.generic'),
-      );
-    };
-
-    if (mode === 'create') {
-      createSchedule(input, { onSuccess, onError });
-    } else {
-      updateSchedule(
-        { id: props.schedule.id, ...input },
-        { onSuccess, onError },
-      );
-    }
-  }, initialValuesFor(props));
+  const { onSubmit, isPending } = useScheduleFormHandler({
+    mode,
+    schedule: mode === 'edit' ? props.schedule : undefined,
+    resetFiltersAndPage,
+    onClose,
+    t,
+  });
+  const formik = useScheduleForm(
+    // `formik` is fully assigned by the time this callback ever runs
+    // (only after a later user submit), so this self-reference is safe
+    // despite the React Compiler lint rule's static TDZ heuristic.
+    // eslint-disable-next-line react-hooks/immutability
+    (values) => onSubmit(formik)(values),
+    initialValuesFor(props),
+  );
 
   return (
     <Dialog open={open} maxWidth="sm" fullWidth>

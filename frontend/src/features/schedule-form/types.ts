@@ -1,6 +1,6 @@
 import { DateRange } from '@/components/date-range-picker/types';
 
-export interface CreateScheduleFormValues {
+export interface ScheduleFormValues {
   label: string;
   dates: DateRange | null;
   timeZone: string;

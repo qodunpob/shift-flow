@@ -1,19 +1,19 @@
 import { useEffect } from 'react';
 import { useFormik } from 'formik';
 import { createScheduleSchema } from '@/features/schedule-form/validation-schema';
-import { CreateScheduleFormValues } from '@/features/schedule-form/types';
+import { ScheduleFormValues } from '@/features/schedule-form/types';
 
-const DEFAULT_INITIAL_VALUES: CreateScheduleFormValues = {
+const DEFAULT_INITIAL_VALUES: ScheduleFormValues = {
   label: '',
   dates: null,
   timeZone: '',
 };
 
 export const useScheduleForm = (
-  onSubmit: (values: CreateScheduleFormValues) => void,
-  initialValues: CreateScheduleFormValues = DEFAULT_INITIAL_VALUES,
+  onSubmit: (values: ScheduleFormValues) => void,
+  initialValues: ScheduleFormValues = DEFAULT_INITIAL_VALUES,
 ) => {
-  const formik = useFormik<CreateScheduleFormValues>({
+  const formik = useFormik<ScheduleFormValues>({
     initialValues,
     validationSchema: createScheduleSchema,
     onSubmit,
