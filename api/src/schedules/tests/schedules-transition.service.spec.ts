@@ -23,10 +23,8 @@ describe('schedules/SchedulesTransitionService', () => {
   // Chainable query-builder stub backing the unfilled-shift guard. `getExists`
   // resolves to `false` (schedule fully staffed) unless a test overrides it.
   let shiftsQueryBuilder: {
-    leftJoin: jest.Mock;
     where: jest.Mock;
-    groupBy: jest.Mock;
-    having: jest.Mock;
+    andWhere: jest.Mock;
     getExists: jest.Mock;
   };
   let shifts: { createQueryBuilder: jest.Mock };
@@ -40,10 +38,8 @@ describe('schedules/SchedulesTransitionService', () => {
     };
 
     shiftsQueryBuilder = {
-      leftJoin: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
-      groupBy: jest.fn().mockReturnThis(),
-      having: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
       getExists: jest.fn().mockResolvedValue(false),
     };
     shifts = {
@@ -186,6 +182,12 @@ describe('schedules/SchedulesTransitionService', () => {
     expect(shiftsQueryBuilder.where).toHaveBeenCalledWith(
       'shift.scheduleId = :scheduleId',
       { scheduleId: 'schedule-1' },
+    );
+    // A plain correlated subquery, not GROUP BY/HAVING - see the fix note
+    // on assertNoUnfilledShifts for why.
+    expect(shiftsQueryBuilder.andWhere).toHaveBeenCalledWith(
+      expect.any(Function),
+      { declined: 'DECLINED' },
     );
   });
 
