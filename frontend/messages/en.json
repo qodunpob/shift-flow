@@ -37,6 +37,52 @@
       "generic": "Something went wrong. Please try again."
     }
   },
+  "ScheduleActions": {
+    "edit": "Edit",
+    "delete": "Delete",
+    "publish": "Publish",
+    "unpublish": "Unpublish",
+    "submitForApproval": "Submit for approval",
+    "withdraw": "Withdraw",
+    "confirm": {
+      "delete": {
+        "title": "Delete this schedule?",
+        "description": "This can't be undone.",
+        "confirmLabel": "Delete"
+      },
+      "publish": {
+        "title": "Publish this schedule?",
+        "description": "It will move into review.",
+        "confirmLabel": "Publish"
+      },
+      "unpublish": {
+        "title": "Unpublish this schedule?",
+        "description": "It will move back to draft.",
+        "confirmLabel": "Unpublish"
+      },
+      "submitForApproval": {
+        "title": "Submit this schedule for approval?",
+        "description": "An approver will review it next.",
+        "confirmLabel": "Submit"
+      },
+      "withdraw": {
+        "title": "Withdraw this schedule from approval?",
+        "description": "It will move back to review.",
+        "confirmLabel": "Withdraw"
+      }
+    },
+    "success": {
+      "updated": "Schedule updated",
+      "deleted": "Schedule deleted",
+      "publish": "Schedule published",
+      "unpublish": "Schedule unpublished",
+      "submitForApproval": "Schedule submitted for approval",
+      "withdraw": "Schedule withdrawn"
+    },
+    "errors": {
+      "generic": "Something went wrong. Please try again."
+    }
+  },
   "Schedule": {
     "status": {
       "DRAFT": "Draft",
