@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Button, Menu, MenuItem } from '@mui/material';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { useTranslations } from 'next-intl';
 import { toast } from 'react-toastify';
 import { StatusCodes } from 'http-status-codes';
@@ -11,6 +12,7 @@ import {
   useAvailableEmployeesQuery,
   useCreateAssignmentMutation,
 } from '@/features/shift-assignments/api/client';
+import { EmployeeChip } from '@/components/employee-chip/EmployeeChip';
 
 export interface AssignEmployeeButtonProps {
   shiftId: string;
@@ -57,10 +59,10 @@ export const AssignEmployeeButton: React.FC<AssignEmployeeButtonProps> = ({
   return (
     <>
       <Button
-        variant="outlined"
-        size="small"
+        variant="contained"
         onClick={(event) => setAnchorEl(event.currentTarget)}
         disabled={isPending}
+        endIcon={<ArrowDropDownIcon />}
       >
         {t('ShiftAssignments.assign')}
       </Button>
@@ -75,7 +77,7 @@ export const AssignEmployeeButton: React.FC<AssignEmployeeButtonProps> = ({
         )}
         {availableEmployees?.map((employee) => (
           <MenuItem key={employee.id} onClick={() => handleAssign(employee.id)}>
-            {employee.firstName} {employee.lastName}
+            <EmployeeChip employee={employee} />
           </MenuItem>
         ))}
       </Menu>

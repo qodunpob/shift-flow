@@ -2,11 +2,11 @@
 
 import React from 'react';
 import {
+  Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  Button,
   IconButton,
   Typography,
 } from '@mui/material';
@@ -16,7 +16,6 @@ import { useLocale, useTranslations } from 'next-intl';
 import { toast } from 'react-toastify';
 import { StatusCodes } from 'http-status-codes';
 import { FlexBox } from '@/components/box/box';
-import { UserAvatar } from '@/components/user-avatar/UserAvatar';
 import { dateFormat } from '@/constants/dates';
 import { Employee, Shift } from '@/lib/api/types';
 import { useCurrentUser } from '@/providers/CurrentUserProvider';
@@ -25,6 +24,7 @@ import { useRouter } from '@/i18n/navigation';
 import { ApiError } from '@/lib/errors/ApiError';
 import { AssignEmployeeButton } from '@/features/shift-assignments/AssignEmployeeButton';
 import { useDeleteAssignmentMutation } from '@/features/shift-assignments/api/client';
+import { EmployeeChip } from '@/components/employee-chip/EmployeeChip';
 
 export interface AssignmentsModalProps {
   shift: Shift;
@@ -87,12 +87,11 @@ export const AssignmentsModal: React.FC<AssignmentsModalProps> = ({
           <Typography variant="subtitle2">
             {t('ShiftAssignments.assigned')}
           </Typography>
-          {canAssign && <AssignEmployeeButton shiftId={shift.id} />}
         </FlexBox>
         {shift.assignments.length > 0 ? (
           <FlexBox gap={2} sx={{ flexWrap: 'wrap' }}>
             {shift.assignments.map((assignment) => (
-              <EmployeeChip
+              <AssignmentEmployeeChip
                 key={assignment.id}
                 employee={assignment.employee}
                 onRemove={
@@ -116,13 +115,17 @@ export const AssignmentsModal: React.FC<AssignmentsModalProps> = ({
             </Typography>
             <FlexBox gap={2} sx={{ flexWrap: 'wrap' }}>
               {shift.proposals.map((proposal) => (
-                <EmployeeChip key={proposal.id} employee={proposal.employee} />
+                <AssignmentEmployeeChip
+                  key={proposal.id}
+                  employee={proposal.employee}
+                />
               ))}
             </FlexBox>
           </>
         )}
       </DialogContent>
       <DialogActions>
+        {canAssign && <AssignEmployeeButton shiftId={shift.id} />}
         <Button onClick={onClose} variant="outlined">
           {t('common.close')}
         </Button>
@@ -131,10 +134,10 @@ export const AssignmentsModal: React.FC<AssignmentsModalProps> = ({
   );
 };
 
-const EmployeeChip: React.FC<{ employee: Employee; onRemove?: () => void }> = ({
-  employee,
-  onRemove,
-}) => {
+const AssignmentEmployeeChip: React.FC<{
+  employee: Employee;
+  onRemove?: () => void;
+}> = ({ employee, onRemove }) => {
   const t = useTranslations();
 
   return (
@@ -142,10 +145,7 @@ const EmployeeChip: React.FC<{ employee: Employee; onRemove?: () => void }> = ({
       gap={1}
       sx={{ '&:hover .assignment-remove-button': { opacity: 1 } }}
     >
-      <UserAvatar user={employee} />
-      <Typography variant="body2">
-        {employee.firstName} {employee.lastName}
-      </Typography>
+      <EmployeeChip employee={employee} />
       {onRemove && (
         <IconButton
           className="assignment-remove-button"
