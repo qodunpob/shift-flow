@@ -8,13 +8,21 @@ import { useLocale } from 'next-intl';
 import { Schedule } from '@/lib/api/types';
 import Link from 'next/link';
 import { routes } from '@/routes';
+import { useCurrentUser } from '@/providers/CurrentUserProvider';
+import { isMine } from '@/utils/user';
+import { ScheduleActionsMenu } from '@/features/schedule-actions/ScheduleActionsMenu';
 
 export interface ScheduleCardProps {
   schedule: Schedule;
+  resetFiltersAndPage: () => void;
 }
 
-export const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule }) => {
+export const ScheduleCard: React.FC<ScheduleCardProps> = ({
+  schedule,
+  resetFiltersAndPage,
+}) => {
   const locale = useLocale();
+  const currentUser = useCurrentUser();
   const formatDate = (date: string) =>
     DateTime.fromISO(date).toFormat(dateFormat(locale).scheduleBoundaryDate);
 
@@ -39,7 +47,15 @@ export const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule }) => {
               )}
             </FlexBox>
           </Link>
-          <ScheduleStatusChip status={schedule.status} />
+          <FlexBox alignItems="center">
+            <ScheduleStatusChip status={schedule.status} />
+            {isMine(schedule.createdBy, currentUser.id) && (
+              <ScheduleActionsMenu
+                schedule={schedule}
+                resetFiltersAndPage={resetFiltersAndPage}
+              />
+            )}
+          </FlexBox>
         </FlexBox>
       </CardContent>
     </StyledCard>

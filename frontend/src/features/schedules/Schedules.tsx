@@ -74,7 +74,10 @@ export const Schedules: React.FC<SchedulesProps> = ({
           </Button>
         )}
       </FlexBox>
-      <ScheduleList items={schedules.items} />
+      <ScheduleList
+        items={schedules.items}
+        resetFiltersAndPage={resetFiltersAndPage}
+      />
       {schedules.meta.totalPages > 1 && (
         <FlexBox justifyContent="center">
           <Pagination

@@ -38,6 +38,7 @@
     }
   },
   "ScheduleActions": {
+    "menu": "Schedule actions",
     "edit": "Edit",
     "delete": "Delete",
     "publish": "Publish",
