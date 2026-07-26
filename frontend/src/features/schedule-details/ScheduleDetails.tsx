@@ -8,6 +8,7 @@ import { scheduleRange } from '@/utils/scheduleRange';
 import { useLocale, useTranslations } from 'next-intl';
 import { ScheduleToolbar } from '@/components/schedule-toolbar/ScheduleToolbar';
 import { FlexBox } from '@/components/box/box';
+import { ScheduleStatusChip } from '@/components/schedule-status-chip/ScheduleStatusChip';
 
 export interface ScheduleDetailsProps {
   schedule: Schedule;
@@ -27,9 +28,10 @@ export const ScheduleDetails: React.FC<ScheduleDetailsProps> = ({
         <Typography variant="h6" component="div">
           {scheduleRange(schedule, locale)}
         </Typography>
-        <Typography variant="body2" component="div">
+        <Typography variant="body2" component="div" sx={{ flexGrow: 1 }}>
           ({t('labels.timeZone')}: {schedule.timeZone})
         </Typography>
+        <ScheduleStatusChip status={schedule.status} />
       </FlexBox>
       <ScheduleToolbar schedule={schedule} />
       <TimeSheet schedule={schedule} shifts={shifts} />

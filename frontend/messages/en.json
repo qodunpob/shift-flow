@@ -49,6 +49,8 @@
     "unpublish": "Unpublish",
     "submitForApproval": "Submit for approval",
     "withdraw": "Withdraw",
+    "approve": "Approve",
+    "reject": "Reject",
     "confirm": {
       "delete": {
         "title": "Delete this schedule?",
@@ -74,6 +76,16 @@
         "title": "Withdraw this schedule from approval?",
         "description": "It will move back to review.",
         "confirmLabel": "Withdraw"
+      },
+      "approve": {
+        "title": "Approve this schedule?",
+        "description": "It will be finalized and visible to employees.",
+        "confirmLabel": "Approve"
+      },
+      "reject": {
+        "title": "Reject this schedule?",
+        "description": "The owning manager will see your reason and can resubmit it.",
+        "confirmLabel": "Reject"
       }
     },
     "success": {
@@ -82,7 +94,9 @@
       "publish": "Schedule published",
       "unpublish": "Schedule unpublished",
       "submitForApproval": "Schedule submitted for approval",
-      "withdraw": "Schedule withdrawn"
+      "withdraw": "Schedule withdrawn",
+      "approve": "Schedule approved",
+      "reject": "Schedule rejected"
     }
   },
   "ShiftForm": {
@@ -126,6 +140,7 @@
     "timeZone": "Time zone",
     "startsAt": "Starts at",
     "endsAt": "Ends at",
-    "requiredHeadcount": "Required headcount"
+    "requiredHeadcount": "Required headcount",
+    "rejectionReason": "Rejection reason"
   }
 }
