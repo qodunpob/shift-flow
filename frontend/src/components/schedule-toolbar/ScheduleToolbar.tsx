@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Button } from '@mui/material';
+import { Box, Button } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import { useLocale, useTranslations } from 'next-intl';
@@ -64,14 +64,16 @@ export const ScheduleToolbar: React.FC<ScheduleToolbarProps> = ({
   return (
     <>
       <FlexBox justifyContent="space-between">
-        {isScheduleOwner && (
-          <Button
-            variant="contained"
-            onClick={() => setOpenShiftFormModal(true)}
-          >
-            {t('ScheduleDetailsPage.createShift')}
-          </Button>
-        )}
+        <Box>
+          {isScheduleOwner && (
+            <Button
+              variant="contained"
+              onClick={() => setOpenShiftFormModal(true)}
+            >
+              {t('ScheduleDetailsPage.createShift')}
+            </Button>
+          )}
+        </Box>
         <FlexBox>
           {isScheduleOwner && editable && (
             <Button
@@ -102,11 +104,7 @@ export const ScheduleToolbar: React.FC<ScheduleToolbarProps> = ({
                 {action.label}
               </Button>
             ))}
-          {isScheduleApprover && (
-            <Button variant="contained" onClick={approveAction.requestApprove}>
-              {t('ScheduleActions.approve')}
-            </Button>
-          )}
+
           {isScheduleApprover && (
             <Button
               variant="outlined"
@@ -114,6 +112,11 @@ export const ScheduleToolbar: React.FC<ScheduleToolbarProps> = ({
               onClick={rejectAction.requestReject}
             >
               {t('ScheduleActions.reject')}
+            </Button>
+          )}
+          {isScheduleApprover && (
+            <Button variant="contained" onClick={approveAction.requestApprove}>
+              {t('ScheduleActions.approve')}
             </Button>
           )}
         </FlexBox>
