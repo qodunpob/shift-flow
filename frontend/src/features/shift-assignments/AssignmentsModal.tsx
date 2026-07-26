@@ -19,10 +19,11 @@ import { FlexBox } from '@/components/box/box';
 import { dateFormat } from '@/constants/dates';
 import { Employee, Shift } from '@/lib/api/types';
 import { useCurrentUser } from '@/providers/CurrentUserProvider';
-import { isManager, isMine } from '@/utils/user';
+import { isEmployee, isManager, isMine } from '@/utils/user';
 import { useRouter } from '@/i18n/navigation';
 import { ApiError } from '@/lib/errors/ApiError';
 import { AssignEmployeeButton } from '@/features/shift-assignments/AssignEmployeeButton';
+import { ProposeButton } from '@/features/shift-assignments/ProposeButton';
 import { useDeleteAssignmentMutation } from '@/features/shift-assignments/api/client';
 import { EmployeeChip } from '@/components/employee-chip/EmployeeChip';
 
@@ -48,6 +49,13 @@ export const AssignmentsModal: React.FC<AssignmentsModalProps> = ({
   const isScheduleOwner =
     isManager(currentUser.roles) && isMine(scheduleCreatedBy, currentUser.id);
   const canAssign = isScheduleOwner && shift.spotsRemaining > 0;
+
+  const isAlreadyInvolved =
+    shift.assignments.some(
+      (assignment) => assignment.employeeId === currentUser.id,
+    ) ||
+    shift.proposals.some((proposal) => proposal.employeeId === currentUser.id);
+  const canPropose = isEmployee(currentUser.roles) && !isAlreadyInvolved;
 
   const handleRemoveAssignment = (assignmentId: string) => {
     deleteAssignment(assignmentId, {
@@ -126,6 +134,7 @@ export const AssignmentsModal: React.FC<AssignmentsModalProps> = ({
       </DialogContent>
       <DialogActions>
         {canAssign && <AssignEmployeeButton shiftId={shift.id} />}
+        {canPropose && <ProposeButton shiftId={shift.id} />}
         <Button onClick={onClose} variant="outlined">
           {t('common.close')}
         </Button>

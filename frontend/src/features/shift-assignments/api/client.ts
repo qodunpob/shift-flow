@@ -32,3 +32,12 @@ export const useDeleteAssignmentMutation = () =>
         method: 'DELETE',
       }),
   });
+
+export const useCreateProposalMutation = (shiftId: string) =>
+  useMutation<unknown, Error, void>({
+    mutationFn: () =>
+      apiFetchFromClient(`/shifts/${shiftId}/assignment-proposals`, {
+        method: 'POST',
+        body: JSON.stringify({}),
+      }),
+  });

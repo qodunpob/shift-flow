@@ -104,7 +104,9 @@
     "loading": "Loading…",
     "noAvailableEmployees": "No employees available",
     "remove": "Remove",
-    "removeSuccess": "Employee removed"
+    "removeSuccess": "Employee removed",
+    "propose": "Propose",
+    "proposeSuccess": "Proposal sent"
   },
   "Schedule": {
     "status": {

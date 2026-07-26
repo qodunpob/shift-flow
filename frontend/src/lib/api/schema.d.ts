@@ -642,7 +642,7 @@ export interface components {
             declineReason: string;
         };
         CreateAssignmentProposalDto: {
-            message: string;
+            message?: string;
         };
         UpdateAssignmentProposalDto: {
             message: string;
