@@ -1,12 +1,13 @@
 'use client';
 import React, { useMemo, useState } from 'react';
-import { Box, lighten, styled, Typography } from '@mui/material';
+import { Box, lighten, styled } from '@mui/material';
 import { FlexBox } from '@/components/box/box';
 import { DateTime } from 'luxon';
 import { Schedule, Shift } from '@/lib/api/types';
 import { useLocale } from 'next-intl';
 import { dateFormat } from '@/constants/dates';
 import { AssignmentsModal } from '@/features/shift-assignments/AssignmentsModal';
+import { ShiftView } from '@/components/time-sheet/ShiftView';
 
 export interface TimeSheetProps {
   schedule: Pick<Schedule, 'startsAt' | 'endsAt' | 'timeZone' | 'createdBy'>;
@@ -82,12 +83,14 @@ export const TimeSheet: React.FC<TimeSheetProps> = ({ schedule, shifts }) => {
   );
 
   return (
-    <FlexBox gap={0}>
-      <HourLabelColumn>{hourLabels}</HourLabelColumn>
-      <TimeSheetBody>
-        {renderedShifts}
-        {dayColumns}
-      </TimeSheetBody>
+    <>
+      <FlexBox gap={0}>
+        <HourLabelColumn>{hourLabels}</HourLabelColumn>
+        <TimeSheetBody>
+          {renderedShifts}
+          {dayColumns}
+        </TimeSheetBody>
+      </FlexBox>
       {selectedShift && (
         <AssignmentsModal
           shift={selectedShift}
@@ -96,7 +99,7 @@ export const TimeSheet: React.FC<TimeSheetProps> = ({ schedule, shifts }) => {
           onClose={() => setSelectedShiftId(null)}
         />
       )}
-    </FlexBox>
+    </>
   );
 };
 
@@ -143,17 +146,19 @@ const renderShift = ({
   for (let i = 0; i < sectors.length; i++) {
     sectors[i].left = (diffFromBeginning + i) * columnWidth;
   }
+
   const timeLabelFormat =
     days > 1
       ? dateFormat(locale).shiftBoundaryDateTime
       : dateFormat(locale).shiftBoundaryTime;
+  const timeLabel =
+    startsAt.toFormat(timeLabelFormat) +
+    ' – ' +
+    endsAt.toFormat(timeLabelFormat);
+
   return sectors.map((sector, index) => (
     <ShiftBox key={`shift-${shift.id}-${index}`} sx={sector} onClick={onClick}>
-      <Typography variant="body2">
-        {startsAt.toFormat(timeLabelFormat)}
-        {' – '}
-        {endsAt.toFormat(timeLabelFormat)}
-      </Typography>
+      <ShiftView timeLabel={timeLabel} shift={shift} />
     </ShiftBox>
   ));
 };
@@ -208,6 +213,7 @@ const ShiftBox = styled(Box)(({ theme }) => ({
   padding: theme.spacing(1),
   position: 'absolute',
   width: columnWidth,
+  overflow: 'hidden',
   backgroundColor: theme.palette.primary.main,
   transition: 'background-color 0.3s ease',
   cursor: 'pointer',
