@@ -4,7 +4,8 @@ import { Settings } from 'luxon';
 import React from 'react';
 import { AssignmentsModal } from '@/features/shift-assignments/AssignmentsModal';
 import { CurrentUserProvider } from '@/providers/CurrentUserProvider';
-import { CurrentUser, Shift } from '@/lib/api/types';
+import { ScheduleProvider } from '@/features/schedule-details/ScheduleProvider';
+import { CurrentUser, Schedule, Shift } from '@/lib/api/types';
 import { apiFetchFromClient } from '@/lib/api/client/apiFetch';
 import { ApiError } from '@/lib/errors/ApiError';
 import { toast } from 'react-toastify';
@@ -66,6 +67,24 @@ const baseShift: Shift = {
   ],
 };
 
+const baseSchedule: Schedule = {
+  id: 'schedule-1',
+  createdAt: '2026-07-20T00:00:00.000Z',
+  createdBy: 'manager-1',
+  updatedAt: '2026-07-20T00:00:00.000Z',
+  updatedBy: 'manager-1',
+  deletedAt: null,
+  label: 'Week 32',
+  startsAt: '2026-08-02T15:00:00.000Z',
+  endsAt: '2026-08-09T14:59:59.999Z',
+  timeZone: 'Asia/Tokyo',
+  status: 'DRAFT',
+  rejectionReason: null,
+  totalRequiredHeadcount: 5,
+  totalFilledCount: 0,
+  totalAcceptedCount: 0,
+};
+
 const employeeViewer: CurrentUser = {
   id: 'employee-1',
   createdAt: '2026-07-20T00:00:00.000Z',
@@ -108,8 +127,6 @@ const proposingEmployeeViewer: CurrentUser = {
 const renderModal = (
   props: Partial<{
     shift: Shift;
-    timeZone: string;
-    scheduleCreatedBy: string;
     onClose: () => void;
   }> = {},
   viewer: CurrentUser = employeeViewer,
@@ -123,13 +140,9 @@ const renderModal = (
   return render(
     <QueryClientProvider client={queryClient}>
       <CurrentUserProvider user={viewer}>
-        <AssignmentsModal
-          shift={baseShift}
-          timeZone="Asia/Tokyo"
-          scheduleCreatedBy="manager-1"
-          onClose={jest.fn()}
-          {...props}
-        />
+        <ScheduleProvider schedule={baseSchedule}>
+          <AssignmentsModal shift={baseShift} onClose={jest.fn()} {...props} />
+        </ScheduleProvider>
       </CurrentUserProvider>
     </QueryClientProvider>,
   );

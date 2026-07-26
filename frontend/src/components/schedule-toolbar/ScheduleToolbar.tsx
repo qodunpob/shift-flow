@@ -16,23 +16,18 @@ import { RejectScheduleDialog } from '@/features/schedule-actions/RejectSchedule
 import { formatScheduleIdentity } from '@/features/schedule-actions/scheduleIdentity';
 import { isScheduleEditable } from '@/features/schedule-actions/isScheduleEditable';
 import { FlexBox } from '@/components/box/box';
-import { Schedule } from '@/lib/api/types';
 import { useCurrentUser } from '@/providers/CurrentUserProvider';
+import { useSchedule } from '@/features/schedule-details/ScheduleProvider';
 import { isApprover, isManager, isMine } from '@/utils/user';
 import { useRouter } from '@/i18n/navigation';
 import { routes } from '@/routes';
 
-export interface ScheduleToolbarProps {
-  schedule: Schedule;
-}
-
-export const ScheduleToolbar: React.FC<ScheduleToolbarProps> = ({
-  schedule,
-}) => {
+export const ScheduleToolbar: React.FC = () => {
   const t = useTranslations();
   const locale = useLocale();
   const router = useRouter();
   const currentUser = useCurrentUser();
+  const schedule = useSchedule();
   const [openShiftFormModal, setOpenShiftFormModal] = useState(false);
 
   const isScheduleOwner =

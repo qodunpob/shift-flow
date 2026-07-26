@@ -16,8 +16,9 @@ import { DateTime } from 'luxon';
 import { useLocale, useTranslations } from 'next-intl';
 import { FlexBox } from '@/components/box/box';
 import { dateFormat } from '@/constants/dates';
-import { CurrentUser, Employee, Schedule, Shift } from '@/lib/api/types';
+import { CurrentUser, Employee, Shift } from '@/lib/api/types';
 import { useCurrentUser } from '@/providers/CurrentUserProvider';
+import { useSchedule } from '@/features/schedule-details/ScheduleProvider';
 import { isEmployee } from '@/utils/user';
 import { AssignEmployeeButton } from '@/features/shift-assignments/AssignEmployeeButton';
 import { ProposeButton } from '@/features/shift-assignments/ProposeButton';
@@ -27,21 +28,18 @@ import { useAssignmentHandlers } from '@/features/shift-assignments/useAssignmen
 import { canEdit, isEditable } from '@/utils/scheduleState';
 
 export interface AssignmentsModalProps {
-  schedule: Pick<Schedule, 'status' | 'createdBy'>;
   shift: Shift;
-  timeZone: string;
   onClose: () => void;
 }
 
 export const AssignmentsModal: React.FC<AssignmentsModalProps> = ({
-  schedule,
   shift,
-  timeZone,
   onClose,
 }) => {
   const t = useTranslations();
   const locale = useLocale();
   const currentUser = useCurrentUser();
+  const schedule = useSchedule();
 
   const canAssign = canEdit(schedule, currentUser) && shift.spotsRemaining > 0;
   const canPropose =
@@ -53,8 +51,10 @@ export const AssignmentsModal: React.FC<AssignmentsModalProps> = ({
     useAssignmentHandlers(t);
 
   const format = dateFormat(locale).shiftBoundaryDateTime;
-  const startsAt = DateTime.fromISO(shift.startsAt, { zone: timeZone });
-  const endsAt = DateTime.fromISO(shift.endsAt, { zone: timeZone });
+  const startsAt = DateTime.fromISO(shift.startsAt, {
+    zone: schedule.timeZone,
+  });
+  const endsAt = DateTime.fromISO(shift.endsAt, { zone: schedule.timeZone });
 
   return (
     <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
