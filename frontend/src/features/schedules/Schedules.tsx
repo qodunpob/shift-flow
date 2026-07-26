@@ -55,13 +55,13 @@ export const Schedules: React.FC<SchedulesProps> = ({
     isInitialMount && isInitialFilter ? initialSchedules : undefined,
   );
   const t = useTranslations();
-  const [openCreateModal, setOpenCreateModal] = useState(false);
+  const [openScheduleFormModal, setOpenScheduleFormModal] = useState(false);
   const isManager = getIsManager(user.roles);
 
   const resetFiltersAndPage = () => {
-    setPage(1);
-    setStatus(null);
-    setMine(false);
+    void setPage(1);
+    void setStatus(null);
+    void setMine(false);
   };
 
   return (
@@ -69,7 +69,10 @@ export const Schedules: React.FC<SchedulesProps> = ({
       <FlexBox justifyContent="space-between">
         <ScheduleFilters isMineFilterVisible={isManager} />
         {isManager && (
-          <Button variant="contained" onClick={() => setOpenCreateModal(true)}>
+          <Button
+            variant="contained"
+            onClick={() => setOpenScheduleFormModal(true)}
+          >
             {t('common.create')}
           </Button>
         )}
@@ -90,8 +93,8 @@ export const Schedules: React.FC<SchedulesProps> = ({
       {isManager && (
         <ScheduleFormModal
           mode="create"
-          open={openCreateModal}
-          onClose={() => setOpenCreateModal(false)}
+          open={openScheduleFormModal}
+          onClose={() => setOpenScheduleFormModal(false)}
           resetFiltersAndPage={resetFiltersAndPage}
         />
       )}

@@ -7,10 +7,12 @@ import {
   Paper,
   Popover,
 } from '@mui/material';
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { usePopoverVisibility } from '@/hooks/usePopoverVisibility';
 import { MaskedTextField } from '@/components/masked-text-field/MaskedTextField';
 import { DayPicker } from '@daypicker/react';
+import '@daypicker/react/style.css';
+import { useDatePickerValue } from '@/components/date-picker/useDatePickerValue';
 
 export interface DatePickerProps extends Omit<
   OutlinedInputProps,
@@ -29,23 +31,35 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   error,
   helperText,
   value: givenValue,
+  fullWidth,
   onChange,
   ...restProps
 }) => {
   const locale = useLocale();
-  const t = useTranslations();
 
   const { anchorEl, handleOnClick, handleClose } = usePopoverVisibility();
+  const { value, textValue, handleCalendarSelect, handleInputAccept } =
+    useDatePickerValue({
+      givenValue,
+      locale,
+      onChange,
+      onClose: handleClose,
+    });
   return (
     <>
-      <FormControl required={required} error={error} onClick={handleOnClick}>
+      <FormControl
+        required={required}
+        error={error}
+        onClick={handleOnClick}
+        fullWidth={fullWidth}
+      >
         {label && <InputLabel>{label}</InputLabel>}
         <MaskedTextField
           {...restProps}
           mask="00/00/0000"
           placeholder="MM/DD/YYYY"
-          // value={textRange}
-          // inputProps={{ onAccept: handleInputAccept }}
+          value={textValue}
+          onAccept={handleInputAccept}
         />
         {helperText && <FormHelperText>{helperText}</FormHelperText>}
       </FormControl>
@@ -77,12 +91,9 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           <DayPicker
             animate
             mode="single"
-            // selected={calendarRange}
-            onSelect={handleClose}
+            selected={value ?? undefined}
+            onSelect={handleCalendarSelect}
           />
-          {/*<FlexBox justifyContent="flex-end" sx={{ mt: 1 }}>*/}
-          {/*  <Button onClick={handleClose}>{t('common.ok')}</Button>*/}
-          {/*</FlexBox>*/}
         </Paper>
       </Popover>
     </>

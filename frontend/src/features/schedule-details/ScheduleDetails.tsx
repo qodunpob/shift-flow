@@ -18,6 +18,7 @@ export const ScheduleDetails: React.FC<ScheduleDetailsProps> = ({
   shifts,
 }) => {
   const locale = useLocale();
+
   return (
     <>
       <Typography variant="h6" component="div">

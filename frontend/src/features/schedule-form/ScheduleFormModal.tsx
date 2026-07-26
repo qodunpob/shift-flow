@@ -19,6 +19,7 @@ import { ScheduleFormValues } from '@/features/schedule-form/types';
 import { zonedInstantToLocalDate } from '@/features/schedule-form/zonedDate';
 import { Schedule } from '@/lib/api/types';
 import { useScheduleFormHandler } from '@/features/schedule-form/useScheduleFormHandler';
+import { hasError } from '@/utils/formikHelpers';
 
 interface CommonProps {
   open: boolean;
@@ -105,9 +106,9 @@ export const ScheduleFormModal: React.FC<ScheduleFormModalProps> = (props) => {
             value={formik.values.dates}
             onChange={(value) => formik.setFieldValue('dates', value)}
             onBlur={() => formik.setFieldTouched('dates', true)}
-            error={!!(formik.touched.dates && formik.errors.dates)}
+            error={hasError(formik, 'dates')}
             helperText={
-              formik.touched.dates && formik.errors.dates
+              hasError(formik, 'dates')
                 ? t('CreateSchedule.errors.datesRequired')
                 : ' '
             }
@@ -124,9 +125,9 @@ export const ScheduleFormModal: React.FC<ScheduleFormModalProps> = (props) => {
                 <TextField
                   {...params}
                   label={t('labels.timeZone')}
-                  error={!!(formik.touched.timeZone && formik.errors.timeZone)}
+                  error={hasError(formik, 'timeZone')}
                   helperText={
-                    formik.touched.timeZone && formik.errors.timeZone
+                    hasError(formik, 'timeZone')
                       ? t('CreateSchedule.errors.timeZoneRequired')
                       : ' '
                   }

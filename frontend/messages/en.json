@@ -103,6 +103,9 @@
   "labels": {
     "label": "Label",
     "dates": "Dates",
-    "timeZone": "Time zone"
+    "timeZone": "Time zone",
+    "startsAt": "Starts at",
+    "endsAt": "Ends at",
+    "requiredHeadcount": "Required headcount"
   }
 }

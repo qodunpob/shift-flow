@@ -5,7 +5,7 @@ import { shiftFormSchema } from '@/features/shift-form/validation-schema';
 const INITIAL_VALUES = {
   startsAt: null,
   endsAt: null,
-  requiredHeadcount: 0,
+  requiredHeadcount: 1,
 };
 
 export const useShiftForm = (onSubmit: (values: ShiftFormValues) => void) => {

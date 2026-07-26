@@ -18,11 +18,9 @@ export const isSameDateRange = (
   a: DateRange | null,
   b: DateRange | null,
 ): boolean => {
-  if (a === b) return true;
-  if (!a || !b) return false;
   return (
-    a.startsAt.getTime() === b.startsAt.getTime() &&
-    a.endsAt.getTime() === b.endsAt.getTime()
+    a?.startsAt.getTime() === b?.startsAt.getTime() &&
+    a?.endsAt.getTime() === b?.endsAt.getTime()
   );
 };
 
