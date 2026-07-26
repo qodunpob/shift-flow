@@ -5,7 +5,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import { DataSource, EntityManager, Not } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import { AssignmentsService } from '../assignments.service';
 import {
   AssignmentEntity,
@@ -203,7 +203,7 @@ describe('assignments/AssignmentsService', () => {
         service.create(shiftId, dto, manager),
       ).rejects.toBeInstanceOf(ConflictException);
       expect(assignments.count).toHaveBeenCalledWith({
-        where: { shiftId, status: Not(AssignmentStatus.DECLINED) },
+        where: { shiftId },
       });
       expect(dataSource.transaction).not.toHaveBeenCalled();
     });
