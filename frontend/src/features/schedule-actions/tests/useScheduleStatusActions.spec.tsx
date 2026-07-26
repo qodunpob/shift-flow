@@ -72,8 +72,8 @@ describe('features/schedule-actions/useScheduleStatusActions', () => {
     const { result } = renderFor('IN_REVIEW');
 
     expect(result.current.actions.map((a) => a.key)).toEqual([
-      'submitForApproval',
       'unpublish',
+      'submitForApproval',
     ]);
   });
 

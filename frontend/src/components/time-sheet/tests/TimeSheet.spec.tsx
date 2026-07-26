@@ -6,6 +6,7 @@ import { TimeSheet } from '@/components/time-sheet/TimeSheet';
 import { CurrentUserProvider } from '@/providers/CurrentUserProvider';
 import { ScheduleProvider } from '@/features/schedule-details/ScheduleProvider';
 import { CurrentUser, Schedule, Shift } from '@/lib/api/types';
+import { ConfirmDialogProvider } from '@/providers/ConfirmDialogProvider';
 
 jest.mock('next-intl', () => ({
   useLocale: () => 'fallback',
@@ -78,7 +79,9 @@ const renderTimeSheet = (shifts: Shift[]) => {
     <QueryClientProvider client={queryClient}>
       <CurrentUserProvider user={viewer}>
         <ScheduleProvider schedule={schedule}>
-          <TimeSheet shifts={shifts} />
+          <ConfirmDialogProvider>
+            <TimeSheet shifts={shifts} />
+          </ConfirmDialogProvider>
         </ScheduleProvider>
       </CurrentUserProvider>
     </QueryClientProvider>,
