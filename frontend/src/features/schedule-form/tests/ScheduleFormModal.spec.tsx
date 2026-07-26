@@ -156,8 +156,17 @@ const renderModal = (
 
 describe('features/schedule-form/ScheduleFormModal', () => {
   describe('create mode', () => {
-    it('should not show validation errors before the fields are touched', () => {
+    it('should not show validation errors before the fields are touched', async () => {
       renderModal();
+
+      // Wait for the mount-only default-timezone effect to settle before
+      // asserting - otherwise its async formik.setFieldValue update lands
+      // after this test has already returned, outside any act() scope.
+      await waitFor(() => {
+        expect(screen.getByRole('combobox')).toHaveValue(
+          MOCKED_BROWSER_TIME_ZONE,
+        );
+      });
 
       expect(
         screen.queryByText('CreateSchedule.errors.datesRequired'),
