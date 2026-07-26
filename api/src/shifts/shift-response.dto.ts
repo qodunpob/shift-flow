@@ -15,7 +15,7 @@ export class EmployeeRefDto {
 export class AssignmentViewDto implements AssignmentView {
   id: string;
   employeeId: string;
-  employee: EmployeeRefDto | null;
+  employee: EmployeeRefDto;
   status: AssignmentStatus;
   declineReason: string | null;
 }
@@ -23,7 +23,7 @@ export class AssignmentViewDto implements AssignmentView {
 export class ProposalViewDto implements ProposalView {
   id: string;
   employeeId: string;
-  employee: EmployeeRefDto | null;
+  employee: EmployeeRefDto;
   message: string | null;
   createdAt: Date;
 }

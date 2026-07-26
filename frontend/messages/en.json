@@ -98,6 +98,12 @@
       "generic": "Something went wrong. Please try again."
     }
   },
+  "ShiftAssignments": {
+    "title": "Shift details",
+    "assigned": "Assigned",
+    "proposals": "Proposals",
+    "noneAssigned": "No one assigned yet"
+  },
   "Schedule": {
     "status": {
       "DRAFT": "Draft",

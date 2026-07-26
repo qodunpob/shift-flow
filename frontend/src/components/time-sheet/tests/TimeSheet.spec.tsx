@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { Settings } from 'luxon';
 import React from 'react';
 import { TimeSheet } from '@/components/time-sheet/TimeSheet';
@@ -6,6 +6,7 @@ import { Shift } from '@/lib/api/types';
 
 jest.mock('next-intl', () => ({
   useLocale: () => 'fallback',
+  useTranslations: () => (key: string) => key,
 }));
 
 const schedule = {
@@ -58,5 +59,28 @@ describe('components/time-sheet/TimeSheet', () => {
     render(<TimeSheet schedule={schedule} shifts={[]} />);
 
     expect(screen.getByText('08/03')).toBeInTheDocument();
+  });
+
+  it('should open the assignments modal for a shift when it is clicked', () => {
+    render(<TimeSheet schedule={schedule} shifts={[shift]} />);
+
+    expect(
+      screen.queryByText('ShiftAssignments.title'),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('08:00 – 16:30'));
+
+    expect(screen.getByText('ShiftAssignments.title')).toBeInTheDocument();
+  });
+
+  it('should close the assignments modal when its close button is clicked', () => {
+    render(<TimeSheet schedule={schedule} shifts={[shift]} />);
+
+    fireEvent.click(screen.getByText('08:00 – 16:30'));
+    fireEvent.click(screen.getByText('common.close'));
+
+    expect(
+      screen.queryByText('ShiftAssignments.title'),
+    ).not.toBeInTheDocument();
   });
 });
