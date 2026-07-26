@@ -61,7 +61,7 @@ export class SchedulesService {
   ): Promise<Paginated<ScheduleView>> {
     const query = this.schedules
       .createQueryBuilder('schedule')
-      .orderBy('schedule.startsAt', 'ASC');
+      .orderBy('schedule.startsAt', 'DESC');
 
     applyScheduleVisibility(query, user);
 
