@@ -614,4 +614,68 @@ describe('features/shift-assignments/AssignmentsModal', () => {
       ).not.toBeInTheDocument();
     });
   });
+
+  describe('delete shift', () => {
+    it("should show the delete button for the schedule's own manager", () => {
+      renderModal({}, managerAuthorViewer);
+
+      expect(screen.getByText('common.delete')).toBeInTheDocument();
+    });
+
+    it("should not show the delete button for a manager who isn't the schedule's author", () => {
+      renderModal({}, managerOtherViewer);
+
+      expect(screen.queryByText('common.delete')).not.toBeInTheDocument();
+    });
+
+    it('should not show the delete button for an employee', () => {
+      renderModal({}, employeeViewer);
+
+      expect(screen.queryByText('common.delete')).not.toBeInTheDocument();
+    });
+
+    it('should delete the shift immediately without a confirmation step, notify, refresh, and close the modal', async () => {
+      mockedApiFetchFromClient.mockResolvedValue(undefined);
+      const onClose = jest.fn();
+      renderModal({ onClose }, managerAuthorViewer);
+
+      fireEvent.click(screen.getByText('common.delete'));
+
+      await waitFor(() =>
+        expect(mockedApiFetchFromClient).toHaveBeenCalledWith(
+          '/shifts/shift-1',
+          { method: 'DELETE' },
+        ),
+      );
+      await waitFor(() =>
+        expect(toast.success).toHaveBeenCalledWith('ShiftForm.deleteSuccess'),
+      );
+      expect(mockRouterRefresh).toHaveBeenCalled();
+      expect(onClose).toHaveBeenCalled();
+    });
+
+    it('should show a distinct error when deletion conflicts with the current state', async () => {
+      mockedApiFetchFromClient.mockRejectedValue(
+        new ApiError('Request to /shifts/shift-1 failed with status 409', 409),
+      );
+      renderModal({}, managerAuthorViewer);
+
+      fireEvent.click(screen.getByText('common.delete'));
+
+      await waitFor(() =>
+        expect(toast.error).toHaveBeenCalledWith('commonErrors.conflict'),
+      );
+    });
+
+    it('should show a generic error when deletion fails for another reason', async () => {
+      mockedApiFetchFromClient.mockRejectedValue(new Error('network down'));
+      renderModal({}, managerAuthorViewer);
+
+      fireEvent.click(screen.getByText('common.delete'));
+
+      await waitFor(() =>
+        expect(toast.error).toHaveBeenCalledWith('commonErrors.generic'),
+      );
+    });
+  });
 });

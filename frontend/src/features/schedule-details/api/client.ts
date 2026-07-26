@@ -32,3 +32,9 @@ export const useUpdateShiftMutation = () =>
         body: JSON.stringify(input),
       }),
   });
+
+export const useDeleteShiftMutation = () =>
+  useMutation<void, Error, string>({
+    mutationFn: (id) =>
+      apiFetchFromClient(`/shifts/${id}`, { method: 'DELETE' }),
+  });

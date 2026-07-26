@@ -14,6 +14,8 @@ import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined
 import CheckOutlinedIcon from '@mui/icons-material/CheckOutlined';
 import { DateTime } from 'luxon';
 import { useLocale, useTranslations } from 'next-intl';
+import { StatusCodes } from 'http-status-codes';
+import { toast } from 'react-toastify';
 import { FlexBox } from '@/components/box/box';
 import { dateFormat } from '@/constants/dates';
 import { CurrentUser, Employee, Shift } from '@/lib/api/types';
@@ -27,6 +29,9 @@ import EditIcon from '@mui/icons-material/Edit';
 import { useAssignmentHandlers } from '@/features/shift-assignments/useAssignmentHandlers';
 import { canEdit, isEditable } from '@/utils/scheduleState';
 import { ShiftFormModal } from '@/features/shift-form/ShiftFormModal';
+import { useDeleteShiftMutation } from '@/features/schedule-details/api/client';
+import { ApiError } from '@/lib/errors/ApiError';
+import { useRouter } from '@/i18n/navigation';
 
 export interface AssignmentsModalProps {
   shift: Shift;
@@ -39,6 +44,7 @@ export const AssignmentsModal: React.FC<AssignmentsModalProps> = ({
 }) => {
   const t = useTranslations();
   const locale = useLocale();
+  const router = useRouter();
   const currentUser = useCurrentUser();
   const schedule = useSchedule();
   const [isEditingShift, setIsEditingShift] = useState(false);
@@ -51,6 +57,26 @@ export const AssignmentsModal: React.FC<AssignmentsModalProps> = ({
 
   const { handleRemoveAssignment, handleRemoveProposal, handleAcceptProposal } =
     useAssignmentHandlers(t);
+  const { mutate: deleteShift, isPending: isDeletingShift } =
+    useDeleteShiftMutation();
+
+  const handleDeleteShift = () => {
+    deleteShift(shift.id, {
+      onSuccess: () => {
+        toast.success(t('ShiftForm.deleteSuccess'));
+        router.refresh();
+        onClose();
+      },
+      onError: (error) => {
+        const isConflict =
+          error instanceof ApiError &&
+          error.statusCode === StatusCodes.CONFLICT;
+        toast.error(
+          isConflict ? t('commonErrors.conflict') : t('commonErrors.generic'),
+        );
+      },
+    });
+  };
 
   const format = dateFormat(locale).shiftBoundaryDateTime;
   const startsAt = DateTime.fromISO(shift.startsAt, {
@@ -141,6 +167,8 @@ export const AssignmentsModal: React.FC<AssignmentsModalProps> = ({
               variant="outlined"
               color="warning"
               endIcon={<DeleteOutlineOutlinedIcon />}
+              onClick={handleDeleteShift}
+              disabled={isDeletingShift}
             >
               {t('common.delete')}
             </Button>
