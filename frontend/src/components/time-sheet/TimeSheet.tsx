@@ -3,14 +3,14 @@ import React, { useMemo, useState } from 'react';
 import { Box, lighten, styled } from '@mui/material';
 import { FlexBox } from '@/components/box/box';
 import { DateTime } from 'luxon';
-import { Schedule, Shift } from '@/lib/api/types';
+import { Shift } from '@/lib/api/types';
 import { useLocale } from 'next-intl';
 import { dateFormat } from '@/constants/dates';
 import { AssignmentsModal } from '@/features/shift-assignments/AssignmentsModal';
 import { ShiftView } from '@/components/time-sheet/ShiftView';
+import { useSchedule } from '@/features/schedule-details/ScheduleProvider';
 
 export interface TimeSheetProps {
-  schedule: Schedule;
   shifts: Shift[];
 }
 
@@ -19,7 +19,8 @@ const dayLabelHeight = 40;
 const cellHeight = 60;
 const hourCellClassName = 'time-sheet-hour-cell';
 
-export const TimeSheet: React.FC<TimeSheetProps> = ({ schedule, shifts }) => {
+export const TimeSheet: React.FC<TimeSheetProps> = ({ shifts }) => {
+  const schedule = useSchedule();
   const locale = useLocale();
   const [selectedShiftId, setSelectedShiftId] = useState<string | null>(null);
   const selectedShift =
@@ -93,9 +94,7 @@ export const TimeSheet: React.FC<TimeSheetProps> = ({ schedule, shifts }) => {
       </FlexBox>
       {selectedShift && (
         <AssignmentsModal
-          schedule={schedule}
           shift={selectedShift}
-          timeZone={schedule.timeZone}
           onClose={() => setSelectedShiftId(null)}
         />
       )}

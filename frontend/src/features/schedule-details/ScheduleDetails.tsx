@@ -11,6 +11,7 @@ import { FlexBox } from '@/components/box/box';
 import { ScheduleStatusChip } from '@/components/schedule-status-chip/ScheduleStatusChip';
 import { isMine } from '@/utils/user';
 import { useCurrentUser } from '@/providers/CurrentUserProvider';
+import { ScheduleProvider } from '@/features/schedule-details/ScheduleProvider';
 
 export interface ScheduleDetailsProps {
   schedule: Schedule;
@@ -25,12 +26,12 @@ export const ScheduleDetails: React.FC<ScheduleDetailsProps> = ({
   const t = useTranslations();
   const currentUser = useCurrentUser();
   const isRejectionReasonVisible =
-    isMine(schedule.createdBy, currentUser.id) &&
+    isMine(schedule, currentUser) &&
     schedule.status === 'REJECTED' &&
     schedule.rejectionReason;
 
   return (
-    <>
+    <ScheduleProvider schedule={schedule}>
       <FlexBox>
         <Typography variant="h6" component="div">
           {scheduleRange(schedule, locale)}
@@ -46,8 +47,8 @@ export const ScheduleDetails: React.FC<ScheduleDetailsProps> = ({
           {schedule.rejectionReason}
         </Alert>
       )}
-      <ScheduleToolbar schedule={schedule} />
-      <TimeSheet schedule={schedule} shifts={shifts} />
-    </>
+      <ScheduleToolbar />
+      <TimeSheet shifts={shifts} />
+    </ScheduleProvider>
   );
 };

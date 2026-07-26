@@ -4,7 +4,8 @@ import { Settings } from 'luxon';
 import React from 'react';
 import { AssignmentsModal } from '@/features/shift-assignments/AssignmentsModal';
 import { CurrentUserProvider } from '@/providers/CurrentUserProvider';
-import { CurrentUser, Shift } from '@/lib/api/types';
+import { ScheduleProvider } from '@/features/schedule-details/ScheduleProvider';
+import { CurrentUser, Schedule, Shift } from '@/lib/api/types';
 import { apiFetchFromClient } from '@/lib/api/client/apiFetch';
 import { ApiError } from '@/lib/errors/ApiError';
 import { toast } from 'react-toastify';
@@ -25,6 +26,18 @@ jest.mock('@/lib/api/client/apiFetch', () => ({
 
 jest.mock('react-toastify', () => ({
   toast: { success: jest.fn(), error: jest.fn() },
+}));
+
+// ShiftFormModal's own edit-mode behavior (pre-fill, submit) is covered by
+// its own test suite - what's under test here is only that AssignmentsModal
+// swaps to it when Edit is clicked, and swaps back on its onClose.
+jest.mock('@/features/shift-form/ShiftFormModal', () => ({
+  ShiftFormModal: ({ onClose }: { onClose: () => void }) => (
+    <div>
+      shift-form-modal-edit
+      <button onClick={onClose}>close-shift-form-modal</button>
+    </div>
+  ),
 }));
 
 const mockedApiFetchFromClient = apiFetchFromClient as jest.MockedFunction<
@@ -64,6 +77,24 @@ const baseShift: Shift = {
       createdAt: '2026-07-21T00:00:00.000Z',
     },
   ],
+};
+
+const baseSchedule: Schedule = {
+  id: 'schedule-1',
+  createdAt: '2026-07-20T00:00:00.000Z',
+  createdBy: 'manager-1',
+  updatedAt: '2026-07-20T00:00:00.000Z',
+  updatedBy: 'manager-1',
+  deletedAt: null,
+  label: 'Week 32',
+  startsAt: '2026-08-02T15:00:00.000Z',
+  endsAt: '2026-08-09T14:59:59.999Z',
+  timeZone: 'Asia/Tokyo',
+  status: 'DRAFT',
+  rejectionReason: null,
+  totalRequiredHeadcount: 5,
+  totalFilledCount: 0,
+  totalAcceptedCount: 0,
 };
 
 const employeeViewer: CurrentUser = {
@@ -108,8 +139,6 @@ const proposingEmployeeViewer: CurrentUser = {
 const renderModal = (
   props: Partial<{
     shift: Shift;
-    timeZone: string;
-    scheduleCreatedBy: string;
     onClose: () => void;
   }> = {},
   viewer: CurrentUser = employeeViewer,
@@ -123,13 +152,9 @@ const renderModal = (
   return render(
     <QueryClientProvider client={queryClient}>
       <CurrentUserProvider user={viewer}>
-        <AssignmentsModal
-          shift={baseShift}
-          timeZone="Asia/Tokyo"
-          scheduleCreatedBy="manager-1"
-          onClose={jest.fn()}
-          {...props}
-        />
+        <ScheduleProvider schedule={baseSchedule}>
+          <AssignmentsModal shift={baseShift} onClose={jest.fn()} {...props} />
+        </ScheduleProvider>
       </CurrentUserProvider>
     </QueryClientProvider>,
   );
@@ -540,6 +565,113 @@ describe('features/shift-assignments/AssignmentsModal', () => {
       renderModal({}, managerAuthorViewer);
 
       fireEvent.click(screen.getByLabelText('ShiftAssignments.accept'));
+
+      await waitFor(() =>
+        expect(toast.error).toHaveBeenCalledWith('commonErrors.generic'),
+      );
+    });
+  });
+
+  describe('edit shift', () => {
+    it("should show the edit button for the schedule's own manager", () => {
+      renderModal({}, managerAuthorViewer);
+
+      expect(screen.getByText('common.edit')).toBeInTheDocument();
+    });
+
+    it("should not show the edit button for a manager who isn't the schedule's author", () => {
+      renderModal({}, managerOtherViewer);
+
+      expect(screen.queryByText('common.edit')).not.toBeInTheDocument();
+    });
+
+    it('should not show the edit button for an employee', () => {
+      renderModal({}, employeeViewer);
+
+      expect(screen.queryByText('common.edit')).not.toBeInTheDocument();
+    });
+
+    it('should swap to the edit form when the edit button is clicked', () => {
+      renderModal({}, managerAuthorViewer);
+
+      fireEvent.click(screen.getByText('common.edit'));
+
+      expect(screen.getByText('shift-form-modal-edit')).toBeInTheDocument();
+      expect(
+        screen.queryByText('ShiftAssignments.title'),
+      ).not.toBeInTheDocument();
+    });
+
+    it('should swap back to the assignments view when the edit form closes', () => {
+      renderModal({}, managerAuthorViewer);
+
+      fireEvent.click(screen.getByText('common.edit'));
+      fireEvent.click(screen.getByText('close-shift-form-modal'));
+
+      expect(screen.getByText('ShiftAssignments.title')).toBeInTheDocument();
+      expect(
+        screen.queryByText('shift-form-modal-edit'),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  describe('delete shift', () => {
+    it("should show the delete button for the schedule's own manager", () => {
+      renderModal({}, managerAuthorViewer);
+
+      expect(screen.getByText('common.delete')).toBeInTheDocument();
+    });
+
+    it("should not show the delete button for a manager who isn't the schedule's author", () => {
+      renderModal({}, managerOtherViewer);
+
+      expect(screen.queryByText('common.delete')).not.toBeInTheDocument();
+    });
+
+    it('should not show the delete button for an employee', () => {
+      renderModal({}, employeeViewer);
+
+      expect(screen.queryByText('common.delete')).not.toBeInTheDocument();
+    });
+
+    it('should delete the shift immediately without a confirmation step, notify, refresh, and close the modal', async () => {
+      mockedApiFetchFromClient.mockResolvedValue(undefined);
+      const onClose = jest.fn();
+      renderModal({ onClose }, managerAuthorViewer);
+
+      fireEvent.click(screen.getByText('common.delete'));
+
+      await waitFor(() =>
+        expect(mockedApiFetchFromClient).toHaveBeenCalledWith(
+          '/shifts/shift-1',
+          { method: 'DELETE' },
+        ),
+      );
+      await waitFor(() =>
+        expect(toast.success).toHaveBeenCalledWith('ShiftForm.deleteSuccess'),
+      );
+      expect(mockRouterRefresh).toHaveBeenCalled();
+      expect(onClose).toHaveBeenCalled();
+    });
+
+    it('should show a distinct error when deletion conflicts with the current state', async () => {
+      mockedApiFetchFromClient.mockRejectedValue(
+        new ApiError('Request to /shifts/shift-1 failed with status 409', 409),
+      );
+      renderModal({}, managerAuthorViewer);
+
+      fireEvent.click(screen.getByText('common.delete'));
+
+      await waitFor(() =>
+        expect(toast.error).toHaveBeenCalledWith('commonErrors.conflict'),
+      );
+    });
+
+    it('should show a generic error when deletion fails for another reason', async () => {
+      mockedApiFetchFromClient.mockRejectedValue(new Error('network down'));
+      renderModal({}, managerAuthorViewer);
+
+      fireEvent.click(screen.getByText('common.delete'));
 
       await waitFor(() =>
         expect(toast.error).toHaveBeenCalledWith('commonErrors.generic'),

@@ -1,9 +1,16 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, renderHook, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  renderHook,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import React from 'react';
 import { useApproveScheduleAction } from '../useApproveScheduleAction';
 import { apiFetchFromClient } from '@/lib/api/client/apiFetch';
 import { toast } from 'react-toastify';
+import { ConfirmDialogProvider } from '@/providers/ConfirmDialogProvider';
 
 jest.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
@@ -30,60 +37,50 @@ const createWrapper = () => {
   });
   return function Wrapper({ children }: { children: React.ReactNode }) {
     return (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <ConfirmDialogProvider>{children}</ConfirmDialogProvider>
+      </QueryClientProvider>
     );
   };
 };
 
 describe('features/schedule-actions/useApproveScheduleAction', () => {
-  it('should start not confirming', () => {
-    const { result } = renderHook(
-      () => useApproveScheduleAction('schedule-1', jest.fn()),
-      { wrapper: createWrapper() },
-    );
-
-    expect(result.current.isConfirming).toBe(false);
+  beforeEach(() => {
+    mockedApiFetchFromClient.mockReset();
   });
 
-  it('should start confirming when requestApprove is called', () => {
+  it('should open the confirm dialog with the given identity when requestApprove is called', () => {
     const { result } = renderHook(
-      () => useApproveScheduleAction('schedule-1', jest.fn()),
+      () => useApproveScheduleAction('schedule-1', 'Week 32', jest.fn()),
       { wrapper: createWrapper() },
     );
 
     act(() => result.current.requestApprove());
 
-    expect(result.current.isConfirming).toBe(true);
+    expect(
+      screen.getByText('ScheduleActions.confirm.approve.title'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Week 32')).toBeInTheDocument();
   });
 
-  it('should stop confirming when cancel is called', () => {
-    const { result } = renderHook(
-      () => useApproveScheduleAction('schedule-1', jest.fn()),
-      { wrapper: createWrapper() },
-    );
-
-    act(() => result.current.requestApprove());
-    act(() => result.current.cancel());
-
-    expect(result.current.isConfirming).toBe(false);
-  });
-
-  it('should approve the schedule, notify, call onSuccess, and stop confirming on success', async () => {
+  it('should approve the schedule, notify, and call onSuccess when confirmed', async () => {
     mockedApiFetchFromClient.mockResolvedValue({});
     const onSuccess = jest.fn();
     const { result } = renderHook(
-      () => useApproveScheduleAction('schedule-1', onSuccess),
+      () => useApproveScheduleAction('schedule-1', 'Week 32', onSuccess),
       { wrapper: createWrapper() },
     );
 
     act(() => result.current.requestApprove());
-    act(() => result.current.confirm());
+    fireEvent.click(
+      screen.getByText('ScheduleActions.confirm.approve.confirmLabel'),
+    );
 
-    await waitFor(() => expect(result.current.isConfirming).toBe(false));
-
-    expect(mockedApiFetchFromClient).toHaveBeenCalledWith(
-      '/schedules/schedule-1/approve',
-      { method: 'POST' },
+    await waitFor(() =>
+      expect(mockedApiFetchFromClient).toHaveBeenCalledWith(
+        '/schedules/schedule-1/approve',
+        { method: 'POST' },
+      ),
     );
     expect(toast.success).toHaveBeenCalledWith(
       'ScheduleActions.success.approve',
@@ -91,18 +88,20 @@ describe('features/schedule-actions/useApproveScheduleAction', () => {
     expect(onSuccess).toHaveBeenCalled();
   });
 
-  it('should show a generic error and stop confirming when approval fails', async () => {
+  it('should show a generic error when approval fails', async () => {
     mockedApiFetchFromClient.mockRejectedValue(new Error('network down'));
     const { result } = renderHook(
-      () => useApproveScheduleAction('schedule-1', jest.fn()),
+      () => useApproveScheduleAction('schedule-1', 'Week 32', jest.fn()),
       { wrapper: createWrapper() },
     );
 
     act(() => result.current.requestApprove());
-    act(() => result.current.confirm());
+    fireEvent.click(
+      screen.getByText('ScheduleActions.confirm.approve.confirmLabel'),
+    );
 
-    await waitFor(() => expect(result.current.isConfirming).toBe(false));
-
-    expect(toast.error).toHaveBeenCalledWith('commonErrors.generic');
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith('commonErrors.generic'),
+    );
   });
 });

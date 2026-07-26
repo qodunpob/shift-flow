@@ -4,7 +4,8 @@ import { Settings } from 'luxon';
 import React from 'react';
 import { TimeSheet } from '@/components/time-sheet/TimeSheet';
 import { CurrentUserProvider } from '@/providers/CurrentUserProvider';
-import { CurrentUser, Shift } from '@/lib/api/types';
+import { ScheduleProvider } from '@/features/schedule-details/ScheduleProvider';
+import { CurrentUser, Schedule, Shift } from '@/lib/api/types';
 
 jest.mock('next-intl', () => ({
   useLocale: () => 'fallback',
@@ -15,13 +16,24 @@ jest.mock('@/i18n/navigation', () => ({
   useRouter: () => ({ refresh: jest.fn(), push: jest.fn() }),
 }));
 
-const schedule = {
+const schedule: Schedule = {
+  id: 'schedule-1',
+  createdAt: '2026-07-20T00:00:00.000Z',
+  createdBy: 'manager-1',
+  updatedAt: '2026-07-20T00:00:00.000Z',
+  updatedBy: 'manager-1',
+  deletedAt: null,
+  label: 'Week 32',
   // 2026-08-02T15:00:00.000Z is 2026-08-03T00:00:00+09:00 in Tokyo.
   startsAt: '2026-08-02T15:00:00.000Z',
   // 2026-08-09T14:59:59.999Z is 2026-08-09T23:59:59.999+09:00 in Tokyo.
   endsAt: '2026-08-09T14:59:59.999Z',
   timeZone: 'Asia/Tokyo',
-  createdBy: 'manager-1',
+  status: 'DRAFT',
+  rejectionReason: null,
+  totalRequiredHeadcount: 5,
+  totalFilledCount: 0,
+  totalAcceptedCount: 0,
 };
 
 const shift: Shift = {
@@ -65,7 +77,9 @@ const renderTimeSheet = (shifts: Shift[]) => {
   return render(
     <QueryClientProvider client={queryClient}>
       <CurrentUserProvider user={viewer}>
-        <TimeSheet schedule={schedule} shifts={shifts} />
+        <ScheduleProvider schedule={schedule}>
+          <TimeSheet shifts={shifts} />
+        </ScheduleProvider>
       </CurrentUserProvider>
     </QueryClientProvider>,
   );

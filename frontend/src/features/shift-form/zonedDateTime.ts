@@ -24,3 +24,21 @@ export const localDateTimeToZonedInstant = (
     { zone },
   ).toJSDate();
 };
+
+/**
+ * The reverse of localDateTimeToZonedInstant: recovers the calendar day and
+ * wall-clock time `isoInstant` represents in `zone`, split into a local Date
+ * (for DatePicker) and an "HH:mm" string (for the masked time field) - the
+ * same split shape the form's own values use. The browser's own zone never
+ * enters this calculation, only `zone` does.
+ */
+export const zonedInstantToLocalDateTime = (
+  isoInstant: string,
+  zone: string,
+): { date: Date; time: string } => {
+  const zoned = DateTime.fromISO(isoInstant, { zone });
+  return {
+    date: new Date(zoned.year, zoned.month - 1, zoned.day),
+    time: zoned.toFormat('HH:mm'),
+  };
+};

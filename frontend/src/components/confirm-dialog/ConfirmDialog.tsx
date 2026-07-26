@@ -10,11 +10,11 @@ import {
   DialogTitle,
 } from '@mui/material';
 
-export interface ConfirmScheduleActionDialogProps {
+export interface ConfirmDialogProps {
   open: boolean;
   title: string;
   description: string;
-  scheduleIdentity: string;
+  identity?: string;
   confirmLabel: string;
   cancelLabel: string;
   onConfirm: () => void;
@@ -22,13 +22,11 @@ export interface ConfirmScheduleActionDialogProps {
   isPending: boolean;
 }
 
-export const ConfirmScheduleActionDialog: React.FC<
-  ConfirmScheduleActionDialogProps
-> = ({
+export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   open,
   title,
   description,
-  scheduleIdentity,
+  identity,
   confirmLabel,
   cancelLabel,
   onConfirm,
@@ -39,7 +37,7 @@ export const ConfirmScheduleActionDialog: React.FC<
     <DialogTitle>{title}</DialogTitle>
     <DialogContent>
       <DialogContentText component="div">
-        <div>{scheduleIdentity}</div>
+        {identity && <div>{identity}</div>}
         <div>{description}</div>
       </DialogContentText>
     </DialogContent>

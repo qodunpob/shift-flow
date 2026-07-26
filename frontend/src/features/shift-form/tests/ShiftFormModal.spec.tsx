@@ -6,6 +6,7 @@ import { localDateTimeToZonedInstant } from '@/features/shift-form/zonedDateTime
 import { apiFetchFromClient } from '@/lib/api/client/apiFetch';
 import { ApiError } from '@/lib/errors/ApiError';
 import { toast } from 'react-toastify';
+import { Shift } from '@/lib/api/types';
 
 jest.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
@@ -104,10 +105,55 @@ const renderModal = (
   render(
     <QueryClientProvider client={queryClient}>
       <ShiftFormModal
+        mode="create"
         open
         {...props}
         onClose={onClose}
         scheduleId="schedule-9"
+        timeZone="Asia/Tokyo"
+      />
+    </QueryClientProvider>,
+  );
+  return { onClose };
+};
+
+const baseShift: Shift = {
+  id: 'shift-1',
+  scheduleId: 'schedule-9',
+  createdAt: '2026-07-20T00:00:00.000Z',
+  createdBy: 'manager-1',
+  updatedAt: '2026-07-20T00:00:00.000Z',
+  updatedBy: 'manager-1',
+  deletedAt: null,
+  // 2026-08-02T23:00:00.000Z is 2026-08-03T08:00:00+09:00 in Tokyo.
+  startsAt: '2026-08-02T23:00:00.000Z',
+  // 2026-08-03T07:30:00.000Z is 2026-08-03T16:30:00+09:00 in Tokyo.
+  endsAt: '2026-08-03T07:30:00.000Z',
+  requiredHeadcount: 2,
+  filledCount: 0,
+  spotsRemaining: 2,
+  assignments: [],
+  proposals: [],
+};
+
+const renderEditModal = (
+  props: Partial<{ shift: Shift; onClose: () => void }> = {},
+) => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+  const onClose = props.onClose ?? jest.fn();
+  render(
+    <QueryClientProvider client={queryClient}>
+      <ShiftFormModal
+        mode="edit"
+        open
+        shift={baseShift}
+        {...props}
+        onClose={onClose}
         timeZone="Asia/Tokyo"
       />
     </QueryClientProvider>,
@@ -196,5 +242,54 @@ describe('features/shift-form/ShiftFormModal', () => {
       expect(toast.error).toHaveBeenCalledWith('commonErrors.generic'),
     );
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  describe('edit mode', () => {
+    it("should pre-fill the shift's times and headcount in the schedule's own time zone", () => {
+      renderEditModal();
+
+      expect(screen.getByLabelText('startsAtTime')).toHaveValue('08:00');
+      expect(screen.getByLabelText('endsAtTime')).toHaveValue('16:30');
+      expect(screen.getByLabelText('requiredHeadcount')).toHaveValue('2');
+    });
+
+    it('should send an update request to the given shift when submitted', async () => {
+      mockedApiFetchFromClient.mockResolvedValue({ id: 'shift-1' });
+      renderEditModal();
+
+      submitForm();
+
+      await waitFor(() =>
+        expect(mockedApiFetchFromClient).toHaveBeenCalledWith(
+          '/shifts/shift-1',
+          {
+            method: 'PUT',
+            body: JSON.stringify({
+              startsAt: localDateTimeToZonedInstant(
+                new Date(2026, 7, 3),
+                '08:00',
+                'Asia/Tokyo',
+              ),
+              endsAt: localDateTimeToZonedInstant(
+                new Date(2026, 7, 3),
+                '16:30',
+                'Asia/Tokyo',
+              ),
+              requiredHeadcount: 2,
+            }),
+          },
+        ),
+      );
+    });
+
+    it('should close the modal and notify the user when the update succeeds', async () => {
+      mockedApiFetchFromClient.mockResolvedValue({ id: 'shift-1' });
+      const { onClose } = renderEditModal();
+
+      submitForm();
+
+      await waitFor(() => expect(onClose).toHaveBeenCalled());
+      expect(toast.success).toHaveBeenCalledWith('ShiftForm.updateSuccess');
+    });
   });
 });

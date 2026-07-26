@@ -1,15 +1,15 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
-import { ConfirmScheduleActionDialog } from '../ConfirmScheduleActionDialog';
+import { ConfirmDialog } from '../ConfirmDialog';
 
-describe('features/schedule-actions/ConfirmScheduleActionDialog', () => {
-  it('should show the title, schedule identity, and description when open', () => {
+describe('components/confirm-dialog/ConfirmDialog', () => {
+  it('should show the title, identity, and description when open', () => {
     render(
-      <ConfirmScheduleActionDialog
+      <ConfirmDialog
         open
         title="Delete this schedule?"
         description="This can't be undone."
-        scheduleIdentity="Week 32"
+        identity="Week 32"
         confirmLabel="Delete"
         cancelLabel="Cancel"
         onConfirm={jest.fn()}
@@ -23,14 +23,31 @@ describe('features/schedule-actions/ConfirmScheduleActionDialog', () => {
     expect(screen.getByText("This can't be undone.")).toBeInTheDocument();
   });
 
-  it('should call onConfirm when the confirm button is clicked', () => {
-    const onConfirm = jest.fn();
+  it('should not render an identity line when none is given', () => {
     render(
-      <ConfirmScheduleActionDialog
+      <ConfirmDialog
         open
         title="Delete this schedule?"
         description="This can't be undone."
-        scheduleIdentity="Week 32"
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={jest.fn()}
+        onCancel={jest.fn()}
+        isPending={false}
+      />,
+    );
+
+    expect(screen.queryByText('Week 32')).not.toBeInTheDocument();
+  });
+
+  it('should call onConfirm when the confirm button is clicked', () => {
+    const onConfirm = jest.fn();
+    render(
+      <ConfirmDialog
+        open
+        title="Delete this schedule?"
+        description="This can't be undone."
+        identity="Week 32"
         confirmLabel="Delete"
         cancelLabel="Cancel"
         onConfirm={onConfirm}
@@ -47,11 +64,11 @@ describe('features/schedule-actions/ConfirmScheduleActionDialog', () => {
   it('should call onCancel when the cancel button is clicked', () => {
     const onCancel = jest.fn();
     render(
-      <ConfirmScheduleActionDialog
+      <ConfirmDialog
         open
         title="Delete this schedule?"
         description="This can't be undone."
-        scheduleIdentity="Week 32"
+        identity="Week 32"
         confirmLabel="Delete"
         cancelLabel="Cancel"
         onConfirm={jest.fn()}
@@ -67,11 +84,11 @@ describe('features/schedule-actions/ConfirmScheduleActionDialog', () => {
 
   it('should disable the confirm button while pending', () => {
     render(
-      <ConfirmScheduleActionDialog
+      <ConfirmDialog
         open
         title="Delete this schedule?"
         description="This can't be undone."
-        scheduleIdentity="Week 32"
+        identity="Week 32"
         confirmLabel="Delete"
         cancelLabel="Cancel"
         onConfirm={jest.fn()}

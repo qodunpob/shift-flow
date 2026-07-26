@@ -9,4 +9,4 @@ export const isEditable = (schedule: Pick<Schedule, 'status' | 'createdBy'>) =>
 export const canEdit = (
   schedule: Pick<Schedule, 'status' | 'createdBy'>,
   user: Pick<CurrentUser, 'id'>,
-) => isEditable(schedule) && isMine(schedule.createdBy, user.id);
+) => isEditable(schedule) && isMine(schedule, user);

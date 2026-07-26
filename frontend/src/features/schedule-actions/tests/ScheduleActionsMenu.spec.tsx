@@ -4,6 +4,7 @@ import React from 'react';
 import { ScheduleActionsMenu } from '../ScheduleActionsMenu';
 import { apiFetchFromClient } from '@/lib/api/client/apiFetch';
 import { Schedule } from '@/lib/api/types';
+import { ConfirmDialogProvider } from '@/providers/ConfirmDialogProvider';
 
 jest.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
@@ -56,10 +57,12 @@ const renderMenu = (schedule: Schedule, resetFiltersAndPage = jest.fn()) => {
   });
   render(
     <QueryClientProvider client={queryClient}>
-      <ScheduleActionsMenu
-        schedule={schedule}
-        resetFiltersAndPage={resetFiltersAndPage}
-      />
+      <ConfirmDialogProvider>
+        <ScheduleActionsMenu
+          schedule={schedule}
+          resetFiltersAndPage={resetFiltersAndPage}
+        />
+      </ConfirmDialogProvider>
     </QueryClientProvider>,
   );
   return { resetFiltersAndPage };
