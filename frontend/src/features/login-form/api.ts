@@ -19,3 +19,8 @@ export async function requestSignIn(
 
   return { success: response.ok, status: response.status };
 }
+
+export const requestSignOut = async () =>
+  fetch('/api/auth/logout', {
+    method: 'POST',
+  });

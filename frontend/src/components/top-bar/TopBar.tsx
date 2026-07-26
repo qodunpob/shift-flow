@@ -1,13 +1,15 @@
 'use client';
 
 import React from 'react';
-import { AppBar, Box, styled, Toolbar, Typography } from '@mui/material';
+import { AppBar, IconButton, styled, Toolbar, Typography } from '@mui/material';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import { UserAvatar } from '@/components/user-avatar/UserAvatar';
 import { FlexBox } from '@/components/box/box';
+import LogoutIcon from '@mui/icons-material/Logout';
 
 import { CurrentUser } from '@/lib/api/types';
 import Link from 'next/link';
+import { useSignOut } from '@/components/top-bar/useSignOut';
 
 export interface TopBarProps {
   title: string;
@@ -19,6 +21,7 @@ export interface TopBarProps {
 }
 
 export const TopBar: React.FC<TopBarProps> = ({ title, user, breadcrumbs }) => {
+  const signOut = useSignOut();
   return (
     <StylessAppBar position="static">
       <StyledToolbar sx={{ gap: 1 }}>
@@ -38,9 +41,12 @@ export const TopBar: React.FC<TopBarProps> = ({ title, user, breadcrumbs }) => {
 
         <FlexBox>
           <UserAvatar user={user} />
-          <Box>
+          <Typography component="div">
             {user.firstName} {user.lastName}
-          </Box>
+          </Typography>
+          <IconButton onClick={signOut}>
+            <LogoutIcon />
+          </IconButton>
         </FlexBox>
       </StyledToolbar>
     </StylessAppBar>
