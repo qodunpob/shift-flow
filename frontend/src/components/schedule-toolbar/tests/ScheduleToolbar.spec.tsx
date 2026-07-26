@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { ScheduleToolbar } from '@/components/schedule-toolbar/ScheduleToolbar';
 import { CurrentUserProvider } from '@/providers/CurrentUserProvider';
+import { ConfirmDialogProvider } from '@/providers/ConfirmDialogProvider';
 import { CurrentUser, Schedule } from '@/lib/api/types';
 import { apiFetchFromClient } from '@/lib/api/client/apiFetch';
 import { toast } from 'react-toastify';
@@ -107,7 +108,9 @@ const renderToolbar = (
   return render(
     <QueryClientProvider client={queryClient}>
       <CurrentUserProvider user={viewer}>
-        <ScheduleToolbar schedule={{ ...baseSchedule, ...schedule }} />
+        <ConfirmDialogProvider>
+          <ScheduleToolbar schedule={{ ...baseSchedule, ...schedule }} />
+        </ConfirmDialogProvider>
       </CurrentUserProvider>
     </QueryClientProvider>,
   );

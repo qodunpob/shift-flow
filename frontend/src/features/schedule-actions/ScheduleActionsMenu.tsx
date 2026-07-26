@@ -9,7 +9,6 @@ import { ScheduleFormModal } from '@/features/schedule-form/ScheduleFormModal';
 import { useEditScheduleAction } from '@/features/schedule-actions/useEditScheduleAction';
 import { useDeleteScheduleAction } from '@/features/schedule-actions/useDeleteScheduleAction';
 import { useScheduleStatusActions } from '@/features/schedule-actions/useScheduleStatusActions';
-import { ConfirmScheduleActionDialog } from '@/features/schedule-actions/ConfirmScheduleActionDialog';
 import { formatScheduleIdentity } from '@/features/schedule-actions/scheduleIdentity';
 import { isScheduleEditable } from '@/features/schedule-actions/isScheduleEditable';
 
@@ -26,15 +25,21 @@ export const ScheduleActionsMenu: React.FC<ScheduleActionsMenuProps> = ({
   const locale = useLocale();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
+  const identity = formatScheduleIdentity(schedule, locale);
+
   const edit = useEditScheduleAction();
-  const del = useDeleteScheduleAction(schedule.id, resetFiltersAndPage);
+  const del = useDeleteScheduleAction(
+    schedule.id,
+    identity,
+    resetFiltersAndPage,
+  );
   const statusActions = useScheduleStatusActions(
     schedule.id,
     schedule.status,
+    identity,
     resetFiltersAndPage,
   );
 
-  const identity = formatScheduleIdentity(schedule, locale);
   const editable = isScheduleEditable(schedule.status);
   const closeMenu = () => setAnchorEl(null);
 
@@ -95,48 +100,6 @@ export const ScheduleActionsMenu: React.FC<ScheduleActionsMenuProps> = ({
           resetFiltersAndPage={resetFiltersAndPage}
         />
       )}
-
-      <ConfirmScheduleActionDialog
-        open={del.isConfirming}
-        title={t('ScheduleActions.confirm.delete.title')}
-        description={t('ScheduleActions.confirm.delete.description')}
-        scheduleIdentity={identity}
-        confirmLabel={t('ScheduleActions.confirm.delete.confirmLabel')}
-        cancelLabel={t('common.cancel')}
-        onConfirm={del.confirm}
-        onCancel={del.cancel}
-        isPending={del.isPending}
-      />
-
-      <ConfirmScheduleActionDialog
-        open={!!statusActions.pendingAction}
-        title={
-          statusActions.pendingAction
-            ? t(
-                `ScheduleActions.confirm.${statusActions.pendingAction.key}.title`,
-              )
-            : ''
-        }
-        description={
-          statusActions.pendingAction
-            ? t(
-                `ScheduleActions.confirm.${statusActions.pendingAction.key}.description`,
-              )
-            : ''
-        }
-        scheduleIdentity={identity}
-        confirmLabel={
-          statusActions.pendingAction
-            ? t(
-                `ScheduleActions.confirm.${statusActions.pendingAction.key}.confirmLabel`,
-              )
-            : ''
-        }
-        cancelLabel={t('common.cancel')}
-        onConfirm={statusActions.confirm}
-        onCancel={statusActions.cancel}
-        isPending={statusActions.isPending}
-      />
     </>
   );
 };

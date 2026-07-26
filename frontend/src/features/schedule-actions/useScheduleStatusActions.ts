@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'react-toastify';
 import { StatusCodes } from 'http-status-codes';
@@ -10,6 +9,7 @@ import {
   useWithdrawScheduleMutation,
 } from '@/features/schedules/api/client-transition';
 import { ScheduleStatus } from '@/lib/api/types';
+import { useConfirmDialog } from '@/providers/ConfirmDialogProvider';
 
 export type StatusActionKey =
   'publish' | 'unpublish' | 'submitForApproval' | 'withdraw';
@@ -29,12 +29,11 @@ const OWNER_ACTIONS_BY_STATUS: Record<ScheduleStatus, StatusActionKey[]> = {
 export const useScheduleStatusActions = (
   scheduleId: string,
   status: ScheduleStatus,
+  identity: string,
   resetFiltersAndPage: () => void,
 ) => {
   const t = useTranslations();
-  const [pendingAction, setPendingAction] = useState<StatusActionKey | null>(
-    null,
-  );
+  const { confirm } = useConfirmDialog();
 
   const mutationFor = {
     publish: usePublishScheduleMutation(),
@@ -45,39 +44,39 @@ export const useScheduleStatusActions = (
 
   const isPending = Object.values(mutationFor).some((m) => m.isPending);
 
-  const actions = OWNER_ACTIONS_BY_STATUS[status].map((key) => ({
-    key,
-    label: t(`ScheduleActions.${key}`),
-    request: () => setPendingAction(key),
-  }));
-
-  const confirm = () => {
-    if (!pendingAction) return;
-    const key = pendingAction;
-    mutationFor[key].mutate(scheduleId, {
-      onSuccess: () => {
-        toast.success(t(`ScheduleActions.success.${key}`));
-        resetFiltersAndPage();
-        setPendingAction(null);
-      },
-      onError: (error) => {
-        toast.error(
-          error instanceof ApiError && error.statusCode === StatusCodes.CONFLICT
-            ? t('commonErrors.conflict')
-            : t('commonErrors.generic'),
-        );
-        setPendingAction(null);
-      },
+  const requestAction = (key: StatusActionKey) => {
+    confirm({
+      title: t(`ScheduleActions.confirm.${key}.title`),
+      description: t(`ScheduleActions.confirm.${key}.description`),
+      identity,
+      confirmLabel: t(`ScheduleActions.confirm.${key}.confirmLabel`),
+      onConfirm: () =>
+        new Promise<void>((resolve) => {
+          mutationFor[key].mutate(scheduleId, {
+            onSuccess: () => {
+              toast.success(t(`ScheduleActions.success.${key}`));
+              resetFiltersAndPage();
+              resolve();
+            },
+            onError: (error) => {
+              toast.error(
+                error instanceof ApiError &&
+                  error.statusCode === StatusCodes.CONFLICT
+                  ? t('commonErrors.conflict')
+                  : t('commonErrors.generic'),
+              );
+              resolve();
+            },
+          });
+        }),
     });
   };
 
-  return {
-    actions,
-    pendingAction: pendingAction
-      ? { key: pendingAction, label: t(`ScheduleActions.${pendingAction}`) }
-      : null,
-    cancel: () => setPendingAction(null),
-    confirm,
-    isPending,
-  };
+  const actions = OWNER_ACTIONS_BY_STATUS[status].map((key) => ({
+    key,
+    label: t(`ScheduleActions.${key}`),
+    request: () => requestAction(key),
+  }));
+
+  return { actions, isPending };
 };

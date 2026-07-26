@@ -12,7 +12,6 @@ import { useDeleteScheduleAction } from '@/features/schedule-actions/useDeleteSc
 import { useScheduleStatusActions } from '@/features/schedule-actions/useScheduleStatusActions';
 import { useApproveScheduleAction } from '@/features/schedule-actions/useApproveScheduleAction';
 import { useRejectScheduleAction } from '@/features/schedule-actions/useRejectScheduleAction';
-import { ConfirmScheduleActionDialog } from '@/features/schedule-actions/ConfirmScheduleActionDialog';
 import { RejectScheduleDialog } from '@/features/schedule-actions/RejectScheduleDialog';
 import { formatScheduleIdentity } from '@/features/schedule-actions/scheduleIdentity';
 import { isScheduleEditable } from '@/features/schedule-actions/isScheduleEditable';
@@ -37,25 +36,30 @@ export const ScheduleToolbar: React.FC<ScheduleToolbarProps> = ({
   const [openShiftFormModal, setOpenShiftFormModal] = useState(false);
 
   const isScheduleOwner =
-    isManager(currentUser.roles) && isMine(schedule.createdBy, currentUser.id);
+    isManager(currentUser.roles) && isMine(schedule, currentUser);
   const isScheduleApprover =
     isApprover(currentUser.roles) && schedule.status === 'AWAITING_APPROVAL';
 
   const refresh = () => router.refresh();
   const goToScheduleList = () => router.push(routes.schedules);
 
+  const identity = formatScheduleIdentity(schedule, locale);
+  const editable = isScheduleEditable(schedule.status);
+
   const edit = useEditScheduleAction();
-  const del = useDeleteScheduleAction(schedule.id, goToScheduleList);
+  const del = useDeleteScheduleAction(schedule.id, identity, goToScheduleList);
   const statusActions = useScheduleStatusActions(
     schedule.id,
     schedule.status,
+    identity,
     refresh,
   );
-  const approveAction = useApproveScheduleAction(schedule.id, refresh);
+  const approveAction = useApproveScheduleAction(
+    schedule.id,
+    identity,
+    refresh,
+  );
   const rejectAction = useRejectScheduleAction(schedule.id, refresh);
-
-  const identity = formatScheduleIdentity(schedule, locale);
-  const editable = isScheduleEditable(schedule.status);
 
   if (!isScheduleOwner && !isScheduleApprover) {
     return null;
@@ -140,60 +144,6 @@ export const ScheduleToolbar: React.FC<ScheduleToolbarProps> = ({
           resetFiltersAndPage={refresh}
         />
       )}
-
-      <ConfirmScheduleActionDialog
-        open={del.isConfirming}
-        title={t('ScheduleActions.confirm.delete.title')}
-        description={t('ScheduleActions.confirm.delete.description')}
-        scheduleIdentity={identity}
-        confirmLabel={t('ScheduleActions.confirm.delete.confirmLabel')}
-        cancelLabel={t('common.cancel')}
-        onConfirm={del.confirm}
-        onCancel={del.cancel}
-        isPending={del.isPending}
-      />
-
-      <ConfirmScheduleActionDialog
-        open={!!statusActions.pendingAction}
-        title={
-          statusActions.pendingAction
-            ? t(
-                `ScheduleActions.confirm.${statusActions.pendingAction.key}.title`,
-              )
-            : ''
-        }
-        description={
-          statusActions.pendingAction
-            ? t(
-                `ScheduleActions.confirm.${statusActions.pendingAction.key}.description`,
-              )
-            : ''
-        }
-        scheduleIdentity={identity}
-        confirmLabel={
-          statusActions.pendingAction
-            ? t(
-                `ScheduleActions.confirm.${statusActions.pendingAction.key}.confirmLabel`,
-              )
-            : ''
-        }
-        cancelLabel={t('common.cancel')}
-        onConfirm={statusActions.confirm}
-        onCancel={statusActions.cancel}
-        isPending={statusActions.isPending}
-      />
-
-      <ConfirmScheduleActionDialog
-        open={approveAction.isConfirming}
-        title={t('ScheduleActions.confirm.approve.title')}
-        description={t('ScheduleActions.confirm.approve.description')}
-        scheduleIdentity={identity}
-        confirmLabel={t('ScheduleActions.confirm.approve.confirmLabel')}
-        cancelLabel={t('common.cancel')}
-        onConfirm={approveAction.confirm}
-        onCancel={approveAction.cancel}
-        isPending={approveAction.isPending}
-      />
 
       <RejectScheduleDialog
         open={rejectAction.isConfirming}
