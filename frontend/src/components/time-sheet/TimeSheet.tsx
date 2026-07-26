@@ -10,7 +10,7 @@ import { AssignmentsModal } from '@/features/shift-assignments/AssignmentsModal'
 import { ShiftView } from '@/components/time-sheet/ShiftView';
 
 export interface TimeSheetProps {
-  schedule: Pick<Schedule, 'startsAt' | 'endsAt' | 'timeZone' | 'createdBy'>;
+  schedule: Schedule;
   shifts: Shift[];
 }
 
@@ -93,9 +93,9 @@ export const TimeSheet: React.FC<TimeSheetProps> = ({ schedule, shifts }) => {
       </FlexBox>
       {selectedShift && (
         <AssignmentsModal
+          schedule={schedule}
           shift={selectedShift}
           timeZone={schedule.timeZone}
-          scheduleCreatedBy={schedule.createdBy}
           onClose={() => setSelectedShiftId(null)}
         />
       )}

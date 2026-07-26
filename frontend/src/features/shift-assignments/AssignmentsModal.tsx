@@ -14,93 +14,43 @@ import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined
 import CheckOutlinedIcon from '@mui/icons-material/CheckOutlined';
 import { DateTime } from 'luxon';
 import { useLocale, useTranslations } from 'next-intl';
-import { toast } from 'react-toastify';
-import { StatusCodes } from 'http-status-codes';
 import { FlexBox } from '@/components/box/box';
 import { dateFormat } from '@/constants/dates';
-import { Employee, Shift } from '@/lib/api/types';
+import { CurrentUser, Employee, Schedule, Shift } from '@/lib/api/types';
 import { useCurrentUser } from '@/providers/CurrentUserProvider';
-import { isEmployee, isManager, isMine } from '@/utils/user';
-import { useRouter } from '@/i18n/navigation';
-import { ApiError } from '@/lib/errors/ApiError';
+import { isEmployee } from '@/utils/user';
 import { AssignEmployeeButton } from '@/features/shift-assignments/AssignEmployeeButton';
 import { ProposeButton } from '@/features/shift-assignments/ProposeButton';
-import {
-  useAcceptProposalMutation,
-  useDeleteAssignmentMutation,
-  useDeleteProposalMutation,
-} from '@/features/shift-assignments/api/client';
 import { EmployeeChip } from '@/components/employee-chip/EmployeeChip';
+import EditIcon from '@mui/icons-material/Edit';
+import { useAssignmentHandlers } from '@/features/shift-assignments/useAssignmentHandlers';
+import { canEdit, isEditable } from '@/utils/scheduleState';
 
 export interface AssignmentsModalProps {
+  schedule: Pick<Schedule, 'status' | 'createdBy'>;
   shift: Shift;
   timeZone: string;
-  scheduleCreatedBy: string;
   onClose: () => void;
 }
 
 export const AssignmentsModal: React.FC<AssignmentsModalProps> = ({
+  schedule,
   shift,
   timeZone,
-  scheduleCreatedBy,
   onClose,
 }) => {
   const t = useTranslations();
   const locale = useLocale();
-  const router = useRouter();
   const currentUser = useCurrentUser();
-  const { mutate: deleteAssignment } = useDeleteAssignmentMutation();
-  const { mutate: deleteProposal } = useDeleteProposalMutation();
-  const { mutate: acceptProposal } = useAcceptProposalMutation();
 
-  const isScheduleOwner =
-    isManager(currentUser.roles) && isMine(scheduleCreatedBy, currentUser.id);
-  const canAssign = isScheduleOwner && shift.spotsRemaining > 0;
+  const canAssign = canEdit(schedule, currentUser) && shift.spotsRemaining > 0;
+  const canPropose =
+    isEditable(schedule) &&
+    isEmployee(currentUser.roles) &&
+    !isAlreadyInvolved(shift, currentUser);
 
-  const isAlreadyInvolved =
-    shift.assignments.some(
-      (assignment) => assignment.employeeId === currentUser.id,
-    ) ||
-    shift.proposals.some((proposal) => proposal.employeeId === currentUser.id);
-  const canPropose = isEmployee(currentUser.roles) && !isAlreadyInvolved;
-
-  const showMutationError = (error: Error) => {
-    const isConflict =
-      error instanceof ApiError && error.statusCode === StatusCodes.CONFLICT;
-    toast.error(
-      isConflict ? t('commonErrors.conflict') : t('commonErrors.generic'),
-    );
-  };
-
-  const handleRemoveAssignment = (assignmentId: string) => {
-    deleteAssignment(assignmentId, {
-      onSuccess: () => {
-        toast.success(t('ShiftAssignments.removeSuccess'));
-        router.refresh();
-      },
-      onError: showMutationError,
-    });
-  };
-
-  const handleRemoveProposal = (proposalId: string) => {
-    deleteProposal(proposalId, {
-      onSuccess: () => {
-        toast.success(t('ShiftAssignments.proposalWithdrawn'));
-        router.refresh();
-      },
-      onError: showMutationError,
-    });
-  };
-
-  const handleAcceptProposal = (proposalId: string) => {
-    acceptProposal(proposalId, {
-      onSuccess: () => {
-        toast.success(t('ShiftAssignments.proposalAccepted'));
-        router.refresh();
-      },
-      onError: showMutationError,
-    });
-  };
+  const { handleRemoveAssignment, handleRemoveProposal, handleAcceptProposal } =
+    useAssignmentHandlers(t);
 
   const format = dateFormat(locale).shiftBoundaryDateTime;
   const startsAt = DateTime.fromISO(shift.startsAt, { zone: timeZone });
@@ -131,7 +81,7 @@ export const AssignmentsModal: React.FC<AssignmentsModalProps> = ({
                 key={assignment.id}
                 employee={assignment.employee}
                 onRemove={
-                  isScheduleOwner
+                  canEdit(schedule, currentUser)
                     ? () => handleRemoveAssignment(assignment.id)
                     : undefined
                 }
@@ -160,7 +110,7 @@ export const AssignmentsModal: React.FC<AssignmentsModalProps> = ({
                       : undefined
                   }
                   onAccept={
-                    isScheduleOwner
+                    canEdit(schedule, currentUser)
                       ? () => handleAcceptProposal(proposal.id)
                       : undefined
                   }
@@ -171,6 +121,20 @@ export const AssignmentsModal: React.FC<AssignmentsModalProps> = ({
         )}
       </DialogContent>
       <DialogActions>
+        {canEdit(schedule, currentUser) && (
+          <FlexBox sx={{ flexGrow: 1 }}>
+            <Button
+              variant="outlined"
+              color="warning"
+              endIcon={<DeleteOutlineOutlinedIcon />}
+            >
+              {t('common.delete')}
+            </Button>
+            <Button variant="outlined" endIcon={<EditIcon />}>
+              {t('common.edit')}
+            </Button>
+          </FlexBox>
+        )}
         {canAssign && <AssignEmployeeButton shiftId={shift.id} />}
         {canPropose && <ProposeButton shiftId={shift.id} />}
         <Button onClick={onClose} variant="outlined">
@@ -180,6 +144,10 @@ export const AssignmentsModal: React.FC<AssignmentsModalProps> = ({
     </Dialog>
   );
 };
+
+const isAlreadyInvolved = (shift: Shift, user: Pick<CurrentUser, 'id'>) =>
+  shift.assignments.some((assignment) => assignment.employeeId === user.id) ||
+  shift.proposals.some((proposal) => proposal.employeeId === user.id);
 
 const AssignmentEmployeeChip: React.FC<{
   employee: Employee;

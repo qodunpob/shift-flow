@@ -9,7 +9,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { ScheduleToolbar } from '@/components/schedule-toolbar/ScheduleToolbar';
 import { FlexBox } from '@/components/box/box';
 import { ScheduleStatusChip } from '@/components/schedule-status-chip/ScheduleStatusChip';
-import { isManager, isMine } from '@/utils/user';
+import { isMine } from '@/utils/user';
 import { useCurrentUser } from '@/providers/CurrentUserProvider';
 
 export interface ScheduleDetailsProps {
@@ -24,10 +24,8 @@ export const ScheduleDetails: React.FC<ScheduleDetailsProps> = ({
   const locale = useLocale();
   const t = useTranslations();
   const currentUser = useCurrentUser();
-  const isScheduleOwner =
-    isManager(currentUser.roles) && isMine(schedule.createdBy, currentUser.id);
   const isRejectionReasonVisible =
-    isScheduleOwner &&
+    isMine(schedule.createdBy, currentUser.id) &&
     schedule.status === 'REJECTED' &&
     schedule.rejectionReason;
 
