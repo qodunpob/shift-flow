@@ -20,7 +20,7 @@ export type StatusActionKey =
 // apply here.
 const OWNER_ACTIONS_BY_STATUS: Record<ScheduleStatus, StatusActionKey[]> = {
   DRAFT: ['publish'],
-  IN_REVIEW: ['submitForApproval', 'unpublish'],
+  IN_REVIEW: ['unpublish', 'submitForApproval'],
   AWAITING_APPROVAL: ['withdraw'],
   APPROVED: [],
   REJECTED: ['submitForApproval'],

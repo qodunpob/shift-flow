@@ -130,6 +130,15 @@
     "proposalAccepted": "Proposal accepted",
     "proposalWithdrawn": "Proposal withdrawn"
   },
+  "ShiftActions": {
+    "confirm": {
+      "delete": {
+        "title": "Delete this shift?",
+        "description": "This can't be undone.",
+        "confirmLabel": "Delete"
+      }
+    }
+  },
   "Schedule": {
     "status": {
       "DRAFT": "Draft",

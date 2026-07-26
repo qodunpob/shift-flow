@@ -18,7 +18,7 @@ import { isScheduleEditable } from '@/features/schedule-actions/isScheduleEditab
 import { FlexBox } from '@/components/box/box';
 import { useCurrentUser } from '@/providers/CurrentUserProvider';
 import { useSchedule } from '@/features/schedule-details/ScheduleProvider';
-import { isApprover, isManager, isMine } from '@/utils/user';
+import { isApprover, isMine } from '@/utils/user';
 import { useRouter } from '@/i18n/navigation';
 import { routes } from '@/routes';
 
@@ -30,8 +30,7 @@ export const ScheduleToolbar: React.FC = () => {
   const schedule = useSchedule();
   const [openShiftFormModal, setOpenShiftFormModal] = useState(false);
 
-  const isScheduleOwner =
-    isManager(currentUser.roles) && isMine(schedule, currentUser);
+  const isScheduleOwner = isMine(schedule, currentUser);
   const isScheduleApprover =
     isApprover(currentUser.roles) && schedule.status === 'AWAITING_APPROVAL';
 
