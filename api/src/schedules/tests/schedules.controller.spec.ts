@@ -410,8 +410,8 @@ describe('schedules/SchedulesController', () => {
   /**
    * These tests exercise the real ValidationPipe (the same configuration
    * registered globally in main.ts) against a real HTTP request, to prove
-   * the require-timezone-with-dates rule actually rejects bad requests at
-   * the API boundary, not just at the unit level tested in schedules.dto.spec.ts.
+   * that validation rules are enforced at the API boundary, not just at the
+   * unit level tested in schedules.dto.spec.ts.
    */
   describe('Validation (HTTP)', () => {
     let app: INestApplication<App>;
