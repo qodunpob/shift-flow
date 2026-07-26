@@ -106,7 +106,10 @@
     "remove": "Remove",
     "removeSuccess": "Employee removed",
     "propose": "Propose",
-    "proposeSuccess": "Proposal sent"
+    "proposeSuccess": "Proposal sent",
+    "accept": "Accept",
+    "proposalAccepted": "Proposal accepted",
+    "proposalWithdrawn": "Proposal withdrawn"
   },
   "Schedule": {
     "status": {

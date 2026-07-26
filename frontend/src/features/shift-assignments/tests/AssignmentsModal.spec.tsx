@@ -395,4 +395,155 @@ describe('features/shift-assignments/AssignmentsModal', () => {
       );
     });
   });
+
+  describe('proposal action visibility', () => {
+    it('should show a remove button on the proposal for the employee who created it', () => {
+      renderModal({}, proposingEmployeeViewer);
+
+      expect(
+        screen.getByLabelText('ShiftAssignments.remove'),
+      ).toBeInTheDocument();
+    });
+
+    it('should not show a remove button on the proposal for a different employee', () => {
+      renderModal({}, uninvolvedEmployeeViewer);
+
+      expect(
+        screen.queryByLabelText('ShiftAssignments.remove'),
+      ).not.toBeInTheDocument();
+    });
+
+    it('should not show an accept button on the proposal for the employee who created it', () => {
+      renderModal({}, proposingEmployeeViewer);
+
+      expect(
+        screen.queryByLabelText('ShiftAssignments.accept'),
+      ).not.toBeInTheDocument();
+    });
+
+    it("should show an accept button on the proposal for the schedule's own manager", () => {
+      renderModal({}, managerAuthorViewer);
+
+      expect(
+        screen.getByLabelText('ShiftAssignments.accept'),
+      ).toBeInTheDocument();
+    });
+
+    it("should not show an accept button for a manager who isn't the schedule's author", () => {
+      renderModal({}, managerOtherViewer);
+
+      expect(
+        screen.queryByLabelText('ShiftAssignments.accept'),
+      ).not.toBeInTheDocument();
+    });
+
+    it("should not show a remove button on the proposal for the schedule's own manager", () => {
+      renderModal(
+        { shift: { ...baseShift, assignments: [] } },
+        managerAuthorViewer,
+      );
+
+      expect(
+        screen.queryByLabelText('ShiftAssignments.remove'),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  describe('proposal removal behavior', () => {
+    it('should withdraw the proposal, notify the user, and refresh the page', async () => {
+      mockedApiFetchFromClient.mockResolvedValue(undefined);
+      renderModal({}, proposingEmployeeViewer);
+
+      fireEvent.click(screen.getByLabelText('ShiftAssignments.remove'));
+
+      await waitFor(() =>
+        expect(mockedApiFetchFromClient).toHaveBeenCalledWith(
+          '/assignment-proposals/proposal-1',
+          { method: 'DELETE' },
+        ),
+      );
+      await waitFor(() =>
+        expect(toast.success).toHaveBeenCalledWith(
+          'ShiftAssignments.proposalWithdrawn',
+        ),
+      );
+      expect(mockRouterRefresh).toHaveBeenCalled();
+    });
+
+    it('should show a distinct error when withdrawal conflicts with the current state', async () => {
+      mockedApiFetchFromClient.mockRejectedValue(
+        new ApiError(
+          'Request to /assignment-proposals/proposal-1 failed with status 409',
+          409,
+        ),
+      );
+      renderModal({}, proposingEmployeeViewer);
+
+      fireEvent.click(screen.getByLabelText('ShiftAssignments.remove'));
+
+      await waitFor(() =>
+        expect(toast.error).toHaveBeenCalledWith('commonErrors.conflict'),
+      );
+    });
+
+    it('should show a generic error when withdrawal fails for another reason', async () => {
+      mockedApiFetchFromClient.mockRejectedValue(new Error('network down'));
+      renderModal({}, proposingEmployeeViewer);
+
+      fireEvent.click(screen.getByLabelText('ShiftAssignments.remove'));
+
+      await waitFor(() =>
+        expect(toast.error).toHaveBeenCalledWith('commonErrors.generic'),
+      );
+    });
+  });
+
+  describe('proposal accept behavior', () => {
+    it('should accept the proposal, notify the user, and refresh the page', async () => {
+      mockedApiFetchFromClient.mockResolvedValue(undefined);
+      renderModal({}, managerAuthorViewer);
+
+      fireEvent.click(screen.getByLabelText('ShiftAssignments.accept'));
+
+      await waitFor(() =>
+        expect(mockedApiFetchFromClient).toHaveBeenCalledWith(
+          '/assignment-proposals/proposal-1/accept',
+          { method: 'POST' },
+        ),
+      );
+      await waitFor(() =>
+        expect(toast.success).toHaveBeenCalledWith(
+          'ShiftAssignments.proposalAccepted',
+        ),
+      );
+      expect(mockRouterRefresh).toHaveBeenCalled();
+    });
+
+    it('should show a distinct error when accepting conflicts with the current state', async () => {
+      mockedApiFetchFromClient.mockRejectedValue(
+        new ApiError(
+          'Request to /assignment-proposals/proposal-1/accept failed with status 409',
+          409,
+        ),
+      );
+      renderModal({}, managerAuthorViewer);
+
+      fireEvent.click(screen.getByLabelText('ShiftAssignments.accept'));
+
+      await waitFor(() =>
+        expect(toast.error).toHaveBeenCalledWith('commonErrors.conflict'),
+      );
+    });
+
+    it('should show a generic error when accepting fails for another reason', async () => {
+      mockedApiFetchFromClient.mockRejectedValue(new Error('network down'));
+      renderModal({}, managerAuthorViewer);
+
+      fireEvent.click(screen.getByLabelText('ShiftAssignments.accept'));
+
+      await waitFor(() =>
+        expect(toast.error).toHaveBeenCalledWith('commonErrors.generic'),
+      );
+    });
+  });
 });

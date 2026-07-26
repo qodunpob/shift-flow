@@ -11,6 +11,7 @@ import {
   Typography,
 } from '@mui/material';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import CheckOutlinedIcon from '@mui/icons-material/CheckOutlined';
 import { DateTime } from 'luxon';
 import { useLocale, useTranslations } from 'next-intl';
 import { toast } from 'react-toastify';
@@ -24,7 +25,11 @@ import { useRouter } from '@/i18n/navigation';
 import { ApiError } from '@/lib/errors/ApiError';
 import { AssignEmployeeButton } from '@/features/shift-assignments/AssignEmployeeButton';
 import { ProposeButton } from '@/features/shift-assignments/ProposeButton';
-import { useDeleteAssignmentMutation } from '@/features/shift-assignments/api/client';
+import {
+  useAcceptProposalMutation,
+  useDeleteAssignmentMutation,
+  useDeleteProposalMutation,
+} from '@/features/shift-assignments/api/client';
 import { EmployeeChip } from '@/components/employee-chip/EmployeeChip';
 
 export interface AssignmentsModalProps {
@@ -45,6 +50,8 @@ export const AssignmentsModal: React.FC<AssignmentsModalProps> = ({
   const router = useRouter();
   const currentUser = useCurrentUser();
   const { mutate: deleteAssignment } = useDeleteAssignmentMutation();
+  const { mutate: deleteProposal } = useDeleteProposalMutation();
+  const { mutate: acceptProposal } = useAcceptProposalMutation();
 
   const isScheduleOwner =
     isManager(currentUser.roles) && isMine(scheduleCreatedBy, currentUser.id);
@@ -57,20 +64,41 @@ export const AssignmentsModal: React.FC<AssignmentsModalProps> = ({
     shift.proposals.some((proposal) => proposal.employeeId === currentUser.id);
   const canPropose = isEmployee(currentUser.roles) && !isAlreadyInvolved;
 
+  const showMutationError = (error: Error) => {
+    const isConflict =
+      error instanceof ApiError && error.statusCode === StatusCodes.CONFLICT;
+    toast.error(
+      isConflict ? t('commonErrors.conflict') : t('commonErrors.generic'),
+    );
+  };
+
   const handleRemoveAssignment = (assignmentId: string) => {
     deleteAssignment(assignmentId, {
       onSuccess: () => {
         toast.success(t('ShiftAssignments.removeSuccess'));
         router.refresh();
       },
-      onError: (error) => {
-        const isConflict =
-          error instanceof ApiError &&
-          error.statusCode === StatusCodes.CONFLICT;
-        toast.error(
-          isConflict ? t('commonErrors.conflict') : t('commonErrors.generic'),
-        );
+      onError: showMutationError,
+    });
+  };
+
+  const handleRemoveProposal = (proposalId: string) => {
+    deleteProposal(proposalId, {
+      onSuccess: () => {
+        toast.success(t('ShiftAssignments.proposalWithdrawn'));
+        router.refresh();
       },
+      onError: showMutationError,
+    });
+  };
+
+  const handleAcceptProposal = (proposalId: string) => {
+    acceptProposal(proposalId, {
+      onSuccess: () => {
+        toast.success(t('ShiftAssignments.proposalAccepted'));
+        router.refresh();
+      },
+      onError: showMutationError,
     });
   };
 
@@ -126,6 +154,16 @@ export const AssignmentsModal: React.FC<AssignmentsModalProps> = ({
                 <AssignmentEmployeeChip
                   key={proposal.id}
                   employee={proposal.employee}
+                  onRemove={
+                    proposal.employeeId === currentUser.id
+                      ? () => handleRemoveProposal(proposal.id)
+                      : undefined
+                  }
+                  onAccept={
+                    isScheduleOwner
+                      ? () => handleAcceptProposal(proposal.id)
+                      : undefined
+                  }
                 />
               ))}
             </FlexBox>
@@ -146,18 +184,30 @@ export const AssignmentsModal: React.FC<AssignmentsModalProps> = ({
 const AssignmentEmployeeChip: React.FC<{
   employee: Employee;
   onRemove?: () => void;
-}> = ({ employee, onRemove }) => {
+  onAccept?: () => void;
+}> = ({ employee, onRemove, onAccept }) => {
   const t = useTranslations();
 
   return (
     <FlexBox
       gap={1}
-      sx={{ '&:hover .assignment-remove-button': { opacity: 1 } }}
+      sx={{ '&:hover .assignment-action-button': { opacity: 1 } }}
     >
       <EmployeeChip employee={employee} />
+      {onAccept && (
+        <IconButton
+          className="assignment-action-button"
+          size="small"
+          aria-label={t('ShiftAssignments.accept')}
+          onClick={onAccept}
+          sx={{ opacity: 0, transition: 'opacity 0.15s ease' }}
+        >
+          <CheckOutlinedIcon fontSize="small" />
+        </IconButton>
+      )}
       {onRemove && (
         <IconButton
-          className="assignment-remove-button"
+          className="assignment-action-button"
           size="small"
           aria-label={t('ShiftAssignments.remove')}
           onClick={onRemove}
