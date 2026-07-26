@@ -37,6 +37,7 @@ describe('schedules/SchedulesService', () => {
     create: jest.Mock;
     save: jest.Mock;
     findOneBy: jest.Mock;
+    find: jest.Mock;
     createQueryBuilder: jest.Mock;
   };
   let shiftsQueryBuilder: {
@@ -86,6 +87,7 @@ describe('schedules/SchedulesService', () => {
         Promise.resolve({ id: 'schedule-1', ...entity }),
       ),
       findOneBy: jest.fn(),
+      find: jest.fn().mockResolvedValue([]),
       createQueryBuilder: jest.fn(() => queryBuilder),
     };
     shiftsQueryBuilder = {
@@ -641,6 +643,32 @@ describe('schedules/SchedulesService', () => {
       helpers.findVisible.mockRejectedValueOnce(new NotFoundException());
       await expect(service.findOne('schedule-1', manager)).rejects.toThrow(
         NotFoundException,
+      );
+    });
+  });
+
+  describe('findUnavailableDates', () => {
+    it("should select each schedule's id, dates, and time zone so the frontend can resolve them to calendar days in the schedule's own zone", async () => {
+      await service.findUnavailableDates();
+
+      expect(repository.find).toHaveBeenCalledWith({
+        select: { id: true, startsAt: true, endsAt: true, timeZone: true },
+      });
+    });
+
+    it('should return whatever the repository finds', async () => {
+      const unavailableDates = [
+        {
+          id: 'schedule-1',
+          startsAt: new Date('2026-08-02T15:00:00.000Z'),
+          endsAt: new Date('2026-08-09T14:59:59.999Z'),
+          timeZone: 'Asia/Tokyo',
+        },
+      ];
+      repository.find.mockResolvedValueOnce(unavailableDates);
+
+      await expect(service.findUnavailableDates()).resolves.toEqual(
+        unavailableDates,
       );
     });
   });

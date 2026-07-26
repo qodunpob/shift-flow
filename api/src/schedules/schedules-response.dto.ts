@@ -38,9 +38,15 @@ export class PaginatedSchedulesDto {
 }
 
 export class UnavailableDatesDto {
+  @ApiProperty({ type: String, format: 'uuid' })
+  id: string;
+
   @ApiProperty({ type: Date })
   startsAt: Date;
 
   @ApiProperty({ type: Date })
   endsAt: Date;
+
+  @ApiProperty({ type: String })
+  timeZone: string;
 }

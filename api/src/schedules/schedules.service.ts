@@ -143,7 +143,9 @@ export class SchedulesService {
   }
 
   async findUnavailableDates(): Promise<UnavailableDatesDto[]> {
-    return this.schedules.find({ select: { startsAt: true, endsAt: true } });
+    return this.schedules.find({
+      select: { id: true, startsAt: true, endsAt: true, timeZone: true },
+    });
   }
 
   /**
