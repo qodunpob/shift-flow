@@ -103,6 +103,6 @@ describe('features/schedule-actions/useDeleteScheduleAction', () => {
 
     await waitFor(() => expect(result.current.isConfirming).toBe(false));
 
-    expect(toast.error).toHaveBeenCalledWith('ScheduleActions.errors.generic');
+    expect(toast.error).toHaveBeenCalledWith('commonErrors.generic');
   });
 });

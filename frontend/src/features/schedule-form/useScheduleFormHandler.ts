@@ -63,8 +63,8 @@ export const useScheduleFormHandler = ({
           isConflict
             ? mode === 'create'
               ? t('CreateSchedule.errors.overlap')
-              : t('CreateSchedule.errors.conflict')
-            : t('CreateSchedule.errors.generic'),
+              : t('commonErrors.conflict')
+            : t('commonErrors.generic'),
         );
       };
 

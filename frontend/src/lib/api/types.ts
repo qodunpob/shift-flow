@@ -1,6 +1,7 @@
 import type { components } from '@/lib/api/schema';
 
-export type CurrentUser = components['schemas']['UserResponseDto'];
+export type User = components['schemas']['UserResponseDto'];
+export type CurrentUser = User;
 export type PaginatedSchedules = components['schemas']['PaginatedSchedulesDto'];
 export type Schedule = components['schemas']['ScheduleViewDto'];
 export type CreatedSchedule = components['schemas']['ScheduleEntity'];

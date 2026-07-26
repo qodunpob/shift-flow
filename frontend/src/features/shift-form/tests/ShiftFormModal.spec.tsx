@@ -193,7 +193,7 @@ describe('features/shift-form/ShiftFormModal', () => {
     submitForm();
 
     await waitFor(() =>
-      expect(toast.error).toHaveBeenCalledWith('ShiftForm.errors.generic'),
+      expect(toast.error).toHaveBeenCalledWith('commonErrors.generic'),
     );
     expect(onClose).not.toHaveBeenCalled();
   });

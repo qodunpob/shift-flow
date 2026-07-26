@@ -12,7 +12,7 @@ import {
   UserEntity,
   UserRole,
 } from '@/entities';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, Not, Repository } from 'typeorm';
 import {
   CreateAssignmentDto,
   DeclineAssignmentDto,
@@ -57,6 +57,18 @@ export class AssignmentsService {
     });
     if (existingAssignment) {
       throw new ConflictException('Assignment already exists');
+    }
+
+    // A slot is occupied by any assignment that has not been declined -
+    // matches ShiftsBoardService's filledCount so "3 assigned, 2 required"
+    // can't happen through this endpoint.
+    const filledCount = await this.assignments.count({
+      where: { shiftId: shift.id, status: Not(AssignmentStatus.DECLINED) },
+    });
+    if (filledCount >= shift.requiredHeadcount) {
+      throw new ConflictException(
+        'This shift already has its required headcount.',
+      );
     }
 
     return this.dataSource.transaction(async (entityManager) => {

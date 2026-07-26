@@ -19,7 +19,7 @@ export const useDeleteScheduleAction = (
         setIsConfirming(false);
       },
       onError: () => {
-        toast.error(t('ScheduleActions.errors.generic'));
+        toast.error(t('commonErrors.generic'));
         setIsConfirming(false);
       },
     });

@@ -9,7 +9,7 @@ import { dateFormat } from '@/constants/dates';
 import { AssignmentsModal } from '@/features/shift-assignments/AssignmentsModal';
 
 export interface TimeSheetProps {
-  schedule: Pick<Schedule, 'startsAt' | 'endsAt' | 'timeZone'>;
+  schedule: Pick<Schedule, 'startsAt' | 'endsAt' | 'timeZone' | 'createdBy'>;
   shifts: Shift[];
 }
 
@@ -20,7 +20,9 @@ const hourCellClassName = 'time-sheet-hour-cell';
 
 export const TimeSheet: React.FC<TimeSheetProps> = ({ schedule, shifts }) => {
   const locale = useLocale();
-  const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
+  const [selectedShiftId, setSelectedShiftId] = useState<string | null>(null);
+  const selectedShift =
+    shifts.find((shift) => shift.id === selectedShiftId) ?? null;
 
   const scheduleStartsAt = useMemo(
     () => DateTime.fromISO(schedule.startsAt, { zone: schedule.timeZone }),
@@ -73,7 +75,7 @@ export const TimeSheet: React.FC<TimeSheetProps> = ({ schedule, shifts }) => {
           scheduleStartsAt,
           locale,
           timeZone: schedule.timeZone,
-          onClick: () => setSelectedShift(shift),
+          onClick: () => setSelectedShiftId(shift.id),
         }),
       ),
     [shifts, scheduleStartsAt, locale, schedule.timeZone],
@@ -90,7 +92,8 @@ export const TimeSheet: React.FC<TimeSheetProps> = ({ schedule, shifts }) => {
         <AssignmentsModal
           shift={selectedShift}
           timeZone={schedule.timeZone}
-          onClose={() => setSelectedShift(null)}
+          scheduleCreatedBy={schedule.createdBy}
+          onClose={() => setSelectedShiftId(null)}
         />
       )}
     </FlexBox>

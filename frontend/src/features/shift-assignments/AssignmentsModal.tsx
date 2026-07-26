@@ -15,20 +15,31 @@ import { FlexBox } from '@/components/box/box';
 import { UserAvatar } from '@/components/user-avatar/UserAvatar';
 import { dateFormat } from '@/constants/dates';
 import { Employee, Shift } from '@/lib/api/types';
+import { useCurrentUser } from '@/providers/CurrentUserProvider';
+import { isManager, isMine } from '@/utils/user';
+import { AssignEmployeeButton } from '@/features/shift-assignments/AssignEmployeeButton';
 
 export interface AssignmentsModalProps {
   shift: Shift;
   timeZone: string;
+  scheduleCreatedBy: string;
   onClose: () => void;
 }
 
 export const AssignmentsModal: React.FC<AssignmentsModalProps> = ({
   shift,
   timeZone,
+  scheduleCreatedBy,
   onClose,
 }) => {
   const t = useTranslations();
   const locale = useLocale();
+  const currentUser = useCurrentUser();
+
+  const canAssign =
+    isManager(currentUser.roles) &&
+    isMine(scheduleCreatedBy, currentUser.id) &&
+    shift.spotsRemaining > 0;
 
   const format = dateFormat(locale).shiftBoundaryDateTime;
   const startsAt = DateTime.fromISO(shift.startsAt, { zone: timeZone });
@@ -47,9 +58,12 @@ export const AssignmentsModal: React.FC<AssignmentsModalProps> = ({
           </Typography>
         </FlexBox>
 
-        <Typography variant="subtitle2" sx={{ mt: 3, mb: 1 }}>
-          {t('ShiftAssignments.assigned')}
-        </Typography>
+        <FlexBox justifyContent="space-between" sx={{ mt: 3, mb: 1 }}>
+          <Typography variant="subtitle2">
+            {t('ShiftAssignments.assigned')}
+          </Typography>
+          {canAssign && <AssignEmployeeButton shiftId={shift.id} />}
+        </FlexBox>
         {shift.assignments.length > 0 ? (
           <FlexBox gap={2} sx={{ flexWrap: 'wrap' }}>
             {shift.assignments.map((assignment) => (

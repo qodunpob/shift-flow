@@ -308,9 +308,7 @@ describe('features/schedule-form/ScheduleFormModal', () => {
       submitForm();
 
       await waitFor(() =>
-        expect(toast.error).toHaveBeenCalledWith(
-          'CreateSchedule.errors.generic',
-        ),
+        expect(toast.error).toHaveBeenCalledWith('commonErrors.generic'),
       );
       expect(onClose).not.toHaveBeenCalled();
     });
