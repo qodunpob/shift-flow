@@ -36,6 +36,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   error,
   helperText,
   value: givenValue,
+  fullWidth,
   onChange,
   ...restProps
 }) => {
@@ -53,14 +54,19 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
 
   return (
     <>
-      <FormControl required={required} error={error} onClick={handleOnClick}>
+      <FormControl
+        required={required}
+        error={error}
+        onClick={handleOnClick}
+        fullWidth={fullWidth}
+      >
         {label && <InputLabel>{label}</InputLabel>}
         <MaskedTextField
           {...restProps}
           mask="00/00/0000 – 00/00/0000"
           placeholder="MM/DD/YYYY – MM/DD/YYYY"
           value={textRange}
-          inputProps={{ onAccept: handleInputAccept }}
+          onAccept={handleInputAccept}
         />
         {helperText && <FormHelperText>{helperText}</FormHelperText>}
       </FormControl>

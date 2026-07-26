@@ -53,7 +53,12 @@ export const useDatePickerValue = ({
 
   const handleInputAccept = (typedText: string) => {
     setTextRange(typedText);
-    emitChange(parseRangeText(typedText, format));
+    const nextValue = parseRangeText(typedText, format);
+    setCalendarRange({
+      from: nextValue?.startsAt,
+      to: nextValue?.endsAt,
+    });
+    emitChange(nextValue);
   };
 
   return {
