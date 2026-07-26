@@ -102,7 +102,9 @@
     "assign": "Assign",
     "assignSuccess": "Employee assigned",
     "loading": "Loading…",
-    "noAvailableEmployees": "No employees available"
+    "noAvailableEmployees": "No employees available",
+    "remove": "Remove",
+    "removeSuccess": "Employee removed"
   },
   "Schedule": {
     "status": {

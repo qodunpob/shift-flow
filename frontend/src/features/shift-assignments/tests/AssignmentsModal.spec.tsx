@@ -1,19 +1,35 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Settings } from 'luxon';
 import React from 'react';
 import { AssignmentsModal } from '@/features/shift-assignments/AssignmentsModal';
 import { CurrentUserProvider } from '@/providers/CurrentUserProvider';
 import { CurrentUser, Shift } from '@/lib/api/types';
+import { apiFetchFromClient } from '@/lib/api/client/apiFetch';
+import { ApiError } from '@/lib/errors/ApiError';
+import { toast } from 'react-toastify';
 
 jest.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
   useLocale: () => 'fallback',
 }));
 
+const mockRouterRefresh = jest.fn();
 jest.mock('@/i18n/navigation', () => ({
-  useRouter: () => ({ refresh: jest.fn(), push: jest.fn() }),
+  useRouter: () => ({ refresh: mockRouterRefresh, push: jest.fn() }),
 }));
+
+jest.mock('@/lib/api/client/apiFetch', () => ({
+  apiFetchFromClient: jest.fn(),
+}));
+
+jest.mock('react-toastify', () => ({
+  toast: { success: jest.fn(), error: jest.fn() },
+}));
+
+const mockedApiFetchFromClient = apiFetchFromClient as jest.MockedFunction<
+  typeof apiFetchFromClient
+>;
 
 const baseShift: Shift = {
   id: 'shift-1',
@@ -107,6 +123,8 @@ const renderModal = (
 describe('features/shift-assignments/AssignmentsModal', () => {
   beforeEach(() => {
     Settings.defaultZone = 'America/New_York';
+    mockedApiFetchFromClient.mockReset();
+    mockRouterRefresh.mockReset();
   });
 
   afterEach(() => {
@@ -194,6 +212,91 @@ describe('features/shift-assignments/AssignmentsModal', () => {
       expect(
         screen.queryByText('ShiftAssignments.assign'),
       ).not.toBeInTheDocument();
+    });
+  });
+
+  describe('remove assignment button', () => {
+    it("should show a remove button on an assignment for the schedule's own manager", () => {
+      renderModal({}, managerAuthorViewer);
+
+      expect(
+        screen.getByLabelText('ShiftAssignments.remove'),
+      ).toBeInTheDocument();
+    });
+
+    it('should not show a remove button for an employee', () => {
+      renderModal({}, employeeViewer);
+
+      expect(
+        screen.queryByLabelText('ShiftAssignments.remove'),
+      ).not.toBeInTheDocument();
+    });
+
+    it("should not show a remove button for a manager who isn't the schedule's author", () => {
+      renderModal({}, managerOtherViewer);
+
+      expect(
+        screen.queryByLabelText('ShiftAssignments.remove'),
+      ).not.toBeInTheDocument();
+    });
+
+    it('should not show a remove button on a proposal', () => {
+      renderModal(
+        { shift: { ...baseShift, assignments: [] } },
+        managerAuthorViewer,
+      );
+
+      expect(
+        screen.queryByLabelText('ShiftAssignments.remove'),
+      ).not.toBeInTheDocument();
+      expect(screen.getByText('Grace Hopper')).toBeInTheDocument();
+    });
+
+    it('should remove the assignment, notify the user, and refresh the page', async () => {
+      mockedApiFetchFromClient.mockResolvedValue(undefined);
+      renderModal({}, managerAuthorViewer);
+
+      fireEvent.click(screen.getByLabelText('ShiftAssignments.remove'));
+
+      await waitFor(() =>
+        expect(mockedApiFetchFromClient).toHaveBeenCalledWith(
+          '/assignments/assignment-1',
+          { method: 'DELETE' },
+        ),
+      );
+      await waitFor(() =>
+        expect(toast.success).toHaveBeenCalledWith(
+          'ShiftAssignments.removeSuccess',
+        ),
+      );
+      expect(mockRouterRefresh).toHaveBeenCalled();
+    });
+
+    it('should show a distinct error when removal conflicts with the current state', async () => {
+      mockedApiFetchFromClient.mockRejectedValue(
+        new ApiError(
+          'Request to /assignments/assignment-1 failed with status 409',
+          409,
+        ),
+      );
+      renderModal({}, managerAuthorViewer);
+
+      fireEvent.click(screen.getByLabelText('ShiftAssignments.remove'));
+
+      await waitFor(() =>
+        expect(toast.error).toHaveBeenCalledWith('commonErrors.conflict'),
+      );
+    });
+
+    it('should show a generic error when removal fails for another reason', async () => {
+      mockedApiFetchFromClient.mockRejectedValue(new Error('network down'));
+      renderModal({}, managerAuthorViewer);
+
+      fireEvent.click(screen.getByLabelText('ShiftAssignments.remove'));
+
+      await waitFor(() =>
+        expect(toast.error).toHaveBeenCalledWith('commonErrors.generic'),
+      );
     });
   });
 });

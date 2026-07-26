@@ -24,3 +24,11 @@ export const useCreateAssignmentMutation = (shiftId: string) =>
         body: JSON.stringify(input),
       }),
   });
+
+export const useDeleteAssignmentMutation = () =>
+  useMutation<unknown, Error, string>({
+    mutationFn: (assignmentId) =>
+      apiFetchFromClient(`/assignments/${assignmentId}`, {
+        method: 'DELETE',
+      }),
+  });
