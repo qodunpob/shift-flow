@@ -65,19 +65,17 @@ export const AssignmentsModal: React.FC<AssignmentsModalProps> = ({
           </Typography>
         )}
 
-        <Typography variant="subtitle2" sx={{ mt: 3, mb: 1 }}>
-          {t('ShiftAssignments.proposals')}
-        </Typography>
-        {shift.proposals.length > 0 ? (
-          <FlexBox gap={2} sx={{ flexWrap: 'wrap' }}>
-            {shift.proposals.map((proposal) => (
-              <EmployeeChip key={proposal.id} employee={proposal.employee} />
-            ))}
-          </FlexBox>
-        ) : (
-          <Typography variant="body2" color="text.secondary">
-            {t('ShiftAssignments.noProposals')}
-          </Typography>
+        {shift.proposals.length > 0 && (
+          <>
+            <Typography variant="subtitle2" sx={{ mt: 3, mb: 1 }}>
+              {t('ShiftAssignments.proposals')}
+            </Typography>
+            <FlexBox gap={2} sx={{ flexWrap: 'wrap' }}>
+              {shift.proposals.map((proposal) => (
+                <EmployeeChip key={proposal.id} employee={proposal.employee} />
+              ))}
+            </FlexBox>
+          </>
         )}
       </DialogContent>
       <DialogActions>

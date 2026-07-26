@@ -140,7 +140,7 @@ describe('features/shift-assignments/AssignmentsModal', () => {
     ).toBeInTheDocument();
   });
 
-  it('should show an empty state when there are no proposals', () => {
+  it('should not show the proposals section when there are no proposals', () => {
     render(
       <AssignmentsModal
         shift={{ ...baseShift, proposals: [] }}
@@ -150,8 +150,8 @@ describe('features/shift-assignments/AssignmentsModal', () => {
     );
 
     expect(
-      screen.getByText('ShiftAssignments.noProposals'),
-    ).toBeInTheDocument();
+      screen.queryByText('ShiftAssignments.proposals'),
+    ).not.toBeInTheDocument();
   });
 
   it('should call onClose when the close button is clicked', () => {
