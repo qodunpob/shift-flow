@@ -44,7 +44,7 @@ export const ScheduleCard: React.FC<ScheduleCardProps> = ({
           </Link>
           <FlexBox alignItems="center">
             <ScheduleStatusChip status={schedule.status} />
-            {isMine(schedule.createdBy, currentUser.id) && (
+            {isMine(schedule, currentUser) && (
               <ScheduleActionsMenu
                 schedule={schedule}
                 resetFiltersAndPage={resetFiltersAndPage}

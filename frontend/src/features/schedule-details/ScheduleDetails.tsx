@@ -25,7 +25,7 @@ export const ScheduleDetails: React.FC<ScheduleDetailsProps> = ({
   const t = useTranslations();
   const currentUser = useCurrentUser();
   const isRejectionReasonVisible =
-    isMine(schedule.createdBy, currentUser.id) &&
+    isMine(schedule, currentUser) &&
     schedule.status === 'REJECTED' &&
     schedule.rejectionReason;
 
