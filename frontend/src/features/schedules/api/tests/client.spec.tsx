@@ -4,9 +4,12 @@ import React from 'react';
 import { DEFAULT_PAGE_SIZE } from '@/constants/common';
 import {
   CreateScheduleInput,
+  UpdateScheduleInput,
   schedulesQueryKey,
   useCreateScheduleMutation,
+  useDeleteScheduleMutation,
   useSchedulesQuery,
+  useUpdateScheduleMutation,
 } from '@/features/schedules/api/client';
 import { apiFetchFromClient } from '@/lib/api/client/apiFetch';
 import { ApiError } from '@/lib/errors/ApiError';
@@ -43,6 +46,15 @@ const createWrapper = () => {
 };
 
 describe('features/schedules/api/client', () => {
+  const createWrapperWithClient = (queryClient: QueryClient) =>
+    function Wrapper({ children }: { children: React.ReactNode }) {
+      return (
+        <QueryClientProvider client={queryClient}>
+          {children}
+        </QueryClientProvider>
+      );
+    };
+
   beforeEach(() => {
     mockedApiFetchFromClient.mockReset();
   });
@@ -134,15 +146,6 @@ describe('features/schedules/api/client', () => {
       timeZone: 'Asia/Tokyo',
     };
 
-    const createWrapperWithClient = (queryClient: QueryClient) =>
-      function Wrapper({ children }: { children: React.ReactNode }) {
-        return (
-          <QueryClientProvider client={queryClient}>
-            {children}
-          </QueryClientProvider>
-        );
-      };
-
     it('should send schedule create request', async () => {
       mockedApiFetchFromClient.mockResolvedValue({ id: 'schedule-9' });
 
@@ -202,6 +205,102 @@ describe('features/schedules/api/client', () => {
       result.current.mutate(input);
 
       await waitFor(() => expect(result.current.isError).toBe(true));
+
+      expect(
+        queryClient.getQueryState(schedulesQueryKey(1))?.isInvalidated,
+      ).toBe(true);
+    });
+  });
+
+  describe('useUpdateScheduleMutation', () => {
+    const input: UpdateScheduleInput = {
+      id: 'schedule-9',
+      label: 'Week 32 (renamed)',
+      startsAt: new Date('2026-08-03T00:00:00.000Z'),
+      endsAt: new Date('2026-08-09T23:59:59.999Z'),
+      timeZone: 'Asia/Tokyo',
+    };
+
+    it('should send schedule update request', async () => {
+      mockedApiFetchFromClient.mockResolvedValue({ id: 'schedule-9' });
+
+      const { result } = renderHook(() => useUpdateScheduleMutation(), {
+        wrapper: createWrapper(),
+      });
+
+      result.current.mutate(input);
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+      const { id, ...body } = input;
+      expect(mockedApiFetchFromClient).toHaveBeenCalledWith(
+        `/schedules/${id}`,
+        {
+          method: 'PUT',
+          body: JSON.stringify(body),
+        },
+      );
+    });
+
+    it('should refresh the schedules list after updating a schedule', async () => {
+      mockedApiFetchFromClient.mockResolvedValue({ id: 'schedule-9' });
+      const queryClient = new QueryClient({
+        defaultOptions: {
+          queries: { retry: false },
+          mutations: { retry: false },
+        },
+      });
+      queryClient.setQueryData(schedulesQueryKey(1), makeSchedules(1));
+
+      const { result } = renderHook(() => useUpdateScheduleMutation(), {
+        wrapper: createWrapperWithClient(queryClient),
+      });
+
+      result.current.mutate(input);
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+      expect(
+        queryClient.getQueryState(schedulesQueryKey(1))?.isInvalidated,
+      ).toBe(true);
+    });
+  });
+
+  describe('useDeleteScheduleMutation', () => {
+    it('should send schedule delete request', async () => {
+      mockedApiFetchFromClient.mockResolvedValue(undefined);
+
+      const { result } = renderHook(() => useDeleteScheduleMutation(), {
+        wrapper: createWrapper(),
+      });
+
+      result.current.mutate('schedule-9');
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+      expect(mockedApiFetchFromClient).toHaveBeenCalledWith(
+        '/schedules/schedule-9',
+        { method: 'DELETE' },
+      );
+    });
+
+    it('should refresh the schedules list after deleting a schedule', async () => {
+      mockedApiFetchFromClient.mockResolvedValue(undefined);
+      const queryClient = new QueryClient({
+        defaultOptions: {
+          queries: { retry: false },
+          mutations: { retry: false },
+        },
+      });
+      queryClient.setQueryData(schedulesQueryKey(1), makeSchedules(1));
+
+      const { result } = renderHook(() => useDeleteScheduleMutation(), {
+        wrapper: createWrapperWithClient(queryClient),
+      });
+
+      result.current.mutate('schedule-9');
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
       expect(
         queryClient.getQueryState(schedulesQueryKey(1))?.isInvalidated,

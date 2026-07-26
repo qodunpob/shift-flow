@@ -22,6 +22,20 @@ describe('lib/api/client/apiFetch', () => {
       expect(result).toEqual({ ok: true });
     });
 
+    it('should return undefined when the response has no content', async () => {
+      const json = jest.fn();
+      global.fetch = jest.fn().mockResolvedValue({
+        status: StatusCodes.NO_CONTENT,
+        ok: true,
+        json,
+      }) as unknown as typeof fetch;
+
+      const result = await apiFetchFromClient('/some/path');
+
+      expect(result).toBeUndefined();
+      expect(json).not.toHaveBeenCalled();
+    });
+
     it('should redirect to the login page when the session has expired', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         status: StatusCodes.UNAUTHORIZED,
