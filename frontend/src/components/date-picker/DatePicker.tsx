@@ -1,8 +1,5 @@
-'use client';
-
 import React from 'react';
 import {
-  Button,
   FormControl,
   FormHelperText,
   InputLabel,
@@ -10,27 +7,23 @@ import {
   Paper,
   Popover,
 } from '@mui/material';
-import { DayPicker } from '@daypicker/react';
-import '@daypicker/react/style.css';
 import { useLocale, useTranslations } from 'next-intl';
-import { FlexBox } from '@/components/box/box';
-import { DateRange } from '@/components/date-range-picker/types';
-import { MaskedTextField } from '@/components/masked-text-field/MaskedTextField';
-import { useDatePickerValue } from '@/components/date-range-picker/useDatePickerValue';
 import { usePopoverVisibility } from '@/hooks/usePopoverVisibility';
+import { MaskedTextField } from '@/components/masked-text-field/MaskedTextField';
+import { DayPicker } from '@daypicker/react';
 
-export interface DateRangePickerProps extends Omit<
+export interface DatePickerProps extends Omit<
   OutlinedInputProps,
   'value' | 'onChange'
 > {
   label?: string;
   required?: boolean;
   helperText?: React.ReactNode;
-  value: DateRange | null;
-  onChange: (value: DateRange | null) => void;
+  value: Date | null;
+  onChange: (value: Date | null) => void;
 }
 
-export const DateRangePicker: React.FC<DateRangePickerProps> = ({
+export const DatePicker: React.FC<DatePickerProps> = ({
   label,
   required,
   error,
@@ -42,25 +35,17 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   const locale = useLocale();
   const t = useTranslations();
 
-  const { calendarRange, textRange, handleCalendarSelect, handleInputAccept } =
-    useDatePickerValue({
-      givenValue,
-      locale,
-      onChange,
-    });
-
   const { anchorEl, handleOnClick, handleClose } = usePopoverVisibility();
-
   return (
     <>
       <FormControl required={required} error={error} onClick={handleOnClick}>
         {label && <InputLabel>{label}</InputLabel>}
         <MaskedTextField
           {...restProps}
-          mask="00/00/0000 – 00/00/0000"
-          placeholder="MM/DD/YYYY – MM/DD/YYYY"
-          value={textRange}
-          inputProps={{ onAccept: handleInputAccept }}
+          mask="00/00/0000"
+          placeholder="MM/DD/YYYY"
+          // value={textRange}
+          // inputProps={{ onAccept: handleInputAccept }}
         />
         {helperText && <FormHelperText>{helperText}</FormHelperText>}
       </FormControl>
@@ -91,14 +76,13 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
         >
           <DayPicker
             animate
-            mode="range"
-            min={1}
-            selected={calendarRange}
-            onSelect={handleCalendarSelect}
+            mode="single"
+            // selected={calendarRange}
+            onSelect={handleClose}
           />
-          <FlexBox justifyContent="flex-end" sx={{ mt: 1 }}>
-            <Button onClick={handleClose}>{t('common.ok')}</Button>
-          </FlexBox>
+          {/*<FlexBox justifyContent="flex-end" sx={{ mt: 1 }}>*/}
+          {/*  <Button onClick={handleClose}>{t('common.ok')}</Button>*/}
+          {/*</FlexBox>*/}
         </Paper>
       </Popover>
     </>

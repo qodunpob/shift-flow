@@ -1,4 +1,5 @@
-import { CreateScheduleFormValues, createScheduleSchema } from '../schema';
+import { createScheduleSchema } from '../validation-schema';
+import { CreateScheduleFormValues } from '@/features/create-schedule/types';
 
 const VALID_VALUES: CreateScheduleFormValues = {
   label: 'Summer schedule',

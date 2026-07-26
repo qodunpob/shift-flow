@@ -6,6 +6,7 @@ import { Schedule, Shift } from '@/lib/api/types';
 import { Typography } from '@mui/material';
 import { scheduleRange } from '@/utils/scheduleRange';
 import { useLocale } from 'next-intl';
+import { ScheduleToolbar } from '@/components/schedule-toolbar/ScheduleToolbar';
 
 export interface ScheduleDetailsProps {
   schedule: Schedule;
@@ -22,7 +23,7 @@ export const ScheduleDetails: React.FC<ScheduleDetailsProps> = ({
       <Typography variant="h6" component="div">
         {scheduleRange(schedule, locale)}
       </Typography>
-
+      <ScheduleToolbar />
       <TimeSheet schedule={schedule} shifts={shifts} />
     </>
   );

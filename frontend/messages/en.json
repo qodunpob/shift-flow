@@ -2,7 +2,8 @@
   "common": {
     "cancel": "Cancel",
     "create": "Create",
-    "close": "Close"
+    "close": "Close",
+    "ok": "OK"
   },
   "LoginPage": {
     "title": "Welcome back",
@@ -23,7 +24,8 @@
     }
   },
   "ScheduleDetailsPage": {
-    "title": "Schedule {label}"
+    "title": "Schedule {label}",
+    "createShift": "Create Shift"
   },
   "CreateSchedule": {
     "title": "Create a schedule",
@@ -34,6 +36,9 @@
       "overlap": "These dates overlap with an existing schedule",
       "generic": "Something went wrong. Please try again."
     }
+  },
+  "ShiftForm": {
+    "createTitle": "Create Shift"
   },
   "Schedule": {
     "status": {
