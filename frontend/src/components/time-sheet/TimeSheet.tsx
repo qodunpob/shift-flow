@@ -8,7 +8,7 @@ import { useLocale } from 'next-intl';
 import { dateFormat } from '@/constants/dates';
 
 export interface TimeSheetProps {
-  schedule: Pick<Schedule, 'startsAt' | 'endsAt'>;
+  schedule: Pick<Schedule, 'startsAt' | 'endsAt' | 'timeZone'>;
   shifts: Shift[];
 }
 
@@ -21,8 +21,8 @@ export const TimeSheet: React.FC<TimeSheetProps> = ({ schedule, shifts }) => {
   const locale = useLocale();
 
   const scheduleStartsAt = useMemo(
-    () => DateTime.fromISO(schedule.startsAt),
-    [schedule.startsAt],
+    () => DateTime.fromISO(schedule.startsAt, { zone: schedule.timeZone }),
+    [schedule.startsAt, schedule.timeZone],
   );
 
   const hourLabels = useMemo(() => {
@@ -36,7 +36,9 @@ export const TimeSheet: React.FC<TimeSheetProps> = ({ schedule, shifts }) => {
   }, []);
 
   const dayColumns = useMemo(() => {
-    const scheduleEndsAt = DateTime.fromISO(schedule.endsAt);
+    const scheduleEndsAt = DateTime.fromISO(schedule.endsAt, {
+      zone: schedule.timeZone,
+    });
     const days = Math.ceil(scheduleEndsAt.diff(scheduleStartsAt, 'days').days);
 
     const columns = [];
@@ -59,12 +61,19 @@ export const TimeSheet: React.FC<TimeSheetProps> = ({ schedule, shifts }) => {
       columns.push(<DayColumn key={`day-column-${d}`}>{hourCells}</DayColumn>);
     }
     return columns;
-  }, [locale, schedule.endsAt, scheduleStartsAt]);
+  }, [locale, schedule.endsAt, schedule.timeZone, scheduleStartsAt]);
 
   const renderedShifts = useMemo(
     () =>
-      shifts.map((shift) => renderShift({ shift, scheduleStartsAt, locale })),
-    [shifts, scheduleStartsAt, locale],
+      shifts.map((shift) =>
+        renderShift({
+          shift,
+          scheduleStartsAt,
+          locale,
+          timeZone: schedule.timeZone,
+        }),
+      ),
+    [shifts, scheduleStartsAt, locale, schedule.timeZone],
   );
 
   return (
@@ -82,13 +91,21 @@ interface RenderShiftArgs {
   shift: Shift;
   scheduleStartsAt: DateTime;
   locale: string;
+  timeZone: string;
 }
 
-const renderShift = ({ shift, scheduleStartsAt, locale }: RenderShiftArgs) => {
-  const startsAt = DateTime.fromISO(shift.startsAt);
-  const endsAt = DateTime.fromISO(shift.endsAt);
+const renderShift = ({
+  shift,
+  scheduleStartsAt,
+  locale,
+  timeZone,
+}: RenderShiftArgs) => {
+  const startsAt = DateTime.fromISO(shift.startsAt, { zone: timeZone });
+  const startDay = startsAt.startOf('day');
+  const endsAt = DateTime.fromISO(shift.endsAt, { zone: timeZone });
+  const endDay = endsAt.startOf('day');
 
-  const days = Math.ceil(endsAt.diff(startsAt, 'days').days);
+  const days = Math.ceil(endDay.diff(startDay, 'days').days);
 
   const sectors =
     days > 2 ? new Array(days - 2).fill({ top: 0, bottom: 0 }) : [];
@@ -106,9 +123,8 @@ const renderShift = ({ shift, scheduleStartsAt, locale }: RenderShiftArgs) => {
   }
 
   const diffFromBeginning = Math.floor(
-    startsAt.diff(scheduleStartsAt, 'days').days,
+    startDay.diff(scheduleStartsAt, 'days').days,
   );
-  console.log(diffFromBeginning);
   for (let i = 0; i < sectors.length; i++) {
     sectors[i].left = (diffFromBeginning + i) * columnWidth;
   }
