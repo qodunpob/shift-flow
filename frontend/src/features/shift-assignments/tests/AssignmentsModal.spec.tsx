@@ -184,5 +184,16 @@ describe('features/shift-assignments/AssignmentsModal', () => {
         screen.queryByText('ShiftAssignments.assign'),
       ).not.toBeInTheDocument();
     });
+
+    it('should not show the assign button once the shift has no remaining spots', () => {
+      renderModal(
+        { shift: { ...baseShift, spotsRemaining: 0 } },
+        managerAuthorViewer,
+      );
+
+      expect(
+        screen.queryByText('ShiftAssignments.assign'),
+      ).not.toBeInTheDocument();
+    });
   });
 });

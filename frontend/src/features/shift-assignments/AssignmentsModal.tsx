@@ -37,7 +37,9 @@ export const AssignmentsModal: React.FC<AssignmentsModalProps> = ({
   const currentUser = useCurrentUser();
 
   const canAssign =
-    isManager(currentUser.roles) && isMine(scheduleCreatedBy, currentUser.id);
+    isManager(currentUser.roles) &&
+    isMine(scheduleCreatedBy, currentUser.id) &&
+    shift.spotsRemaining > 0;
 
   const format = dateFormat(locale).shiftBoundaryDateTime;
   const startsAt = DateTime.fromISO(shift.startsAt, { zone: timeZone });

@@ -5,7 +5,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import { DataSource, EntityManager } from 'typeorm';
+import { DataSource, EntityManager, Not } from 'typeorm';
 import { AssignmentsService } from '../assignments.service';
 import {
   AssignmentEntity,
@@ -28,6 +28,7 @@ describe('assignments/AssignmentsService', () => {
     find: jest.Mock;
     findOne: jest.Mock;
     findOneBy: jest.Mock;
+    count: jest.Mock;
   };
   let users: { findOneBy: jest.Mock };
   let entityManager: {
@@ -57,6 +58,7 @@ describe('assignments/AssignmentsService', () => {
   ): ShiftEntity =>
     ({
       id: shiftId,
+      requiredHeadcount: 2,
       schedule: {
         id: 'schedule-1',
         createdBy: manager.id,
@@ -91,6 +93,7 @@ describe('assignments/AssignmentsService', () => {
       find: jest.fn().mockResolvedValue([]),
       findOne: jest.fn(),
       findOneBy: jest.fn().mockResolvedValue(null),
+      count: jest.fn().mockResolvedValue(0),
     };
     users = {
       findOneBy: jest.fn().mockResolvedValue({
@@ -190,6 +193,27 @@ describe('assignments/AssignmentsService', () => {
         service.create(shiftId, dto, manager),
       ).rejects.toBeInstanceOf(ConflictException);
       expect(dataSource.transaction).not.toHaveBeenCalled();
+    });
+
+    it('should reject assigning once the shift already has its required headcount filled', async () => {
+      // editableShift() defaults to requiredHeadcount: 2.
+      assignments.count.mockResolvedValue(2);
+
+      await expect(
+        service.create(shiftId, dto, manager),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(assignments.count).toHaveBeenCalledWith({
+        where: { shiftId, status: Not(AssignmentStatus.DECLINED) },
+      });
+      expect(dataSource.transaction).not.toHaveBeenCalled();
+    });
+
+    it('should allow assigning when the filled count is below the required headcount', async () => {
+      assignments.count.mockResolvedValue(1);
+
+      await expect(
+        service.create(shiftId, dto, manager),
+      ).resolves.toMatchObject({ status: AssignmentStatus.PENDING });
     });
 
     it('should create a PENDING assignment when the employee has no proposal', async () => {
