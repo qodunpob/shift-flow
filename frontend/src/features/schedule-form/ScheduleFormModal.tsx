@@ -18,7 +18,10 @@ import { toast } from 'react-toastify';
 import { DateRangePicker } from '@/components/date-range-picker/DateRangePicker';
 import { useScheduleForm } from '@/features/schedule-form/useScheduleForm';
 import { CreateScheduleFormValues } from '@/features/schedule-form/schema';
-import { zonedInstantToLocalDate } from '@/features/schedule-form/zonedDate';
+import {
+  localDateToZonedInstant,
+  zonedInstantToLocalDate,
+} from '@/features/schedule-form/zonedDate';
 import {
   useCreateScheduleMutation,
   useUpdateScheduleMutation,
@@ -73,8 +76,11 @@ export const ScheduleFormModal: React.FC<ScheduleFormModalProps> = (props) => {
   const formik = useScheduleForm((values) => {
     const input = {
       label: values.label,
-      startsAt: values.dates!.startsAt,
-      endsAt: values.dates!.endsAt,
+      startsAt: localDateToZonedInstant(
+        values.dates!.startsAt,
+        values.timeZone,
+      ),
+      endsAt: localDateToZonedInstant(values.dates!.endsAt, values.timeZone),
       timeZone: values.timeZone,
     };
 

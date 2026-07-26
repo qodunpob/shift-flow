@@ -2,6 +2,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { ScheduleFormModal } from '@/features/schedule-form/ScheduleFormModal';
+import {
+  localDateToZonedInstant,
+  zonedInstantToLocalDate,
+} from '@/features/schedule-form/zonedDate';
 import { apiFetchFromClient } from '@/lib/api/client/apiFetch';
 import { ApiError } from '@/lib/errors/ApiError';
 import { toast } from 'react-toastify';
@@ -40,6 +44,48 @@ jest.mock('@/components/date-range-picker/DateRangePicker', () => ({
   ),
 }));
 
+const MOCKED_BROWSER_TIME_ZONE = 'America/New_York';
+
+// Only the zero-argument call pattern (`Intl.DateTimeFormat()`, no locale/
+// options) is how this app ever asks "what's the browser's own zone" - both
+// in useScheduleForm.ts and in this file's own assertions. luxon (used by
+// zonedDate.ts, exercised via submit in these tests) makes its own,
+// differently-shaped Intl.DateTimeFormat(locale, options) calls internally
+// to resolve zone data, and reads more than just `timeZone` off
+// resolvedOptions() (e.g. `locale`) - a blanket stub of the constructor
+// breaks that internal usage with an unrelated crash. Only overriding the
+// zero-arg case, and delegating everything else (including the rest of
+// resolvedOptions()'s real fields) to the real implementation, keeps luxon
+// working while still deterministically mocking *this app's* browser-zone
+// lookups.
+const RealDateTimeFormat = Intl.DateTimeFormat;
+
+beforeEach(() => {
+  jest
+    .spyOn(Intl, 'DateTimeFormat')
+    .mockImplementation((...args: unknown[]) => {
+      const real = new (
+        RealDateTimeFormat as unknown as new (
+          ...a: unknown[]
+        ) => Intl.DateTimeFormat
+      )(...args);
+      if (args.length > 0) {
+        return real;
+      }
+      return {
+        ...real,
+        resolvedOptions: () => ({
+          ...real.resolvedOptions(),
+          timeZone: MOCKED_BROWSER_TIME_ZONE,
+        }),
+      };
+    });
+});
+
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
 const mockedApiFetchFromClient = apiFetchFromClient as jest.MockedFunction<
   typeof apiFetchFromClient
 >;
@@ -54,9 +100,7 @@ const submitForm = () => fireEvent.submit(document.querySelector('form')!);
 const pickDatesAndWaitForTimeZone = async () => {
   fireEvent.click(screen.getByText('pick-dates'));
   await waitFor(() => {
-    expect(screen.getByRole('combobox')).toHaveValue(
-      Intl.DateTimeFormat().resolvedOptions().timeZone,
-    );
+    expect(screen.getByRole('combobox')).toHaveValue(MOCKED_BROWSER_TIME_ZONE);
   });
 };
 
@@ -80,7 +124,14 @@ const editSchedule: Schedule = {
 };
 
 const renderModal = (
-  props: Partial<React.ComponentProps<typeof ScheduleFormModal>> = {},
+  props: Partial<{
+    open: boolean;
+    onClose: () => void;
+    resetFiltersAndPage: () => void;
+  }> &
+    ({ mode: 'create' } | { mode: 'edit'; schedule: Schedule }) = {
+    mode: 'create',
+  },
 ) => {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -93,7 +144,6 @@ const renderModal = (
   render(
     <QueryClientProvider client={queryClient}>
       <ScheduleFormModal
-        mode="create"
         open
         {...props}
         onClose={onClose}
@@ -137,7 +187,7 @@ describe('features/schedule-form/ScheduleFormModal', () => {
 
       await waitFor(() => {
         expect(screen.getByRole('combobox')).toHaveValue(
-          Intl.DateTimeFormat().resolvedOptions().timeZone,
+          MOCKED_BROWSER_TIME_ZONE,
         );
       });
     });
@@ -165,14 +215,21 @@ describe('features/schedule-form/ScheduleFormModal', () => {
       await pickDatesAndWaitForTimeZone();
       submitForm();
 
+      const timeZone = MOCKED_BROWSER_TIME_ZONE;
       await waitFor(() =>
         expect(mockedApiFetchFromClient).toHaveBeenCalledWith('/schedules', {
           method: 'POST',
           body: JSON.stringify({
             label: '',
-            startsAt: new Date('2026-08-03T00:00:00.000Z'),
-            endsAt: new Date('2026-08-09T23:59:59.999Z'),
-            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            startsAt: localDateToZonedInstant(
+              new Date('2026-08-03T00:00:00.000Z'),
+              timeZone,
+            ),
+            endsAt: localDateToZonedInstant(
+              new Date('2026-08-09T23:59:59.999Z'),
+              timeZone,
+            ),
+            timeZone,
           }),
         }),
       );
@@ -213,7 +270,7 @@ describe('features/schedule-form/ScheduleFormModal', () => {
 
       expect(screen.getByLabelText('labels.label')).toHaveValue('');
       expect(screen.getByRole('combobox')).toHaveValue(
-        Intl.DateTimeFormat().resolvedOptions().timeZone,
+        MOCKED_BROWSER_TIME_ZONE,
       );
     });
 
@@ -262,7 +319,7 @@ describe('features/schedule-form/ScheduleFormModal', () => {
       renderModal({ mode: 'edit', schedule: editSchedule });
 
       expect(screen.getByRole('combobox')).not.toHaveValue(
-        Intl.DateTimeFormat().resolvedOptions().timeZone,
+        MOCKED_BROWSER_TIME_ZONE,
       );
       expect(screen.getByRole('combobox')).toHaveValue(editSchedule.timeZone);
     });
@@ -280,8 +337,20 @@ describe('features/schedule-form/ScheduleFormModal', () => {
             method: 'PUT',
             body: JSON.stringify({
               label: 'Week 32',
-              startsAt: new Date('2026-08-02T15:00:00.000Z'),
-              endsAt: new Date('2026-08-09T14:59:59.999Z'),
+              startsAt: localDateToZonedInstant(
+                zonedInstantToLocalDate(
+                  editSchedule.startsAt,
+                  editSchedule.timeZone,
+                ),
+                editSchedule.timeZone,
+              ),
+              endsAt: localDateToZonedInstant(
+                zonedInstantToLocalDate(
+                  editSchedule.endsAt,
+                  editSchedule.timeZone,
+                ),
+                editSchedule.timeZone,
+              ),
               timeZone: 'Asia/Tokyo',
             }),
           },
