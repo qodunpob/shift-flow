@@ -6,8 +6,7 @@ import { CurrentUserProvider } from '@/providers/CurrentUserProvider';
 import { CurrentUser } from '@/lib/api/types';
 
 export interface AppShellProps
-  extends Omit<TopBarProps, 'user'>,
-    PropsWithChildren {
+  extends Omit<TopBarProps, 'user'>, PropsWithChildren {
   user: CurrentUser;
 }
 

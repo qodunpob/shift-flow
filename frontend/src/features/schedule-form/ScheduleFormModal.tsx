@@ -99,9 +99,13 @@ export const ScheduleFormModal: React.FC<ScheduleFormModalProps> = (props) => {
       onClose();
     };
     const onError = (error: Error) => {
+      const isConflict =
+        error instanceof ApiError && error.statusCode === StatusCodes.CONFLICT;
       toast.error(
-        error instanceof ApiError && error.statusCode === StatusCodes.CONFLICT
-          ? t('CreateSchedule.errors.overlap')
+        isConflict
+          ? mode === 'create'
+            ? t('CreateSchedule.errors.overlap')
+            : t('CreateSchedule.errors.conflict')
           : t('CreateSchedule.errors.generic'),
       );
     };

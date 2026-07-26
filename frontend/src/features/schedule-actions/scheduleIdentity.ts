@@ -9,7 +9,11 @@ export const formatScheduleIdentity = (
   if (schedule.label) return schedule.label;
 
   const format = dateFormat(locale).scheduleBoundaryDate;
-  const start = DateTime.fromISO(schedule.startsAt).toFormat(format);
-  const end = DateTime.fromISO(schedule.endsAt).toFormat(format);
+  const start = DateTime.fromISO(schedule.startsAt, {
+    zone: schedule.timeZone,
+  }).toFormat(format);
+  const end = DateTime.fromISO(schedule.endsAt, {
+    zone: schedule.timeZone,
+  }).toFormat(format);
   return `${start} – ${end}`;
 };

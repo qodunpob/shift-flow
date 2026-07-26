@@ -34,6 +34,7 @@
       "datesRequired": "Please select a date range",
       "timeZoneRequired": "Please select a time zone",
       "overlap": "These dates overlap with an existing schedule",
+      "conflict": "This change isn't possible right now. Please refresh and try again.",
       "generic": "Something went wrong. Please try again."
     }
   },
@@ -81,6 +82,7 @@
       "withdraw": "Schedule withdrawn"
     },
     "errors": {
+      "conflict": "This action isn't possible right now. Please refresh and try again.",
       "generic": "Something went wrong. Please try again."
     }
   },

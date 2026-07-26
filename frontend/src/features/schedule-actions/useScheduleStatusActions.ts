@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'react-toastify';
+import { StatusCodes } from 'http-status-codes';
+import { ApiError } from '@/lib/errors/ApiError';
 import {
   usePublishScheduleMutation,
   useSubmitForApprovalScheduleMutation,
@@ -58,8 +60,12 @@ export const useScheduleStatusActions = (
         resetFiltersAndPage();
         setPendingAction(null);
       },
-      onError: () => {
-        toast.error(t('ScheduleActions.errors.generic'));
+      onError: (error) => {
+        toast.error(
+          error instanceof ApiError && error.statusCode === StatusCodes.CONFLICT
+            ? t('ScheduleActions.errors.conflict')
+            : t('ScheduleActions.errors.generic'),
+        );
         setPendingAction(null);
       },
     });

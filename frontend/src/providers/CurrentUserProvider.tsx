@@ -22,9 +22,7 @@ export const CurrentUserProvider: React.FC<CurrentUserProviderProps> = ({
 export const useCurrentUser = (): CurrentUser => {
   const user = useContext(CurrentUserContext);
   if (!user) {
-    throw new Error(
-      'useCurrentUser must be used within a CurrentUserProvider',
-    );
+    throw new Error('useCurrentUser must be used within a CurrentUserProvider');
   }
   return user;
 };

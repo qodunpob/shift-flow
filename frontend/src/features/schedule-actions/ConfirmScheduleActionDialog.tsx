@@ -35,7 +35,7 @@ export const ConfirmScheduleActionDialog: React.FC<
   onCancel,
   isPending,
 }) => (
-  <Dialog open={open} onClose={onCancel}>
+  <Dialog open={open} onClose={isPending ? undefined : onCancel}>
     <DialogTitle>{title}</DialogTitle>
     <DialogContent>
       <DialogContentText component="div">
@@ -44,7 +44,7 @@ export const ConfirmScheduleActionDialog: React.FC<
       </DialogContentText>
     </DialogContent>
     <DialogActions>
-      <Button onClick={onCancel} variant="outlined">
+      <Button onClick={onCancel} variant="outlined" disabled={isPending}>
         {cancelLabel}
       </Button>
       <Button onClick={onConfirm} variant="contained" disabled={isPending}>

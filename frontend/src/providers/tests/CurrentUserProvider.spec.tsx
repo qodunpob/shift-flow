@@ -30,7 +30,9 @@ describe('providers/CurrentUserProvider', () => {
   });
 
   it('should throw when used outside a CurrentUserProvider', () => {
-    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleError = jest
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
 
     expect(() => renderHook(() => useCurrentUser())).toThrow(
       'useCurrentUser must be used within a CurrentUserProvider',

@@ -3,7 +3,6 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { ScheduleActionsMenu } from '../ScheduleActionsMenu';
 import { apiFetchFromClient } from '@/lib/api/client/apiFetch';
-import { toast } from 'react-toastify';
 import { Schedule } from '@/lib/api/types';
 
 jest.mock('next-intl', () => ({
