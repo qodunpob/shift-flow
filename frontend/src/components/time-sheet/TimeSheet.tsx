@@ -1,11 +1,12 @@
 'use client';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Box, lighten, styled, Typography } from '@mui/material';
 import { FlexBox } from '@/components/box/box';
 import { DateTime } from 'luxon';
 import { Schedule, Shift } from '@/lib/api/types';
 import { useLocale } from 'next-intl';
 import { dateFormat } from '@/constants/dates';
+import { AssignmentsModal } from '@/features/shift-assignments/AssignmentsModal';
 
 export interface TimeSheetProps {
   schedule: Pick<Schedule, 'startsAt' | 'endsAt' | 'timeZone'>;
@@ -19,6 +20,7 @@ const hourCellClassName = 'time-sheet-hour-cell';
 
 export const TimeSheet: React.FC<TimeSheetProps> = ({ schedule, shifts }) => {
   const locale = useLocale();
+  const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
 
   const scheduleStartsAt = useMemo(
     () => DateTime.fromISO(schedule.startsAt, { zone: schedule.timeZone }),
@@ -71,6 +73,7 @@ export const TimeSheet: React.FC<TimeSheetProps> = ({ schedule, shifts }) => {
           scheduleStartsAt,
           locale,
           timeZone: schedule.timeZone,
+          onClick: () => setSelectedShift(shift),
         }),
       ),
     [shifts, scheduleStartsAt, locale, schedule.timeZone],
@@ -83,6 +86,13 @@ export const TimeSheet: React.FC<TimeSheetProps> = ({ schedule, shifts }) => {
         {renderedShifts}
         {dayColumns}
       </TimeSheetBody>
+      {selectedShift && (
+        <AssignmentsModal
+          shift={selectedShift}
+          timeZone={schedule.timeZone}
+          onClose={() => setSelectedShift(null)}
+        />
+      )}
     </FlexBox>
   );
 };
@@ -92,6 +102,7 @@ interface RenderShiftArgs {
   scheduleStartsAt: DateTime;
   locale: string;
   timeZone: string;
+  onClick: () => void;
 }
 
 const renderShift = ({
@@ -99,6 +110,7 @@ const renderShift = ({
   scheduleStartsAt,
   locale,
   timeZone,
+  onClick,
 }: RenderShiftArgs) => {
   const startsAt = DateTime.fromISO(shift.startsAt, { zone: timeZone });
   const startDay = startsAt.startOf('day');
@@ -133,7 +145,7 @@ const renderShift = ({
       ? dateFormat(locale).shiftBoundaryDateTime
       : dateFormat(locale).shiftBoundaryTime;
   return sectors.map((sector, index) => (
-    <ShiftBox key={`shift-${shift.id}-${index}`} sx={sector}>
+    <ShiftBox key={`shift-${shift.id}-${index}`} sx={sector} onClick={onClick}>
       <Typography variant="body2">
         {startsAt.toFormat(timeLabelFormat)}
         {' – '}
