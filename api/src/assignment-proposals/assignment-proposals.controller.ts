@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Delete,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Post,
@@ -53,6 +55,7 @@ export class AssignmentProposalsController {
 
   @Roles([UserRole.EMPLOYEE])
   @Delete()
+  @HttpCode(HttpStatus.NO_CONTENT)
   delete(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
