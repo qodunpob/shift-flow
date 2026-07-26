@@ -16,29 +16,56 @@ import React from 'react';
 import { useTranslations } from 'next-intl';
 import { useShiftForm } from '@/features/shift-form/useShiftForm';
 import { useShiftFormHandler } from '@/features/shift-form/useShiftFormHandler';
+import { zonedInstantToLocalDateTime } from '@/features/shift-form/zonedDateTime';
 import { DatePicker } from '@/components/date-picker/DatePicker';
 import { FlexBox } from '@/components/box/box';
 import { MaskedTextField } from '@/components/masked-text-field/MaskedTextField';
 import { hasError } from '@/utils/formikHelpers';
+import { Shift } from '@/lib/api/types';
+import { ShiftFormValues } from '@/features/shift-form/types';
 
 const FORM_ID = 'shift-form';
 
-export interface ShiftFormModalProps {
+interface CommonProps {
   open: boolean;
   onClose: () => void;
-  scheduleId: string;
   timeZone: string;
 }
 
-export const ShiftFormModal: React.FC<ShiftFormModalProps> = ({
-  open,
-  onClose,
-  scheduleId,
-  timeZone,
-}) => {
+export type ShiftFormModalProps =
+  | ({ mode: 'create'; scheduleId: string } & CommonProps)
+  | ({ mode: 'edit'; shift: Shift } & CommonProps);
+
+const initialValuesFor = (
+  props: ShiftFormModalProps,
+): ShiftFormValues | undefined => {
+  if (props.mode !== 'edit') {
+    return undefined;
+  }
+  const startsAt = zonedInstantToLocalDateTime(
+    props.shift.startsAt,
+    props.timeZone,
+  );
+  const endsAt = zonedInstantToLocalDateTime(
+    props.shift.endsAt,
+    props.timeZone,
+  );
+  return {
+    startsAtDate: startsAt.date,
+    startsAtTime: startsAt.time,
+    endsAtDate: endsAt.date,
+    endsAtTime: endsAt.time,
+    requiredHeadcount: props.shift.requiredHeadcount,
+  };
+};
+
+export const ShiftFormModal: React.FC<ShiftFormModalProps> = (props) => {
+  const { mode, open, onClose, timeZone } = props;
   const t = useTranslations();
   const { onSubmit, isPending } = useShiftFormHandler({
-    scheduleId,
+    mode,
+    scheduleId: mode === 'create' ? props.scheduleId : undefined,
+    shiftId: mode === 'edit' ? props.shift.id : undefined,
     timeZone,
     onClose,
     t,
@@ -49,6 +76,7 @@ export const ShiftFormModal: React.FC<ShiftFormModalProps> = ({
     // despite the React Compiler lint rule's static TDZ heuristic.
     // eslint-disable-next-line react-hooks/immutability
     (values) => onSubmit(formik)(values),
+    initialValuesFor(props),
   );
 
   const startsAtInvalid =
@@ -58,7 +86,11 @@ export const ShiftFormModal: React.FC<ShiftFormModalProps> = ({
 
   return (
     <Dialog open={open} maxWidth="sm" fullWidth>
-      <DialogTitle>{t('ShiftForm.createTitle')}</DialogTitle>
+      <DialogTitle>
+        {mode === 'create'
+          ? t('ShiftForm.createTitle')
+          : t('ShiftForm.editTitle')}
+      </DialogTitle>
       <DialogContent dividers>
         <Stack
           id={FORM_ID}
@@ -156,7 +188,7 @@ export const ShiftFormModal: React.FC<ShiftFormModalProps> = ({
           variant="contained"
           disabled={isPending}
         >
-          {t('common.save')}
+          {mode === 'create' ? t('common.create') : t('common.save')}
         </Button>
       </DialogActions>
     </Dialog>

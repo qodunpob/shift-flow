@@ -103,7 +103,10 @@
   },
   "ShiftForm": {
     "createTitle": "Create Shift",
+    "editTitle": "Edit Shift",
     "success": "Shift created",
+    "updateSuccess": "Shift updated",
+    "deleteSuccess": "Shift deleted",
     "errors": {
       "startsAtRequired": "Please provide a valid start date and time",
       "endsAtRequired": "Please provide a valid end date and time",

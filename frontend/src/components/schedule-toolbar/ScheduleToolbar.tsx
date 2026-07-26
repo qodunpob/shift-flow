@@ -123,6 +123,7 @@ export const ScheduleToolbar: React.FC = () => {
 
       {isScheduleOwner && (
         <ShiftFormModal
+          mode="create"
           open={openShiftFormModal}
           onClose={() => setOpenShiftFormModal(false)}
           scheduleId={schedule.id}

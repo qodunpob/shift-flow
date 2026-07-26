@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Button,
   Dialog,
@@ -26,6 +26,7 @@ import { EmployeeChip } from '@/components/employee-chip/EmployeeChip';
 import EditIcon from '@mui/icons-material/Edit';
 import { useAssignmentHandlers } from '@/features/shift-assignments/useAssignmentHandlers';
 import { canEdit, isEditable } from '@/utils/scheduleState';
+import { ShiftFormModal } from '@/features/shift-form/ShiftFormModal';
 
 export interface AssignmentsModalProps {
   shift: Shift;
@@ -40,6 +41,7 @@ export const AssignmentsModal: React.FC<AssignmentsModalProps> = ({
   const locale = useLocale();
   const currentUser = useCurrentUser();
   const schedule = useSchedule();
+  const [isEditingShift, setIsEditingShift] = useState(false);
 
   const canAssign = canEdit(schedule, currentUser) && shift.spotsRemaining > 0;
   const canPropose =
@@ -55,6 +57,18 @@ export const AssignmentsModal: React.FC<AssignmentsModalProps> = ({
     zone: schedule.timeZone,
   });
   const endsAt = DateTime.fromISO(shift.endsAt, { zone: schedule.timeZone });
+
+  if (isEditingShift) {
+    return (
+      <ShiftFormModal
+        mode="edit"
+        shift={shift}
+        timeZone={schedule.timeZone}
+        open
+        onClose={() => setIsEditingShift(false)}
+      />
+    );
+  }
 
   return (
     <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
@@ -130,7 +144,11 @@ export const AssignmentsModal: React.FC<AssignmentsModalProps> = ({
             >
               {t('common.delete')}
             </Button>
-            <Button variant="outlined" endIcon={<EditIcon />}>
+            <Button
+              variant="outlined"
+              endIcon={<EditIcon />}
+              onClick={() => setIsEditingShift(true)}
+            >
               {t('common.edit')}
             </Button>
           </FlexBox>

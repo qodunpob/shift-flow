@@ -16,3 +16,19 @@ export const useCreateShiftMutation = (scheduleId: string) =>
         body: JSON.stringify(input),
       }),
   });
+
+export interface UpdateShiftInput {
+  id: string;
+  startsAt: Date;
+  endsAt: Date;
+  requiredHeadcount: number;
+}
+
+export const useUpdateShiftMutation = () =>
+  useMutation<Shift, Error, UpdateShiftInput>({
+    mutationFn: ({ id, ...input }) =>
+      apiFetchFromClient(`/shifts/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(input),
+      }),
+  });

@@ -10,9 +10,12 @@ const INITIAL_VALUES: ShiftFormValues = {
   requiredHeadcount: 1,
 };
 
-export const useShiftForm = (onSubmit: (values: ShiftFormValues) => void) => {
+export const useShiftForm = (
+  onSubmit: (values: ShiftFormValues) => void,
+  initialValues: ShiftFormValues = INITIAL_VALUES,
+) => {
   const formik = useFormik<ShiftFormValues>({
-    initialValues: INITIAL_VALUES,
+    initialValues,
     validationSchema: shiftFormSchema,
     onSubmit,
   });

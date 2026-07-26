@@ -28,6 +28,18 @@ jest.mock('react-toastify', () => ({
   toast: { success: jest.fn(), error: jest.fn() },
 }));
 
+// ShiftFormModal's own edit-mode behavior (pre-fill, submit) is covered by
+// its own test suite - what's under test here is only that AssignmentsModal
+// swaps to it when Edit is clicked, and swaps back on its onClose.
+jest.mock('@/features/shift-form/ShiftFormModal', () => ({
+  ShiftFormModal: ({ onClose }: { onClose: () => void }) => (
+    <div>
+      shift-form-modal-edit
+      <button onClick={onClose}>close-shift-form-modal</button>
+    </div>
+  ),
+}));
+
 const mockedApiFetchFromClient = apiFetchFromClient as jest.MockedFunction<
   typeof apiFetchFromClient
 >;
@@ -557,6 +569,49 @@ describe('features/shift-assignments/AssignmentsModal', () => {
       await waitFor(() =>
         expect(toast.error).toHaveBeenCalledWith('commonErrors.generic'),
       );
+    });
+  });
+
+  describe('edit shift', () => {
+    it("should show the edit button for the schedule's own manager", () => {
+      renderModal({}, managerAuthorViewer);
+
+      expect(screen.getByText('common.edit')).toBeInTheDocument();
+    });
+
+    it("should not show the edit button for a manager who isn't the schedule's author", () => {
+      renderModal({}, managerOtherViewer);
+
+      expect(screen.queryByText('common.edit')).not.toBeInTheDocument();
+    });
+
+    it('should not show the edit button for an employee', () => {
+      renderModal({}, employeeViewer);
+
+      expect(screen.queryByText('common.edit')).not.toBeInTheDocument();
+    });
+
+    it('should swap to the edit form when the edit button is clicked', () => {
+      renderModal({}, managerAuthorViewer);
+
+      fireEvent.click(screen.getByText('common.edit'));
+
+      expect(screen.getByText('shift-form-modal-edit')).toBeInTheDocument();
+      expect(
+        screen.queryByText('ShiftAssignments.title'),
+      ).not.toBeInTheDocument();
+    });
+
+    it('should swap back to the assignments view when the edit form closes', () => {
+      renderModal({}, managerAuthorViewer);
+
+      fireEvent.click(screen.getByText('common.edit'));
+      fireEvent.click(screen.getByText('close-shift-form-modal'));
+
+      expect(screen.getByText('ShiftAssignments.title')).toBeInTheDocument();
+      expect(
+        screen.queryByText('shift-form-modal-edit'),
+      ).not.toBeInTheDocument();
     });
   });
 });

@@ -30,6 +30,7 @@ const renderModal = () => {
   render(
     <QueryClientProvider client={queryClient}>
       <ShiftFormModal
+        mode="create"
         open
         onClose={jest.fn()}
         scheduleId="schedule-9"
