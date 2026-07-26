@@ -102,7 +102,15 @@
     "title": "Shift details",
     "assigned": "Assigned",
     "proposals": "Proposals",
-    "noneAssigned": "No one assigned yet"
+    "noneAssigned": "No one assigned yet",
+    "assign": "Assign",
+    "assignSuccess": "Employee assigned",
+    "loading": "Loading…",
+    "noAvailableEmployees": "No employees available",
+    "errors": {
+      "conflict": "This action isn't possible right now. Please refresh and try again.",
+      "generic": "Something went wrong. Please try again."
+    }
   },
   "Schedule": {
     "status": {
