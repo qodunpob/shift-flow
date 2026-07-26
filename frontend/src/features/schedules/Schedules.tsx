@@ -16,7 +16,7 @@ import {
   ScheduleStatus,
 } from '@/lib/api/types';
 import { useTranslations } from 'next-intl';
-import { CreateScheduleModal } from '@/features/create-schedule/CreateScheduleModal';
+import { ScheduleFormModal } from '@/features/schedule-form/ScheduleFormModal';
 import { ScheduleFilters } from '@/features/schedules/ScheduleFilters';
 import { isManager as getIsManager } from '@/utils/user';
 
@@ -74,7 +74,10 @@ export const Schedules: React.FC<SchedulesProps> = ({
           </Button>
         )}
       </FlexBox>
-      <ScheduleList items={schedules.items} />
+      <ScheduleList
+        items={schedules.items}
+        resetFiltersAndPage={resetFiltersAndPage}
+      />
       {schedules.meta.totalPages > 1 && (
         <FlexBox justifyContent="center">
           <Pagination
@@ -85,7 +88,8 @@ export const Schedules: React.FC<SchedulesProps> = ({
         </FlexBox>
       )}
       {isManager && (
-        <CreateScheduleModal
+        <ScheduleFormModal
+          mode="create"
           open={openCreateModal}
           onClose={() => setOpenCreateModal(false)}
           resetFiltersAndPage={resetFiltersAndPage}

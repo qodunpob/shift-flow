@@ -58,3 +58,34 @@ export const useCreateScheduleMutation = () => {
     onSettled: () => queryClient.invalidateQueries(schedulesQueryFilter),
   });
 };
+
+export interface UpdateScheduleInput {
+  id: string;
+  label?: string;
+  startsAt: Date;
+  endsAt: Date;
+  timeZone: string;
+}
+
+export const useUpdateScheduleMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<CreatedSchedule, Error, UpdateScheduleInput>({
+    mutationFn: ({ id, ...input }) =>
+      apiFetchFromClient(`/schedules/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(input),
+      }),
+    onSettled: () => queryClient.invalidateQueries(schedulesQueryFilter),
+  });
+};
+
+export const useDeleteScheduleMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, string>({
+    mutationFn: (id) =>
+      apiFetchFromClient(`/schedules/${id}`, { method: 'DELETE' }),
+    onSettled: () => queryClient.invalidateQueries(schedulesQueryFilter),
+  });
+};

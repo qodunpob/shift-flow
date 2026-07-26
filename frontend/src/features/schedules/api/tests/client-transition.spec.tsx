@@ -24,11 +24,11 @@ const schedulesPage1: PaginatedSchedules = {
       updatedAt: '2026-07-20T00:00:00.000+09:00',
       updatedBy: 'manager-1',
       deletedAt: null,
-      label: 'Week 31 — In Review',
+      label: 'Week 31 — Awaiting Approval',
       startsAt: '2026-07-27T00:00:00.000+09:00',
       endsAt: '2026-08-02T23:59:59.999+09:00',
       timeZone: 'Asia/Tokyo',
-      status: 'IN_REVIEW',
+      status: 'AWAITING_APPROVAL',
       rejectionReason: null,
       totalRequiredHeadcount: 5,
       totalFilledCount: 3,
@@ -59,7 +59,7 @@ describe('features/schedules/api/client-transition', () => {
     queryClient.setQueryData(schedulesQueryKey(1), schedulesPage1);
   });
 
-  it('should optimistically set the schedule status to DRAFT before the request resolves', async () => {
+  it('should optimistically set the schedule status to IN_REVIEW before the request resolves', async () => {
     let resolveRequest: (value: unknown) => void = () => {};
     mockedApiFetchFromClient.mockReturnValue(
       new Promise((resolve) => {
@@ -77,7 +77,7 @@ describe('features/schedules/api/client-transition', () => {
       const cached = queryClient.getQueryData<PaginatedSchedules>(
         schedulesQueryKey(1),
       );
-      expect(cached?.items[0].status).toBe('DRAFT');
+      expect(cached?.items[0].status).toBe('IN_REVIEW');
     });
 
     resolveRequest({});
@@ -98,7 +98,7 @@ describe('features/schedules/api/client-transition', () => {
     const cached = queryClient.getQueryData<PaginatedSchedules>(
       schedulesQueryKey(1),
     );
-    expect(cached?.items[0].status).toBe('IN_REVIEW');
+    expect(cached?.items[0].status).toBe('AWAITING_APPROVAL');
   });
 
   it('should call the withdraw endpoint with the schedule id', async () => {

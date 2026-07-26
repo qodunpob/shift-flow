@@ -28,5 +28,9 @@ export const apiFetchFromClient = async <Result>(
     );
   }
 
+  if (response.status === StatusCodes.NO_CONTENT) {
+    return undefined as Result;
+  }
+
   return response.json();
 };

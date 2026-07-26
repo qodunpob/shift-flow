@@ -2,6 +2,7 @@
   "common": {
     "cancel": "Cancel",
     "create": "Create",
+    "save": "Save",
     "close": "Close",
     "ok": "OK"
   },
@@ -29,11 +30,61 @@
   },
   "CreateSchedule": {
     "title": "Create a schedule",
+    "editTitle": "Edit schedule",
     "success": "Schedule created",
     "errors": {
       "datesRequired": "Please select a date range",
       "timeZoneRequired": "Please select a time zone",
       "overlap": "These dates overlap with an existing schedule",
+      "conflict": "This change isn't possible right now. Please refresh and try again.",
+      "generic": "Something went wrong. Please try again."
+    }
+  },
+  "ScheduleActions": {
+    "menu": "Schedule actions",
+    "edit": "Edit",
+    "delete": "Delete",
+    "publish": "Publish",
+    "unpublish": "Unpublish",
+    "submitForApproval": "Submit for approval",
+    "withdraw": "Withdraw",
+    "confirm": {
+      "delete": {
+        "title": "Delete this schedule?",
+        "description": "This can't be undone.",
+        "confirmLabel": "Delete"
+      },
+      "publish": {
+        "title": "Publish this schedule?",
+        "description": "It will move into review.",
+        "confirmLabel": "Publish"
+      },
+      "unpublish": {
+        "title": "Unpublish this schedule?",
+        "description": "It will move back to draft.",
+        "confirmLabel": "Unpublish"
+      },
+      "submitForApproval": {
+        "title": "Submit this schedule for approval?",
+        "description": "An approver will review it next.",
+        "confirmLabel": "Submit"
+      },
+      "withdraw": {
+        "title": "Withdraw this schedule from approval?",
+        "description": "It will move back to review.",
+        "confirmLabel": "Withdraw"
+      }
+    },
+    "success": {
+      "updated": "Schedule updated",
+      "deleted": "Schedule deleted",
+      "publish": "Schedule published",
+      "unpublish": "Schedule unpublished",
+      "submitForApproval": "Schedule submitted for approval",
+      "withdraw": "Schedule withdrawn"
+    },
+    "errors": {
+      "conflict": "This action isn't possible right now. Please refresh and try again.",
       "generic": "Something went wrong. Please try again."
     }
   },

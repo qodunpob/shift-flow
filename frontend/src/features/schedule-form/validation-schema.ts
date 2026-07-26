@@ -1,5 +1,5 @@
 import * as yup from 'yup';
-import { CreateScheduleFormValues } from '@/features/create-schedule/types';
+import { CreateScheduleFormValues } from '@/features/schedule-form/types';
 
 const TIME_ZONES = Intl.supportedValuesOf('timeZone');
 

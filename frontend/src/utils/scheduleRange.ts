@@ -3,11 +3,13 @@ import { DateTime } from 'luxon';
 import { dateFormat } from '@/constants/dates';
 
 export const scheduleRange = (
-  schedule: Pick<Schedule, 'startsAt' | 'endsAt'>,
+  schedule: Pick<Schedule, 'startsAt' | 'endsAt' | 'timeZone'>,
   locale: string,
 ) => {
   const formatDate = (date: string) =>
-    DateTime.fromISO(date).toFormat(dateFormat(locale).scheduleBoundaryDate);
+    DateTime.fromISO(date, { zone: schedule.timeZone }).toFormat(
+      dateFormat(locale).scheduleBoundaryDate,
+    );
 
   return `${formatDate(schedule.startsAt)} – ${formatDate(schedule.endsAt)}`;
 };
