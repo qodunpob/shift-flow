@@ -1,7 +1,10 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import React from 'react';
-import { useWithdrawScheduleMutation } from '@/features/schedules/api/client-transition';
+import {
+  useRejectScheduleMutation,
+  useWithdrawScheduleMutation,
+} from '@/features/schedules/api/client-transition';
 import { schedulesQueryKey } from '@/features/schedules/api/client';
 import { apiFetchFromClient } from '@/lib/api/client/apiFetch';
 
@@ -116,5 +119,56 @@ describe('features/schedules/api/client-transition', () => {
       '/schedules/schedule-1/withdraw',
       { method: 'POST' },
     );
+  });
+
+  it('should call the reject endpoint with the schedule id and rejection reason in the body', async () => {
+    mockedApiFetchFromClient.mockResolvedValue({});
+
+    const { result } = renderHook(() => useRejectScheduleMutation(), {
+      wrapper: createWrapper(queryClient),
+    });
+
+    result.current.mutate({
+      scheduleId: 'schedule-1',
+      rejectionReason: 'Understaffed',
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(mockedApiFetchFromClient).toHaveBeenCalledWith(
+      '/schedules/schedule-1/reject',
+      {
+        method: 'POST',
+        body: JSON.stringify({ rejectionReason: 'Understaffed' }),
+      },
+    );
+  });
+
+  it('should optimistically set the schedule status to REJECTED before the reject request resolves', async () => {
+    let resolveRequest: (value: unknown) => void = () => {};
+    mockedApiFetchFromClient.mockReturnValue(
+      new Promise((resolve) => {
+        resolveRequest = resolve;
+      }),
+    );
+
+    const { result } = renderHook(() => useRejectScheduleMutation(), {
+      wrapper: createWrapper(queryClient),
+    });
+
+    result.current.mutate({
+      scheduleId: 'schedule-1',
+      rejectionReason: 'Understaffed',
+    });
+
+    await waitFor(() => {
+      const cached = queryClient.getQueryData<PaginatedSchedules>(
+        schedulesQueryKey(1),
+      );
+      expect(cached?.items[0].status).toBe('REJECTED');
+    });
+
+    resolveRequest({});
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
 });

@@ -9,12 +9,7 @@ type TransitionContext = {
 };
 
 type ActionType =
-  | 'publish'
-  | 'submit-for-approval'
-  | 'unpublish'
-  | 'withdraw'
-  | 'approve'
-  | 'reject';
+  'publish' | 'submit-for-approval' | 'unpublish' | 'withdraw' | 'approve';
 
 const useTransition = (
   action: ActionType,
@@ -73,5 +68,51 @@ export const useWithdrawScheduleMutation = () =>
 export const useApproveScheduleMutation = () =>
   useTransition('approve', 'APPROVED');
 
-export const useRejectScheduleMutation = () =>
-  useTransition('reject', 'REJECTED');
+export interface RejectScheduleInput {
+  scheduleId: string;
+  rejectionReason: string;
+}
+
+// Reject needs a request body (rejectionReason), unlike every other
+// transition - the shared useTransition() above only ever POSTs a bare
+// scheduleId, so this duplicates its optimistic-update shape rather than
+// widening that helper's signature for every other, body-less action.
+export const useRejectScheduleMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<unknown, unknown, RejectScheduleInput, TransitionContext>({
+    mutationFn: ({ scheduleId, rejectionReason }) =>
+      apiFetchFromClient(`/schedules/${scheduleId}/reject`, {
+        method: 'POST',
+        body: JSON.stringify({ rejectionReason }),
+      }),
+    onMutate: async ({ scheduleId }) => {
+      await queryClient.cancelQueries(schedulesQueryFilter);
+
+      const previousQueries =
+        queryClient.getQueriesData<PaginatedSchedules>(schedulesQueryFilter);
+
+      previousQueries.forEach(([queryKey, data]) => {
+        if (!data) return;
+        queryClient.setQueryData<PaginatedSchedules>(queryKey, {
+          ...data,
+          items: data.items.map((schedule) =>
+            schedule.id === scheduleId
+              ? { ...schedule, status: 'REJECTED' }
+              : schedule,
+          ),
+        });
+      });
+
+      return { previousQueries };
+    },
+    onError: (_error, _input, context) => {
+      context?.previousQueries.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data);
+      });
+    },
+    onSettled: async () => {
+      await queryClient.invalidateQueries(schedulesQueryFilter);
+    },
+  });
+};
