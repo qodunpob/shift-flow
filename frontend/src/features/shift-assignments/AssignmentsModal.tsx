@@ -87,27 +87,11 @@ export const AssignmentsModal: React.FC<AssignmentsModalProps> = ({
   );
 };
 
-const EmployeeChip: React.FC<{ employee: Employee | null }> = ({
-  employee,
-}) => {
-  const t = useTranslations();
-
-  if (!employee) {
-    return (
-      <FlexBox gap={1}>
-        <Typography variant="body2" color="text.secondary">
-          {t('ShiftAssignments.unknownEmployee')}
-        </Typography>
-      </FlexBox>
-    );
-  }
-
-  return (
-    <FlexBox gap={1}>
-      <UserAvatar user={employee} />
-      <Typography variant="body2">
-        {employee.firstName} {employee.lastName}
-      </Typography>
-    </FlexBox>
-  );
-};
+const EmployeeChip: React.FC<{ employee: Employee }> = ({ employee }) => (
+  <FlexBox gap={1}>
+    <UserAvatar user={employee} />
+    <Typography variant="body2">
+      {employee.firstName} {employee.lastName}
+    </Typography>
+  </FlexBox>
+);

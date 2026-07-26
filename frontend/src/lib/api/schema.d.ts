@@ -591,7 +591,7 @@ export interface components {
         AssignmentViewDto: {
             id: string;
             employeeId: string;
-            employee: components["schemas"]["EmployeeRefDto"] | null;
+            employee: components["schemas"]["EmployeeRefDto"];
             /** @enum {string} */
             status: "PENDING" | "ACCEPTED" | "DECLINED";
             declineReason: string | null;
@@ -599,7 +599,7 @@ export interface components {
         ProposalViewDto: {
             id: string;
             employeeId: string;
-            employee: components["schemas"]["EmployeeRefDto"] | null;
+            employee: components["schemas"]["EmployeeRefDto"];
             message: string | null;
             /** Format: date-time */
             createdAt: string;

@@ -102,8 +102,7 @@
     "title": "Shift details",
     "assigned": "Assigned",
     "proposals": "Proposals",
-    "noneAssigned": "No one assigned yet",
-    "unknownEmployee": "Unknown employee"
+    "noneAssigned": "No one assigned yet"
   },
   "Schedule": {
     "status": {

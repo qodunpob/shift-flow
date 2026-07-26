@@ -101,31 +101,6 @@ describe('features/shift-assignments/AssignmentsModal', () => {
     expect(screen.getByText('Grace Hopper')).toBeInTheDocument();
   });
 
-  it('should show a fallback label when an assignment has no employee', () => {
-    render(
-      <AssignmentsModal
-        shift={{
-          ...baseShift,
-          assignments: [
-            {
-              id: 'assignment-2',
-              employeeId: 'employee-3',
-              employee: null,
-              status: 'ACCEPTED',
-              declineReason: null,
-            },
-          ],
-        }}
-        timeZone="Asia/Tokyo"
-        onClose={jest.fn()}
-      />,
-    );
-
-    expect(
-      screen.getByText('ShiftAssignments.unknownEmployee'),
-    ).toBeInTheDocument();
-  });
-
   it('should show an empty state when there are no assignments', () => {
     render(
       <AssignmentsModal
