@@ -18,7 +18,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { ScheduleFormModal } from '@/features/schedule-form/ScheduleFormModal';
 import { ScheduleFilters } from '@/features/schedules/ScheduleFilters';
-import { isManager as getIsManager } from '@/utils/user';
+import { isManager } from '@/utils/user';
 
 export interface SchedulesProps {
   user: CurrentUser;
@@ -56,7 +56,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
   );
   const t = useTranslations();
   const [openScheduleFormModal, setOpenScheduleFormModal] = useState(false);
-  const isManager = getIsManager(user.roles);
+  const isUserManager = isManager(user.roles);
 
   const resetFiltersAndPage = () => {
     void setPage(1);
@@ -67,8 +67,8 @@ export const Schedules: React.FC<SchedulesProps> = ({
   return (
     <>
       <FlexBox justifyContent="space-between">
-        <ScheduleFilters isMineFilterVisible={isManager} />
-        {isManager && (
+        <ScheduleFilters isManager={isUserManager} />
+        {isUserManager && (
           <Button
             variant="contained"
             onClick={() => setOpenScheduleFormModal(true)}
@@ -90,7 +90,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
           />
         </FlexBox>
       )}
-      {isManager && (
+      {isUserManager && (
         <ScheduleFormModal
           mode="create"
           open={openScheduleFormModal}

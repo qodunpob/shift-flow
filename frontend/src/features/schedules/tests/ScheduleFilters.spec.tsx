@@ -34,7 +34,7 @@ describe('features/schedules/ScheduleFilters', () => {
 
   it('should set the mine query param and reset the page when the switch is toggled on', async () => {
     const onUrlUpdate = jest.fn();
-    render(<ScheduleFilters isMineFilterVisible />, {
+    render(<ScheduleFilters isManager />, {
       wrapper: withNuqsTestingAdapter({
         searchParams: '?page=3',
         onUrlUpdate,

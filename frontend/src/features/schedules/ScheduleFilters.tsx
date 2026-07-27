@@ -19,11 +19,11 @@ import { ScheduleStatus } from '@/lib/api/types';
 import { scheduleStatuses } from '@/constants/common';
 
 export interface ScheduleFiltersProps {
-  isMineFilterVisible?: boolean;
+  isManager?: boolean;
 }
 
 export const ScheduleFilters: React.FC<ScheduleFiltersProps> = ({
-  isMineFilterVisible,
+  isManager,
 }) => {
   const t = useTranslations('SchedulesPage.filters');
   const tStatus = useTranslations('Schedule.status');
@@ -42,6 +42,10 @@ export const ScheduleFilters: React.FC<ScheduleFiltersProps> = ({
     void setPage(1);
   };
 
+  const visibleStatuses = isManager
+    ? scheduleStatuses
+    : scheduleStatuses.filter((status) => status !== 'DRAFT');
+
   return (
     <FlexBox>
       <Select
@@ -51,13 +55,13 @@ export const ScheduleFilters: React.FC<ScheduleFiltersProps> = ({
         onChange={handleStatusChange}
       >
         <MenuItem value="">{t('allStatuses')}</MenuItem>
-        {scheduleStatuses.map((value) => (
+        {visibleStatuses.map((value) => (
           <MenuItem key={value} value={value}>
             {tStatus(value)}
           </MenuItem>
         ))}
       </Select>
-      {isMineFilterVisible && (
+      {isManager && (
         <FormControlLabel
           control={<Switch checked={mine} onChange={handleMineChange} />}
           label={t('mine')}
