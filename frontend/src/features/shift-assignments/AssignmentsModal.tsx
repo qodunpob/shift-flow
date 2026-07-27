@@ -66,7 +66,6 @@ export const AssignmentsModal: React.FC<AssignmentsModalProps> = ({
       <ShiftFormModal
         mode="edit"
         shift={shift}
-        timeZone={schedule.timeZone}
         open
         onClose={() => setIsEditingShift(false)}
       />

@@ -10,7 +10,7 @@ import {
   Paper,
   Popover,
 } from '@mui/material';
-import { DayPicker } from '@daypicker/react';
+import { DayPicker, Matcher } from '@daypicker/react';
 import '@daypicker/react/style.css';
 import { useLocale, useTranslations } from 'next-intl';
 import { FlexBox } from '@/components/box/box';
@@ -28,6 +28,7 @@ export interface DateRangePickerProps extends Omit<
   helperText?: React.ReactNode;
   value: DateRange | null;
   onChange: (value: DateRange | null) => void;
+  disabledDates?: Matcher | Matcher[];
 }
 
 export const DateRangePicker: React.FC<DateRangePickerProps> = ({
@@ -38,6 +39,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   value: givenValue,
   fullWidth,
   onChange,
+  disabledDates,
   ...restProps
 }) => {
   const locale = useLocale();
@@ -101,6 +103,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
             min={1}
             selected={calendarRange}
             onSelect={handleCalendarSelect}
+            disabled={disabledDates}
           />
           <FlexBox justifyContent="flex-end" sx={{ mt: 1 }}>
             <Button onClick={handleClose}>{t('common.ok')}</Button>

@@ -2,6 +2,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, waitFor } from '@testing-library/react';
 import React from 'react';
 import { ShiftFormModal } from '@/features/shift-form/ShiftFormModal';
+import { Schedule } from '@/lib/api/types';
+import { ScheduleProvider } from '@/features/schedule-details/ScheduleProvider';
 
 jest.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
@@ -20,6 +22,24 @@ jest.mock('@/components/date-picker/DatePicker', () => ({
   DatePicker: () => null,
 }));
 
+const schedule: Schedule = {
+  id: 'schedule-9',
+  createdAt: '2026-07-20T00:00:00.000Z',
+  createdBy: 'manager-1',
+  updatedAt: '2026-07-20T00:00:00.000Z',
+  updatedBy: 'manager-1',
+  deletedAt: null,
+  label: 'Week 32',
+  startsAt: '2026-08-02T15:00:00.000Z',
+  endsAt: '2026-08-09T14:59:59.999Z',
+  timeZone: 'Asia/Tokyo',
+  status: 'DRAFT',
+  rejectionReason: null,
+  totalRequiredHeadcount: 5,
+  totalFilledCount: 0,
+  totalAcceptedCount: 0,
+};
+
 const renderModal = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -29,13 +49,14 @@ const renderModal = () => {
   });
   render(
     <QueryClientProvider client={queryClient}>
-      <ShiftFormModal
-        mode="create"
-        open
-        onClose={jest.fn()}
-        scheduleId="schedule-9"
-        timeZone="Asia/Tokyo"
-      />
+      <ScheduleProvider schedule={schedule}>
+        <ShiftFormModal
+          mode="create"
+          open
+          onClose={jest.fn()}
+          scheduleId="schedule-9"
+        />
+      </ScheduleProvider>
     </QueryClientProvider>,
   );
 };

@@ -43,4 +43,7 @@ export class UnavailableDatesDto {
 
   @ApiProperty({ type: Date })
   endsAt: Date;
+
+  @ApiProperty({ type: String })
+  timeZone: string;
 }
