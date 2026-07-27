@@ -9,7 +9,7 @@ import {
 import { apiFetchFromClient } from '@/lib/api/client/apiFetch';
 import { ApiError } from '@/lib/errors/ApiError';
 import { toast } from 'react-toastify';
-import { Schedule } from '@/lib/api/types';
+import { Schedule, UnavailableDates } from '@/lib/api/types';
 
 jest.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
@@ -27,20 +27,25 @@ jest.mock('react-toastify', () => ({
 jest.mock('@/components/date-range-picker/DateRangePicker', () => ({
   DateRangePicker: ({
     onChange,
+    disabledDates,
   }: {
     onChange: (value: { startsAt: Date; endsAt: Date }) => void;
+    disabledDates?: unknown[];
   }) => (
-    <button
-      type="button"
-      onClick={() =>
-        onChange({
-          startsAt: new Date('2026-08-03T00:00:00.000Z'),
-          endsAt: new Date('2026-08-09T23:59:59.999Z'),
-        })
-      }
-    >
-      pick-dates
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={() =>
+          onChange({
+            startsAt: new Date('2026-08-03T00:00:00.000Z'),
+            endsAt: new Date('2026-08-09T23:59:59.999Z'),
+          })
+        }
+      >
+        pick-dates
+      </button>
+      <div data-testid="disabled-dates">{JSON.stringify(disabledDates)}</div>
+    </>
   ),
 }));
 
@@ -89,6 +94,31 @@ afterEach(() => {
 const mockedApiFetchFromClient = apiFetchFromClient as jest.MockedFunction<
   typeof apiFetchFromClient
 >;
+
+// apiFetchFromClient is a single mock shared across every request this modal
+// makes, but ScheduleFormModal also fires a GET for unavailable dates on
+// mount, independent of whatever a given test wants the create/update
+// mutation to resolve/reject with. These keep that GET answered with an
+// empty list while still letting each test control the mutation's outcome.
+const mockMutationResolve = (value: unknown) =>
+  mockedApiFetchFromClient.mockImplementation((url) =>
+    Promise.resolve(url === '/schedules/unavailable-dates' ? [] : value),
+  );
+
+const mockMutationReject = (error: Error) =>
+  mockedApiFetchFromClient.mockImplementation((url) =>
+    url === '/schedules/unavailable-dates'
+      ? Promise.resolve([])
+      : Promise.reject(error),
+  );
+
+// Baseline so every test's initial unavailable-dates fetch resolves even
+// when the test never calls mockMutationResolve/mockMutationReject or sets
+// its own apiFetchFromClient mock - tests that do call one of those, or set
+// their own mock, override this.
+beforeEach(() => {
+  mockedApiFetchFromClient.mockResolvedValue([]);
+});
 
 // fireEvent.click on the submit button doesn't trigger its cross-referenced
 // form (via the `form` attribute) in jsdom - only a real .click() does, per
@@ -218,7 +248,7 @@ describe('features/schedule-form/ScheduleFormModal', () => {
     });
 
     it('should send schedule create request', async () => {
-      mockedApiFetchFromClient.mockResolvedValue({ id: 'schedule-9' });
+      mockMutationResolve({ id: 'schedule-9' });
       renderModal();
 
       await pickDatesAndWaitForTimeZone();
@@ -245,7 +275,7 @@ describe('features/schedule-form/ScheduleFormModal', () => {
     });
 
     it('should close the modal and notify the user when creation succeeds', async () => {
-      mockedApiFetchFromClient.mockResolvedValue({ id: 'schedule-9' });
+      mockMutationResolve({ id: 'schedule-9' });
       const { onClose } = renderModal();
 
       await pickDatesAndWaitForTimeZone();
@@ -256,7 +286,7 @@ describe('features/schedule-form/ScheduleFormModal', () => {
     });
 
     it('should ask its parent to reset filters and page when creation succeeds', async () => {
-      mockedApiFetchFromClient.mockResolvedValue({ id: 'schedule-9' });
+      mockMutationResolve({ id: 'schedule-9' });
       const { resetFiltersAndPage } = renderModal();
 
       await pickDatesAndWaitForTimeZone();
@@ -266,7 +296,7 @@ describe('features/schedule-form/ScheduleFormModal', () => {
     });
 
     it('should reset the form back to its defaults after a successful submit', async () => {
-      mockedApiFetchFromClient.mockResolvedValue({ id: 'schedule-9' });
+      mockMutationResolve({ id: 'schedule-9' });
       renderModal();
 
       fireEvent.change(screen.getByLabelText('labels.label'), {
@@ -284,7 +314,7 @@ describe('features/schedule-form/ScheduleFormModal', () => {
     });
 
     it('should show a distinct error and keep the modal open when dates overlap an existing schedule', async () => {
-      mockedApiFetchFromClient.mockRejectedValue(
+      mockMutationReject(
         new ApiError('Request to /schedules failed with status 409', 409),
       );
       const { onClose } = renderModal();
@@ -301,7 +331,7 @@ describe('features/schedule-form/ScheduleFormModal', () => {
     });
 
     it('should show a generic error when creation fails for a reason other than a date overlap', async () => {
-      mockedApiFetchFromClient.mockRejectedValue(new Error('network down'));
+      mockMutationReject(new Error('network down'));
       const { onClose } = renderModal();
 
       await pickDatesAndWaitForTimeZone();
@@ -332,7 +362,7 @@ describe('features/schedule-form/ScheduleFormModal', () => {
     });
 
     it('should send a schedule update request with the resolved values', async () => {
-      mockedApiFetchFromClient.mockResolvedValue({ id: 'schedule-9' });
+      mockMutationResolve({ id: 'schedule-9' });
       renderModal({ mode: 'edit', schedule: editSchedule });
 
       submitForm();
@@ -366,7 +396,7 @@ describe('features/schedule-form/ScheduleFormModal', () => {
     });
 
     it('should notify the user with an update-specific message when saving succeeds', async () => {
-      mockedApiFetchFromClient.mockResolvedValue({ id: 'schedule-9' });
+      mockMutationResolve({ id: 'schedule-9' });
       renderModal({ mode: 'edit', schedule: editSchedule });
 
       submitForm();
@@ -374,6 +404,58 @@ describe('features/schedule-form/ScheduleFormModal', () => {
       await waitFor(() =>
         expect(toast.success).toHaveBeenCalledWith(
           'ScheduleActions.success.updated',
+        ),
+      );
+    });
+  });
+
+  describe('unavailable dates', () => {
+    const otherUnavailableRange: UnavailableDates = {
+      startsAt: '2026-09-01T15:00:00.000Z',
+      endsAt: '2026-09-07T14:59:59.999Z',
+      timeZone: 'Asia/Tokyo',
+    };
+
+    it('should pass the fetched unavailable ranges to the date range picker as disabled dates', async () => {
+      mockedApiFetchFromClient.mockResolvedValue([otherUnavailableRange]);
+      renderModal();
+
+      await waitFor(() =>
+        expect(screen.getByTestId('disabled-dates')).not.toHaveTextContent(
+          '[]',
+        ),
+      );
+      const disabledDates: { from: string; to: string }[] = JSON.parse(
+        screen.getByTestId('disabled-dates').textContent!,
+      );
+      expect(disabledDates).toEqual([
+        {
+          from: new Date(2026, 8, 2).toISOString(),
+          to: new Date(2026, 8, 7).toISOString(),
+        },
+      ]);
+    });
+
+    it('should not send an excludeId query param in create mode', async () => {
+      mockedApiFetchFromClient.mockResolvedValue([]);
+      renderModal();
+
+      await waitFor(() =>
+        expect(mockedApiFetchFromClient).toHaveBeenCalledWith(
+          '/schedules/unavailable-dates',
+          { params: undefined },
+        ),
+      );
+    });
+
+    it("should send the schedule's own id as excludeId in edit mode, so the backend excludes it server-side rather than the client filtering it out", async () => {
+      mockedApiFetchFromClient.mockResolvedValue([]);
+      renderModal({ mode: 'edit', schedule: editSchedule });
+
+      await waitFor(() =>
+        expect(mockedApiFetchFromClient).toHaveBeenCalledWith(
+          '/schedules/unavailable-dates',
+          { params: { excludeId: editSchedule.id } },
         ),
       );
     });

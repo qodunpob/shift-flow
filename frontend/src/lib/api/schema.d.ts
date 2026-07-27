@@ -550,6 +550,7 @@ export interface components {
             startsAt: string;
             /** Format: date-time */
             endsAt: string;
+            timeZone: string;
         };
         UpdateScheduleDto: {
             label?: string | null;
@@ -762,7 +763,9 @@ export interface operations {
     };
     SchedulesController_findUnavailableDates: {
         parameters: {
-            query?: never;
+            query?: {
+                excludeId?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1276,7 +1279,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            200: {
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1295,7 +1298,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            201: {
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1314,7 +1317,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            201: {
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };

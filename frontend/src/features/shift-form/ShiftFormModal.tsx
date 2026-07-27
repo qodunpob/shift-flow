@@ -23,13 +23,13 @@ import { MaskedTextField } from '@/components/masked-text-field/MaskedTextField'
 import { hasError } from '@/utils/formikHelpers';
 import { Shift } from '@/lib/api/types';
 import { ShiftFormValues } from '@/features/shift-form/types';
+import { useSchedule } from '@/features/schedule-details/ScheduleProvider';
 
 const FORM_ID = 'shift-form';
 
 interface CommonProps {
   open: boolean;
   onClose: () => void;
-  timeZone: string;
 }
 
 export type ShiftFormModalProps =
@@ -38,18 +38,13 @@ export type ShiftFormModalProps =
 
 const initialValuesFor = (
   props: ShiftFormModalProps,
+  timeZone: string,
 ): ShiftFormValues | undefined => {
   if (props.mode !== 'edit') {
     return undefined;
   }
-  const startsAt = zonedInstantToLocalDateTime(
-    props.shift.startsAt,
-    props.timeZone,
-  );
-  const endsAt = zonedInstantToLocalDateTime(
-    props.shift.endsAt,
-    props.timeZone,
-  );
+  const startsAt = zonedInstantToLocalDateTime(props.shift.startsAt, timeZone);
+  const endsAt = zonedInstantToLocalDateTime(props.shift.endsAt, timeZone);
   return {
     startsAtDate: startsAt.date,
     startsAtTime: startsAt.time,
@@ -60,8 +55,10 @@ const initialValuesFor = (
 };
 
 export const ShiftFormModal: React.FC<ShiftFormModalProps> = (props) => {
-  const { mode, open, onClose, timeZone } = props;
+  const { mode, open, onClose } = props;
   const t = useTranslations();
+  const schedule = useSchedule();
+  const timeZone = schedule.timeZone;
   const { onSubmit, isPending } = useShiftFormHandler({
     mode,
     scheduleId: mode === 'create' ? props.scheduleId : undefined,
@@ -76,7 +73,7 @@ export const ShiftFormModal: React.FC<ShiftFormModalProps> = (props) => {
     // despite the React Compiler lint rule's static TDZ heuristic.
     // eslint-disable-next-line react-hooks/immutability
     (values) => onSubmit(formik)(values),
-    initialValuesFor(props),
+    initialValuesFor(props, timeZone),
   );
 
   const startsAtInvalid =
@@ -101,6 +98,22 @@ export const ShiftFormModal: React.FC<ShiftFormModalProps> = (props) => {
       formik.setFieldValue('startsAtDate', value);
     }
   };
+
+  // The shift must fall entirely within its schedule's own range - we don't
+  // check for overlaps with other shifts (the backend still enforces that
+  // via the 409-conflict path), just the schedule's outer bounds.
+  const scheduleStartDay = zonedInstantToLocalDateTime(
+    schedule.startsAt,
+    timeZone,
+  ).date;
+  const scheduleEndDay = zonedInstantToLocalDateTime(
+    schedule.endsAt,
+    timeZone,
+  ).date;
+  const disabledDates = [
+    { before: scheduleStartDay },
+    { after: scheduleEndDay },
+  ];
 
   return (
     <Dialog open={open} maxWidth="sm" fullWidth>
@@ -128,6 +141,7 @@ export const ShiftFormModal: React.FC<ShiftFormModalProps> = (props) => {
                   onChange={handleStartsAtDateChange}
                   onBlur={formik.handleBlur}
                   fullWidth
+                  disabledDates={disabledDates}
                 />
               </Box>
               <MaskedTextField
@@ -159,6 +173,7 @@ export const ShiftFormModal: React.FC<ShiftFormModalProps> = (props) => {
                   onChange={handleEndsAtDateChange}
                   onBlur={formik.handleBlur}
                   fullWidth
+                  disabledDates={disabledDates}
                 />
               </Box>
               <MaskedTextField
