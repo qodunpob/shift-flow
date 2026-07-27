@@ -19,6 +19,7 @@ import { Roles } from '@/auth/roles.decorator';
 import {
   CreateScheduleDto,
   FindSchedulesQueryDto,
+  FindUnavailableDatesQueryDto,
   RejectScheduleDto,
   UpdateScheduleDto,
 } from '@/schedules/schedules.dto';
@@ -61,8 +62,10 @@ export class SchedulesController {
 
   @Roles([UserRole.MANAGER])
   @Get('unavailable-dates')
-  findUnavailableDates(): Promise<UnavailableDatesDto[]> {
-    return this.schedules.findUnavailableDates();
+  findUnavailableDates(
+    @Query() query: FindUnavailableDatesQueryDto,
+  ): Promise<UnavailableDatesDto[]> {
+    return this.schedules.findUnavailableDates(query.excludeId);
   }
 
   @Get(':id')

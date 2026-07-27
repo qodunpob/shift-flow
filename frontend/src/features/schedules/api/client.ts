@@ -43,19 +43,24 @@ export const useSchedulesQuery = (
     placeholderData: keepPreviousData,
   });
 
-export const unavailableDatesQueryKey = [
-  ...schedulesQueryPrefix,
-  'unavailable-dates',
-] as const;
+export const unavailableDatesQueryKey = (excludeId?: string) =>
+  [...schedulesQueryPrefix, 'unavailable-dates', { excludeId }] as const;
 
 // Gated by `enabled` since this is only needed while a schedule form's date
 // picker is actually open - it shares the "schedules" query key prefix so a
 // create/update/delete elsewhere invalidates it along with everything else.
-export const useUnavailableDatesQuery = (enabled: boolean) =>
+// `excludeId` (the schedule being edited, if any) is resolved server-side so
+// the response never has to carry other schedules' ids to the client.
+export const useUnavailableDatesQuery = (
+  enabled: boolean,
+  excludeId?: string,
+) =>
   useQuery({
-    queryKey: unavailableDatesQueryKey,
+    queryKey: unavailableDatesQueryKey(excludeId),
     queryFn: () =>
-      apiFetchFromClient<UnavailableDates[]>('/schedules/unavailable-dates'),
+      apiFetchFromClient<UnavailableDates[]>('/schedules/unavailable-dates', {
+        params: excludeId ? { excludeId } : undefined,
+      }),
     enabled,
   });
 

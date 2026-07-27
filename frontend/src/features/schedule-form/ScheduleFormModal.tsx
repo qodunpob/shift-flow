@@ -61,10 +61,12 @@ const initialValuesFor = (
 export const ScheduleFormModal: React.FC<ScheduleFormModalProps> = (props) => {
   const { mode, open, onClose, resetFiltersAndPage } = props;
   const t = useTranslations();
-  const { data: unavailableDates } = useUnavailableDatesQuery(open);
+  const { data: unavailableDates } = useUnavailableDatesQuery(
+    open,
+    mode === 'edit' ? props.schedule.id : undefined,
+  );
   const disabledDates = unavailableDatesToDisabledMatcher(
     unavailableDates ?? [],
-    mode === 'edit' ? props.schedule.id : undefined,
   );
   const { onSubmit, isPending } = useScheduleFormHandler({
     mode,

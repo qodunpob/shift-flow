@@ -5,7 +5,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import { DataSource, EntityManager } from 'typeorm';
+import { DataSource, EntityManager, Not } from 'typeorm';
 import { SchedulesService } from '../schedules.service';
 import {
   ScheduleEntity,
@@ -648,18 +648,27 @@ describe('schedules/SchedulesService', () => {
   });
 
   describe('findUnavailableDates', () => {
-    it("should select each schedule's id, dates, and time zone so the frontend can resolve them to calendar days in the schedule's own zone", async () => {
+    it("should select each schedule's dates and time zone, without its id, so it doesn't reveal other schedules' identities", async () => {
       await service.findUnavailableDates();
 
       expect(repository.find).toHaveBeenCalledWith({
-        select: { id: true, startsAt: true, endsAt: true, timeZone: true },
+        select: { startsAt: true, endsAt: true, timeZone: true },
+        where: {},
+      });
+    });
+
+    it('should exclude the given schedule id when one is provided', async () => {
+      await service.findUnavailableDates('schedule-1');
+
+      expect(repository.find).toHaveBeenCalledWith({
+        select: { startsAt: true, endsAt: true, timeZone: true },
+        where: { id: Not('schedule-1') },
       });
     });
 
     it('should return whatever the repository finds', async () => {
       const unavailableDates = [
         {
-          id: 'schedule-1',
           startsAt: new Date('2026-08-02T15:00:00.000Z'),
           endsAt: new Date('2026-08-09T14:59:59.999Z'),
           timeZone: 'Asia/Tokyo',

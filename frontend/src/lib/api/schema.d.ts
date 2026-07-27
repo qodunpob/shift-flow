@@ -546,8 +546,6 @@ export interface components {
             meta: components["schemas"]["PaginationMetaDto"];
         };
         UnavailableDatesDto: {
-            /** Format: uuid */
-            id: string;
             /** Format: date-time */
             startsAt: string;
             /** Format: date-time */
@@ -765,7 +763,9 @@ export interface operations {
     };
     SchedulesController_findUnavailableDates: {
         parameters: {
-            query?: never;
+            query?: {
+                excludeId?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;

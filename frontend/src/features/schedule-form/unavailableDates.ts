@@ -7,16 +7,14 @@ import { zonedInstantToLocalDate } from '@/features/schedule-form/zonedDate';
  * resolved in *its own* schedule's persisted zone rather than the zone the
  * schedule being created/edited will end up with - the two can differ, and
  * only the origin zone tells you which days a given range actually covers.
- * `excludeId` drops the schedule currently being edited from the list, so
- * it doesn't show up as unavailable against itself.
+ * The schedule currently being edited is excluded server-side (via
+ * useUnavailableDatesQuery's excludeId), not here - the response never
+ * carries an id to filter on in the first place.
  */
 export const unavailableDatesToDisabledMatcher = (
   unavailableDates: UnavailableDates[],
-  excludeId?: string,
 ): Matcher[] =>
-  unavailableDates
-    .filter((range) => range.id !== excludeId)
-    .map((range) => ({
-      from: zonedInstantToLocalDate(range.startsAt, range.timeZone),
-      to: zonedInstantToLocalDate(range.endsAt, range.timeZone),
-    }));
+  unavailableDates.map((range) => ({
+    from: zonedInstantToLocalDate(range.startsAt, range.timeZone),
+    to: zonedInstantToLocalDate(range.endsAt, range.timeZone),
+  }));

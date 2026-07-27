@@ -4,7 +4,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, Not, Repository } from 'typeorm';
 import { AuthenticatedUser } from '@/auth/authenticated-request';
 import { ScheduleEntity, ShiftEntity } from '@/entities';
 import {
@@ -142,9 +142,12 @@ export class SchedulesService {
     );
   }
 
-  async findUnavailableDates(): Promise<UnavailableDatesDto[]> {
+  async findUnavailableDates(
+    excludeId?: string,
+  ): Promise<UnavailableDatesDto[]> {
     return this.schedules.find({
-      select: { id: true, startsAt: true, endsAt: true, timeZone: true },
+      select: { startsAt: true, endsAt: true, timeZone: true },
+      where: excludeId ? { id: Not(excludeId) } : {},
     });
   }
 

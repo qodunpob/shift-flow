@@ -411,7 +411,6 @@ describe('features/schedule-form/ScheduleFormModal', () => {
 
   describe('unavailable dates', () => {
     const otherUnavailableRange: UnavailableDates = {
-      id: 'schedule-other',
       startsAt: '2026-09-01T15:00:00.000Z',
       endsAt: '2026-09-07T14:59:59.999Z',
       timeZone: 'Asia/Tokyo',
@@ -437,32 +436,28 @@ describe('features/schedule-form/ScheduleFormModal', () => {
       ]);
     });
 
-    it("should exclude the schedule's own range in edit mode so it doesn't show up as unavailable against itself", async () => {
-      mockedApiFetchFromClient.mockResolvedValue([
-        otherUnavailableRange,
-        {
-          id: editSchedule.id,
-          startsAt: editSchedule.startsAt,
-          endsAt: editSchedule.endsAt,
-          timeZone: editSchedule.timeZone,
-        },
-      ]);
+    it('should not send an excludeId query param in create mode', async () => {
+      mockedApiFetchFromClient.mockResolvedValue([]);
+      renderModal();
+
+      await waitFor(() =>
+        expect(mockedApiFetchFromClient).toHaveBeenCalledWith(
+          '/schedules/unavailable-dates',
+          { params: undefined },
+        ),
+      );
+    });
+
+    it("should send the schedule's own id as excludeId in edit mode, so the backend excludes it server-side rather than the client filtering it out", async () => {
+      mockedApiFetchFromClient.mockResolvedValue([]);
       renderModal({ mode: 'edit', schedule: editSchedule });
 
       await waitFor(() =>
-        expect(screen.getByTestId('disabled-dates')).not.toHaveTextContent(
-          '[]',
+        expect(mockedApiFetchFromClient).toHaveBeenCalledWith(
+          '/schedules/unavailable-dates',
+          { params: { excludeId: editSchedule.id } },
         ),
       );
-      const disabledDates: { from: string; to: string }[] = JSON.parse(
-        screen.getByTestId('disabled-dates').textContent!,
-      );
-      expect(disabledDates).toEqual([
-        {
-          from: new Date(2026, 8, 2).toISOString(),
-          to: new Date(2026, 8, 7).toISOString(),
-        },
-      ]);
     });
   });
 });
