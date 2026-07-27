@@ -549,7 +549,7 @@ describe('schedules/SchedulesService', () => {
 
       expect(queryBuilder.orderBy).toHaveBeenCalledWith(
         'schedule.startsAt',
-        'ASC',
+        'DESC',
       );
       expect(result.items).toStrictEqual([{ id: 'schedule-1', ...zeroStats }]);
     });
