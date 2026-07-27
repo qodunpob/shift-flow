@@ -162,7 +162,7 @@ const renderShift = ({
   ));
 };
 
-const TimeSheetBody = styled(FlexBox)(({ theme }) => ({
+const TimeSheetBody = styled(FlexBox)(() => ({
   position: 'relative',
   gap: 0,
   overflowX: 'auto',
@@ -180,7 +180,7 @@ const HourCell = styled(Box)(({ theme }) => ({
   },
 }));
 
-const DayColumn = styled(Box)(({ theme }) => ({
+const DayColumn = styled(Box)(() => ({
   width: columnWidth,
   flexShrink: 0,
   flexGrow: 0,
@@ -189,7 +189,7 @@ const DayColumn = styled(Box)(({ theme }) => ({
   },
 }));
 
-const HourLabelCell = styled(FlexBox)(({ theme }) => ({
+const HourLabelCell = styled(FlexBox)(() => ({
   alignItems: 'center',
   justifyContent: 'center',
   height: cellHeight,
@@ -201,7 +201,7 @@ const HourLabelColumn = styled(Box)(({ theme }) => ({
   flexGrow: 0,
 }));
 
-const DayLabelCell = styled(FlexBox)(({ theme }) => ({
+const DayLabelCell = styled(FlexBox)(() => ({
   alignItems: 'center',
   justifyContent: 'center',
   width: columnWidth,
