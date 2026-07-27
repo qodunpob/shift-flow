@@ -212,6 +212,7 @@ const ShiftBox = styled(Box)(({ theme }) => ({
   position: 'absolute',
   width: columnWidth,
   overflow: 'hidden',
+  color: theme.palette.primary.contrastText,
   backgroundColor: theme.palette.primary.main,
   transition: 'background-color 0.3s ease',
   cursor: 'pointer',
