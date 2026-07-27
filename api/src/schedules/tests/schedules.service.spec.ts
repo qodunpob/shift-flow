@@ -5,7 +5,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import { DataSource, EntityManager } from 'typeorm';
+import { DataSource, EntityManager, Not } from 'typeorm';
 import { SchedulesService } from '../schedules.service';
 import {
   ScheduleEntity,
@@ -37,6 +37,7 @@ describe('schedules/SchedulesService', () => {
     create: jest.Mock;
     save: jest.Mock;
     findOneBy: jest.Mock;
+    find: jest.Mock;
     createQueryBuilder: jest.Mock;
   };
   let shiftsQueryBuilder: {
@@ -86,6 +87,7 @@ describe('schedules/SchedulesService', () => {
         Promise.resolve({ id: 'schedule-1', ...entity }),
       ),
       findOneBy: jest.fn(),
+      find: jest.fn().mockResolvedValue([]),
       createQueryBuilder: jest.fn(() => queryBuilder),
     };
     shiftsQueryBuilder = {
@@ -641,6 +643,41 @@ describe('schedules/SchedulesService', () => {
       helpers.findVisible.mockRejectedValueOnce(new NotFoundException());
       await expect(service.findOne('schedule-1', manager)).rejects.toThrow(
         NotFoundException,
+      );
+    });
+  });
+
+  describe('findUnavailableDates', () => {
+    it("should select each schedule's dates and time zone, without its id, so it doesn't reveal other schedules' identities", async () => {
+      await service.findUnavailableDates();
+
+      expect(repository.find).toHaveBeenCalledWith({
+        select: { startsAt: true, endsAt: true, timeZone: true },
+        where: {},
+      });
+    });
+
+    it('should exclude the given schedule id when one is provided', async () => {
+      await service.findUnavailableDates('schedule-1');
+
+      expect(repository.find).toHaveBeenCalledWith({
+        select: { startsAt: true, endsAt: true, timeZone: true },
+        where: { id: Not('schedule-1') },
+      });
+    });
+
+    it('should return whatever the repository finds', async () => {
+      const unavailableDates = [
+        {
+          startsAt: new Date('2026-08-02T15:00:00.000Z'),
+          endsAt: new Date('2026-08-09T14:59:59.999Z'),
+          timeZone: 'Asia/Tokyo',
+        },
+      ];
+      repository.find.mockResolvedValueOnce(unavailableDates);
+
+      await expect(service.findUnavailableDates()).resolves.toEqual(
+        unavailableDates,
       );
     });
   });

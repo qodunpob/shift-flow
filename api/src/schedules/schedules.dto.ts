@@ -5,6 +5,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsUUID,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { ScheduleStatus } from '@/entities';
@@ -45,6 +46,13 @@ export class FindSchedulesQueryDto extends PaginationQueryDto {
   )
   @IsBoolean()
   mine?: boolean;
+}
+
+export class FindUnavailableDatesQueryDto {
+  /** Exclude this schedule's own range - used when editing it, so it doesn't show up as unavailable against itself. */
+  @IsOptional()
+  @IsUUID()
+  excludeId?: string;
 }
 
 export class RejectScheduleDto {

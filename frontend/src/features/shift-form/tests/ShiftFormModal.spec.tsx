@@ -6,7 +6,8 @@ import { localDateTimeToZonedInstant } from '@/features/shift-form/zonedDateTime
 import { apiFetchFromClient } from '@/lib/api/client/apiFetch';
 import { ApiError } from '@/lib/errors/ApiError';
 import { toast } from 'react-toastify';
-import { Shift } from '@/lib/api/types';
+import { Schedule, Shift } from '@/lib/api/types';
+import { ScheduleProvider } from '@/features/schedule-details/ScheduleProvider';
 
 jest.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
@@ -32,13 +33,20 @@ jest.mock('@/components/date-picker/DatePicker', () => ({
   DatePicker: ({
     name,
     onChange,
+    disabledDates,
   }: {
     name: string;
     onChange: (value: Date | null) => void;
+    disabledDates?: unknown;
   }) => (
-    <button type="button" onClick={() => onChange(new Date(2026, 7, 3))}>
-      pick-{name}
-    </button>
+    <>
+      <button type="button" onClick={() => onChange(new Date(2026, 7, 3))}>
+        pick-{name}
+      </button>
+      <div data-testid={`disabled-dates-${name}`}>
+        {JSON.stringify(disabledDates)}
+      </div>
+    </>
   ),
 }));
 
@@ -92,6 +100,24 @@ const fillForm = () => {
   });
 };
 
+const schedule: Schedule = {
+  id: 'schedule-9',
+  createdAt: '2026-07-20T00:00:00.000Z',
+  createdBy: 'manager-1',
+  updatedAt: '2026-07-20T00:00:00.000Z',
+  updatedBy: 'manager-1',
+  deletedAt: null,
+  label: 'Week 32',
+  startsAt: '2026-08-02T15:00:00.000Z',
+  endsAt: '2026-08-09T14:59:59.999Z',
+  timeZone: 'Asia/Tokyo',
+  status: 'DRAFT',
+  rejectionReason: null,
+  totalRequiredHeadcount: 5,
+  totalFilledCount: 0,
+  totalAcceptedCount: 0,
+};
+
 const renderModal = (
   props: Partial<{ open: boolean; onClose: () => void }> = {},
 ) => {
@@ -104,14 +130,15 @@ const renderModal = (
   const onClose = props.onClose ?? jest.fn();
   render(
     <QueryClientProvider client={queryClient}>
-      <ShiftFormModal
-        mode="create"
-        open
-        {...props}
-        onClose={onClose}
-        scheduleId="schedule-9"
-        timeZone="Asia/Tokyo"
-      />
+      <ScheduleProvider schedule={schedule}>
+        <ShiftFormModal
+          mode="create"
+          open
+          {...props}
+          onClose={onClose}
+          scheduleId="schedule-9"
+        />
+      </ScheduleProvider>
     </QueryClientProvider>,
   );
   return { onClose };
@@ -148,14 +175,15 @@ const renderEditModal = (
   const onClose = props.onClose ?? jest.fn();
   render(
     <QueryClientProvider client={queryClient}>
-      <ShiftFormModal
-        mode="edit"
-        open
-        shift={baseShift}
-        {...props}
-        onClose={onClose}
-        timeZone="Asia/Tokyo"
-      />
+      <ScheduleProvider schedule={schedule}>
+        <ShiftFormModal
+          mode="edit"
+          open
+          shift={baseShift}
+          {...props}
+          onClose={onClose}
+        />
+      </ScheduleProvider>
     </QueryClientProvider>,
   );
   return { onClose };
@@ -290,6 +318,39 @@ describe('features/shift-form/ShiftFormModal', () => {
 
       await waitFor(() => expect(onClose).toHaveBeenCalled());
       expect(toast.success).toHaveBeenCalledWith('ShiftForm.updateSuccess');
+    });
+  });
+
+  describe('date bounds', () => {
+    // We don't check for overlaps with the schedule's other shifts here -
+    // only that a shift can't be dated outside its own schedule's range.
+    // schedule.startsAt/endsAt (2026-08-02T15:00:00.000Z /
+    // 2026-08-09T14:59:59.999Z) resolve to Aug 3 / Aug 9 in Asia/Tokyo.
+    const expectedBounds = JSON.stringify([
+      { before: new Date(2026, 7, 3).toISOString() },
+      { after: new Date(2026, 7, 9).toISOString() },
+    ]);
+
+    it("should bound both date pickers to the schedule's own range in create mode", () => {
+      renderModal();
+
+      expect(
+        screen.getByTestId('disabled-dates-startsAtDate'),
+      ).toHaveTextContent(expectedBounds);
+      expect(screen.getByTestId('disabled-dates-endsAtDate')).toHaveTextContent(
+        expectedBounds,
+      );
+    });
+
+    it("should bound both date pickers to the schedule's own range in edit mode", () => {
+      renderEditModal();
+
+      expect(
+        screen.getByTestId('disabled-dates-startsAtDate'),
+      ).toHaveTextContent(expectedBounds);
+      expect(screen.getByTestId('disabled-dates-endsAtDate')).toHaveTextContent(
+        expectedBounds,
+      );
     });
   });
 });

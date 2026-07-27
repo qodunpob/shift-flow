@@ -382,8 +382,20 @@ describe('schedules/SchedulesController', () => {
         .get('/schedules/unavailable-dates')
         .expect(200, []);
 
-      expect(schedules.findUnavailableDates).toHaveBeenCalled();
+      expect(schedules.findUnavailableDates).toHaveBeenCalledWith(undefined);
       expect(schedules.findOne).not.toHaveBeenCalled();
+    });
+
+    it('should forward excludeId as a query param to findUnavailableDates', async () => {
+      currentTestUser = manager;
+
+      await request(app.getHttpServer())
+        .get(`/schedules/unavailable-dates?excludeId=${validScheduleId}`)
+        .expect(200, []);
+
+      expect(schedules.findUnavailableDates).toHaveBeenCalledWith(
+        validScheduleId,
+      );
     });
 
     it('should reject a non-manager requesting GET /schedules/unavailable-dates with 403, not a UUID validation error', async () => {
