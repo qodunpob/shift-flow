@@ -89,16 +89,33 @@ export const ShiftFormModal: React.FC<ShiftFormModalProps> = (props) => {
   // empty - so a same-day shift only requires one date pick, while an
   // already-chosen date (either explicitly picked or itself auto-filled)
   // never gets silently overwritten.
+  //
+  // Each field gets its own Date instance (never the same object reference
+  // shared across both) - Formik's setNestedObjectValues (used to mark every
+  // field touched on a failed submit) guards against circular references
+  // with a WeakMap keyed by object identity, so two fields pointing at the
+  // exact same Date instance would cause it to silently skip touching the
+  // second one, leaving that field's error permanently invisible.
   const handleStartsAtDateChange = (value: Date | null) => {
-    formik.setFieldValue('startsAtDate', value);
     if (value && !formik.values.endsAtDate) {
-      formik.setFieldValue('endsAtDate', value);
+      void formik.setValues({
+        ...formik.values,
+        startsAtDate: value,
+        endsAtDate: new Date(value),
+      });
+    } else {
+      void formik.setFieldValue('startsAtDate', value);
     }
   };
   const handleEndsAtDateChange = (value: Date | null) => {
-    formik.setFieldValue('endsAtDate', value);
     if (value && !formik.values.startsAtDate) {
-      formik.setFieldValue('startsAtDate', value);
+      void formik.setValues({
+        ...formik.values,
+        startsAtDate: new Date(value),
+        endsAtDate: value,
+      });
+    } else {
+      void formik.setFieldValue('endsAtDate', value);
     }
   };
 

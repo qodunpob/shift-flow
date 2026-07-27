@@ -641,12 +641,21 @@ describe('features/shift-assignments/AssignmentsModal', () => {
       expect(screen.queryByText('common.delete')).not.toBeInTheDocument();
     });
 
-    it.skip('should delete the shift immediately without a confirmation step, notify, refresh, and close the modal', async () => {
+    it('should show a confirmation dialog before deleting, then delete, notify, refresh, and close the modal', async () => {
       mockedApiFetchFromClient.mockResolvedValue(undefined);
       const onClose = jest.fn();
       renderModal({ onClose }, managerAuthorViewer);
 
       fireEvent.click(screen.getByText('common.delete'));
+
+      expect(
+        screen.getByText('ShiftActions.confirm.delete.title'),
+      ).toBeInTheDocument();
+      expect(mockedApiFetchFromClient).not.toHaveBeenCalled();
+
+      fireEvent.click(
+        screen.getByText('ShiftActions.confirm.delete.confirmLabel'),
+      );
 
       await waitFor(() =>
         expect(mockedApiFetchFromClient).toHaveBeenCalledWith(
@@ -661,24 +670,30 @@ describe('features/shift-assignments/AssignmentsModal', () => {
       expect(onClose).toHaveBeenCalled();
     });
 
-    it.skip('should show a distinct error when deletion conflicts with the current state', async () => {
+    it('should show a distinct error when deletion conflicts with the current state', async () => {
       mockedApiFetchFromClient.mockRejectedValue(
         new ApiError('Request to /shifts/shift-1 failed with status 409', 409),
       );
       renderModal({}, managerAuthorViewer);
 
       fireEvent.click(screen.getByText('common.delete'));
+      fireEvent.click(
+        screen.getByText('ShiftActions.confirm.delete.confirmLabel'),
+      );
 
       await waitFor(() =>
         expect(toast.error).toHaveBeenCalledWith('commonErrors.conflict'),
       );
     });
 
-    it.skip('should show a generic error when deletion fails for another reason', async () => {
+    it('should show a generic error when deletion fails for another reason', async () => {
       mockedApiFetchFromClient.mockRejectedValue(new Error('network down'));
       renderModal({}, managerAuthorViewer);
 
       fireEvent.click(screen.getByText('common.delete'));
+      fireEvent.click(
+        screen.getByText('ShiftActions.confirm.delete.confirmLabel'),
+      );
 
       await waitFor(() =>
         expect(toast.error).toHaveBeenCalledWith('commonErrors.generic'),

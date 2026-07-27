@@ -286,51 +286,63 @@ describe('features/shift-form/ShiftFormModal', () => {
   });
 
   describe('auto-filling the empty sibling date', () => {
-    it('should fill the empty endsAtDate with the same day when startsAtDate is picked', () => {
+    // Auto-filling both fields at once goes through formik's setValues,
+    // which (unlike setFieldValue in the single-field cases elsewhere in
+    // this file) resolves asynchronously - awaiting here is what it takes
+    // to observe the settled state rather than an act() warning.
+    it('should fill the empty endsAtDate with the same day when startsAtDate is picked', async () => {
       renderModal();
 
       fireEvent.click(screen.getByText('pick-startsAtDate'));
 
-      expect(screen.getByTestId('date-value-endsAtDate')).toHaveTextContent(
-        new Date(2026, 7, 3).toISOString(),
+      await waitFor(() =>
+        expect(screen.getByTestId('date-value-endsAtDate')).toHaveTextContent(
+          new Date(2026, 7, 3).toISOString(),
+        ),
       );
     });
 
-    it('should fill the empty startsAtDate with the same day when endsAtDate is picked', () => {
+    it('should fill the empty startsAtDate with the same day when endsAtDate is picked', async () => {
       renderModal();
 
       fireEvent.click(screen.getByText('pick-endsAtDate'));
 
-      expect(screen.getByTestId('date-value-startsAtDate')).toHaveTextContent(
-        new Date(2026, 7, 5).toISOString(),
+      await waitFor(() =>
+        expect(screen.getByTestId('date-value-startsAtDate')).toHaveTextContent(
+          new Date(2026, 7, 5).toISOString(),
+        ),
       );
     });
 
-    it('should not overwrite an already-picked endsAtDate when startsAtDate is picked afterwards', () => {
+    it('should not overwrite an already-picked endsAtDate when startsAtDate is picked afterwards', async () => {
       renderModal();
 
       fireEvent.click(screen.getByText('pick-endsAtDate'));
       fireEvent.click(screen.getByText('pick-startsAtDate'));
 
-      expect(screen.getByTestId('date-value-startsAtDate')).toHaveTextContent(
-        new Date(2026, 7, 3).toISOString(),
+      await waitFor(() =>
+        expect(screen.getByTestId('date-value-startsAtDate')).toHaveTextContent(
+          new Date(2026, 7, 3).toISOString(),
+        ),
       );
       expect(screen.getByTestId('date-value-endsAtDate')).toHaveTextContent(
         new Date(2026, 7, 5).toISOString(),
       );
     });
 
-    it('should not overwrite an already-picked startsAtDate when endsAtDate is picked afterwards', () => {
+    it('should not overwrite an already-picked startsAtDate when endsAtDate is picked afterwards', async () => {
       renderModal();
 
       fireEvent.click(screen.getByText('pick-startsAtDate'));
       fireEvent.click(screen.getByText('pick-endsAtDate'));
 
+      await waitFor(() =>
+        expect(screen.getByTestId('date-value-endsAtDate')).toHaveTextContent(
+          new Date(2026, 7, 5).toISOString(),
+        ),
+      );
       expect(screen.getByTestId('date-value-startsAtDate')).toHaveTextContent(
         new Date(2026, 7, 3).toISOString(),
-      );
-      expect(screen.getByTestId('date-value-endsAtDate')).toHaveTextContent(
-        new Date(2026, 7, 5).toISOString(),
       );
     });
   });
@@ -385,12 +397,16 @@ describe('features/shift-form/ShiftFormModal', () => {
   });
 
   describe('date ordering validation', () => {
+    // Picks only startsAtDate - the auto-fill behavior (see the
+    // "auto-filling the empty sibling date" tests above) fills the still-
+    // empty endsAtDate with the same day, so both dates land on the same
+    // calendar day and the inverted times below are what actually produce
+    // the ends-before-starts violation, not a date mismatch.
     const fillFormWithInvertedTimes = () => {
       fireEvent.click(screen.getByText('pick-startsAtDate'));
       fireEvent.change(screen.getByLabelText('startsAtTime'), {
         target: { value: '16:00' },
       });
-      fireEvent.click(screen.getByText('pick-endsAtDate'));
       fireEvent.change(screen.getByLabelText('endsAtTime'), {
         target: { value: '08:00' },
       });
