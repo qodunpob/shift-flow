@@ -81,6 +81,24 @@ export const ShiftFormModal: React.FC<ShiftFormModalProps> = (props) => {
   const endsAtInvalid =
     hasError(formik, 'endsAtDate') || hasError(formik, 'endsAtTime');
 
+  // Most shifts start and end the same day. Picking whichever date field the
+  // user reaches first also fills the other one, as long as it's still
+  // empty - so a same-day shift only requires one date pick, while an
+  // already-chosen date (either explicitly picked or itself auto-filled)
+  // never gets silently overwritten.
+  const handleStartsAtDateChange = (value: Date | null) => {
+    formik.setFieldValue('startsAtDate', value);
+    if (value && !formik.values.endsAtDate) {
+      formik.setFieldValue('endsAtDate', value);
+    }
+  };
+  const handleEndsAtDateChange = (value: Date | null) => {
+    formik.setFieldValue('endsAtDate', value);
+    if (value && !formik.values.startsAtDate) {
+      formik.setFieldValue('startsAtDate', value);
+    }
+  };
+
   // The shift must fall entirely within its schedule's own range - we don't
   // check for overlaps with other shifts (the backend still enforces that
   // via the 409-conflict path), just the schedule's outer bounds.
@@ -120,9 +138,7 @@ export const ShiftFormModal: React.FC<ShiftFormModalProps> = (props) => {
                   required
                   value={formik.values.startsAtDate}
                   error={startsAtInvalid}
-                  onChange={(value) =>
-                    formik.setFieldValue('startsAtDate', value)
-                  }
+                  onChange={handleStartsAtDateChange}
                   onBlur={formik.handleBlur}
                   fullWidth
                   disabledDates={disabledDates}
@@ -154,9 +170,7 @@ export const ShiftFormModal: React.FC<ShiftFormModalProps> = (props) => {
                   required
                   value={formik.values.endsAtDate}
                   error={endsAtInvalid}
-                  onChange={(value) =>
-                    formik.setFieldValue('endsAtDate', value)
-                  }
+                  onChange={handleEndsAtDateChange}
                   onBlur={formik.handleBlur}
                   fullWidth
                   disabledDates={disabledDates}
