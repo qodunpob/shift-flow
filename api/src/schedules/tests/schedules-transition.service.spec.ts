@@ -59,7 +59,6 @@ describe('schedules/SchedulesTransitionService', () => {
 
   afterEach(() => jest.clearAllMocks());
 
-  const user: AuthenticatedUser = { id: 'user-1', roles: [] };
   const manager: AuthenticatedUser = {
     id: 'manager-1',
     roles: [UserRole.MANAGER],

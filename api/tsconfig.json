@@ -29,6 +29,7 @@
     "src/**/*.ts",
     "migrations/**/*.ts",
     "seeds/**/*.ts",
+    "test/**/*.ts",
     "datasource.ts"
   ]
 }

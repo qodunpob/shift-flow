@@ -15,8 +15,10 @@ import { SchedulesService } from '../schedules.service';
 import { SchedulesTransitionService } from '../schedules-transition.service';
 import { ScheduleView } from '../schedule-stats.service';
 import { RolesGuard } from '@/auth/roles.guard';
-import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
-import { AuthenticatedRequest, AuthenticatedUser } from '@/auth/authenticated-request';
+import {
+  AuthenticatedRequest,
+  AuthenticatedUser,
+} from '@/auth/authenticated-request';
 import { ScheduleEntity, UserRole } from '@/entities';
 import {
   CreateScheduleDto,
@@ -45,10 +47,6 @@ describe('schedules/SchedulesController', () => {
     const approver: AuthenticatedUser = {
       id: 'u-approver',
       roles: [UserRole.APPROVER],
-    };
-    const both: AuthenticatedUser = {
-      id: 'u-both',
-      roles: [UserRole.MANAGER, UserRole.APPROVER],
     };
     const noRoles: AuthenticatedUser = { id: 'u-none', roles: [] };
 
@@ -405,7 +403,9 @@ describe('schedules/SchedulesController', () => {
         .get('/schedules/unavailable-dates')
         .expect(403);
 
-      expect(response.body.message).not.toMatch(/uuid/i);
+      expect((response.body as { message: string }).message).not.toMatch(
+        /uuid/i,
+      );
     });
 
     it('should still route GET /schedules/:id to findOne for an actual schedule id', async () => {
@@ -482,7 +482,7 @@ describe('schedules/SchedulesController', () => {
         })
         .expect(400);
 
-      expect(response.body.message).toEqual(
+      expect((response.body as { message: string[] }).message).toEqual(
         expect.arrayContaining([expect.stringContaining('timeZone')]),
       );
       expect(schedules.create).not.toHaveBeenCalled();
