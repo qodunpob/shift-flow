@@ -23,6 +23,7 @@ import { MaskedTextField } from '@/components/masked-text-field/MaskedTextField'
 import { hasError } from '@/utils/formikHelpers';
 import { Shift } from '@/lib/api/types';
 import { ShiftFormValues } from '@/features/shift-form/types';
+import { ENDS_BEFORE_STARTS_ERROR } from '@/features/shift-form/validation-schema';
 
 const FORM_ID = 'shift-form';
 
@@ -83,6 +84,8 @@ export const ShiftFormModal: React.FC<ShiftFormModalProps> = (props) => {
     hasError(formik, 'startsAtDate') || hasError(formik, 'startsAtTime');
   const endsAtInvalid =
     hasError(formik, 'endsAtDate') || hasError(formik, 'endsAtTime');
+  const endsBeforeStarts =
+    formik.errors.endsAtDate === ENDS_BEFORE_STARTS_ERROR;
 
   return (
     <Dialog open={open} maxWidth="sm" fullWidth>
@@ -159,7 +162,11 @@ export const ShiftFormModal: React.FC<ShiftFormModalProps> = (props) => {
               />
             </FlexBox>
             <FormHelperText>
-              {endsAtInvalid ? t('ShiftForm.errors.endsAtRequired') : ' '}
+              {endsAtInvalid
+                ? endsBeforeStarts
+                  ? t('ShiftForm.errors.endsBeforeStarts')
+                  : t('ShiftForm.errors.endsAtRequired')
+                : ' '}
             </FormHelperText>
           </FormControl>
           <FormControl required error={hasError(formik, 'requiredHeadcount')}>
