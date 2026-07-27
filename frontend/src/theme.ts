@@ -18,7 +18,16 @@ const theme = createTheme({
     button: { textTransform: 'none' },
   },
   cssVariables: true,
-  colorSchemes: { light: true, dark: true },
+  colorSchemes: {
+    light: {
+      palette: {
+        background: {
+          default: '#f5f5f5',
+        },
+      },
+    },
+    dark: true,
+  },
 });
 
 export default theme;

@@ -69,4 +69,7 @@ const StyledToolbar = styled(Toolbar)(({ theme }) => ({
   borderColor: (theme.vars || theme).palette.divider,
   boxShadow: (theme.vars || theme).shadows[1],
   padding: '8px 12px',
+  ...theme.applyStyles('light', {
+    backgroundColor: theme.palette.background.paper,
+  }),
 }));
