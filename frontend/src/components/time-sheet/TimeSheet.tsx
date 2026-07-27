@@ -14,9 +14,9 @@ export interface TimeSheetProps {
   shifts: Shift[];
 }
 
-const columnWidth = 160;
-const dayLabelHeight = 40;
-const cellHeight = 60;
+export const columnWidth = 160;
+export const dayLabelHeight = 40;
+export const cellHeight = 60;
 const hourCellClassName = 'time-sheet-hour-cell';
 
 export const TimeSheet: React.FC<TimeSheetProps> = ({ shifts }) => {
@@ -102,7 +102,7 @@ export const TimeSheet: React.FC<TimeSheetProps> = ({ shifts }) => {
   );
 };
 
-interface RenderShiftArgs {
+export interface RenderShiftArgs {
   shift: Shift;
   scheduleStartsAt: DateTime;
   locale: string;
@@ -110,7 +110,14 @@ interface RenderShiftArgs {
   onClick: () => void;
 }
 
-const renderShift = ({
+interface ShiftSector {
+  top: number;
+  left?: number;
+  bottom?: number;
+  height?: number;
+}
+
+export const renderShift = ({
   shift,
   scheduleStartsAt,
   locale,
@@ -123,14 +130,21 @@ const renderShift = ({
   const endDay = endsAt.startOf('day');
 
   const days = Math.ceil(endDay.diff(startDay, 'days').days);
-  const sectors =
+  // One filler sector per calendar day strictly between the first and last
+  // day - each gets its own object (never .fill(), which would give every
+  // slot the same reference and have the `left` assignment below mutate a
+  // single shared object instead of positioning each day's column).
+  const sectors: ShiftSector[] =
     days > 1
-      ? new Array(days - 2).fill({ top: dayLabelHeight, bottom: 0 })
+      ? Array.from({ length: days - 1 }, () => ({
+          top: dayLabelHeight,
+          bottom: 0,
+        }))
       : [];
 
   if (days > 0) {
     const top = dayLabelHeight + startsAt.hour * cellHeight + startsAt.minute;
-    const height = dayLabelHeight + endsAt.hour * cellHeight + endsAt.minute;
+    const height = endsAt.hour * cellHeight + endsAt.minute;
     sectors.unshift({ top, bottom: 0 });
     sectors.push({ top: dayLabelHeight, height });
   } else {
