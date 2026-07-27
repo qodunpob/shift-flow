@@ -28,9 +28,11 @@ jest.mock('@/components/date-range-picker/DateRangePicker', () => ({
   DateRangePicker: ({
     onChange,
     disabledDates,
+    helperText,
   }: {
     onChange: (value: { startsAt: Date; endsAt: Date }) => void;
     disabledDates?: unknown[];
+    helperText?: React.ReactNode;
   }) => (
     <>
       <button
@@ -45,6 +47,7 @@ jest.mock('@/components/date-range-picker/DateRangePicker', () => ({
         pick-dates
       </button>
       <div data-testid="disabled-dates">{JSON.stringify(disabledDates)}</div>
+      <div data-testid="dates-helper-text">{helperText}</div>
     </>
   ),
 }));
@@ -206,10 +209,7 @@ describe('features/schedule-form/ScheduleFormModal', () => {
       ).not.toBeInTheDocument();
     });
 
-    // Skipped: the DateRangePicker mock below only forwards onChange, not
-    // helperText/error, so the dates-required error text this test checks
-    // for can never render under this mock.
-    it.skip('should show a validation error for dates when submitting with no range picked', async () => {
+    it('should show a validation error for dates when submitting with no range picked', async () => {
       renderModal();
 
       submitForm();
@@ -231,10 +231,7 @@ describe('features/schedule-form/ScheduleFormModal', () => {
       });
     });
 
-    // Skipped: the DateRangePicker mock below only forwards onChange, not
-    // helperText/error, so the dates-required error text this test checks
-    // for can never render under this mock.
-    it.skip('should not close the modal while required fields are empty', async () => {
+    it('should not close the modal while required fields are empty', async () => {
       const { onClose } = renderModal();
 
       submitForm();
