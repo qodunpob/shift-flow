@@ -124,7 +124,9 @@ const renderShift = ({
 
   const days = Math.ceil(endDay.diff(startDay, 'days').days);
   const sectors =
-    days > 1 ? new Array(days - 2).fill({ top: 0, bottom: 0 }) : [];
+    days > 1
+      ? new Array(days - 2).fill({ top: dayLabelHeight, bottom: 0 })
+      : [];
 
   if (days > 0) {
     const top = dayLabelHeight + startsAt.hour * cellHeight + startsAt.minute;
