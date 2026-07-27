@@ -123,15 +123,14 @@ const renderShift = ({
   const endDay = endsAt.startOf('day');
 
   const days = Math.ceil(endDay.diff(startDay, 'days').days);
-
   const sectors =
-    days > 2 ? new Array(days - 2).fill({ top: 0, bottom: 0 }) : [];
+    days > 1 ? new Array(days - 2).fill({ top: 0, bottom: 0 }) : [];
 
-  if (days > 1) {
+  if (days > 0) {
     const top = dayLabelHeight + startsAt.hour * cellHeight + startsAt.minute;
     const height = dayLabelHeight + endsAt.hour * cellHeight + endsAt.minute;
     sectors.unshift({ top, bottom: 0 });
-    sectors.push({ top: 0, height });
+    sectors.push({ top: dayLabelHeight, height });
   } else {
     const top = dayLabelHeight + startsAt.hour * cellHeight + startsAt.minute;
     const height =
@@ -147,7 +146,7 @@ const renderShift = ({
   }
 
   const timeLabelFormat =
-    days > 1
+    days > 0
       ? dateFormat(locale).shiftBoundaryDateTime
       : dateFormat(locale).shiftBoundaryTime;
   const timeLabel =
