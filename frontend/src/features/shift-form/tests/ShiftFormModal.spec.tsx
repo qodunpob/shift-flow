@@ -28,17 +28,32 @@ jest.mock('@/i18n/navigation', () => ({
 // Mocked to a plain button per date field - a real calendar popover isn't
 // worth driving through jsdom here; ShiftFormModal's own wiring (which date
 // value it forwards to which formik field) is what these tests exercise.
+// The two fields pick distinct dates specifically so the auto-fill-the-
+// empty-sibling-field tests below can tell "auto-filled" apart from
+// "explicitly picked, then not clobbered".
+const MOCK_PICKED_DATE: Record<string, Date> = {
+  startsAtDate: new Date(2026, 7, 3),
+  endsAtDate: new Date(2026, 7, 5),
+};
+
 jest.mock('@/components/date-picker/DatePicker', () => ({
   DatePicker: ({
     name,
+    value,
     onChange,
   }: {
     name: string;
+    value: Date | null;
     onChange: (value: Date | null) => void;
   }) => (
-    <button type="button" onClick={() => onChange(new Date(2026, 7, 3))}>
-      pick-{name}
-    </button>
+    <>
+      <button type="button" onClick={() => onChange(MOCK_PICKED_DATE[name])}>
+        pick-{name}
+      </button>
+      <div data-testid={`date-value-${name}`}>
+        {value ? value.toISOString() : ''}
+      </div>
+    </>
   ),
 }));
 
@@ -181,7 +196,7 @@ describe('features/shift-form/ShiftFormModal', () => {
               'Asia/Tokyo',
             ),
             endsAt: localDateTimeToZonedInstant(
-              new Date(2026, 7, 3),
+              new Date(2026, 7, 5),
               '16:30',
               'Asia/Tokyo',
             ),
@@ -242,6 +257,56 @@ describe('features/shift-form/ShiftFormModal', () => {
       expect(toast.error).toHaveBeenCalledWith('commonErrors.generic'),
     );
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  describe('auto-filling the empty sibling date', () => {
+    it('should fill the empty endsAtDate with the same day when startsAtDate is picked', () => {
+      renderModal();
+
+      fireEvent.click(screen.getByText('pick-startsAtDate'));
+
+      expect(screen.getByTestId('date-value-endsAtDate')).toHaveTextContent(
+        new Date(2026, 7, 3).toISOString(),
+      );
+    });
+
+    it('should fill the empty startsAtDate with the same day when endsAtDate is picked', () => {
+      renderModal();
+
+      fireEvent.click(screen.getByText('pick-endsAtDate'));
+
+      expect(screen.getByTestId('date-value-startsAtDate')).toHaveTextContent(
+        new Date(2026, 7, 5).toISOString(),
+      );
+    });
+
+    it('should not overwrite an already-picked endsAtDate when startsAtDate is picked afterwards', () => {
+      renderModal();
+
+      fireEvent.click(screen.getByText('pick-endsAtDate'));
+      fireEvent.click(screen.getByText('pick-startsAtDate'));
+
+      expect(screen.getByTestId('date-value-startsAtDate')).toHaveTextContent(
+        new Date(2026, 7, 3).toISOString(),
+      );
+      expect(screen.getByTestId('date-value-endsAtDate')).toHaveTextContent(
+        new Date(2026, 7, 5).toISOString(),
+      );
+    });
+
+    it('should not overwrite an already-picked startsAtDate when endsAtDate is picked afterwards', () => {
+      renderModal();
+
+      fireEvent.click(screen.getByText('pick-startsAtDate'));
+      fireEvent.click(screen.getByText('pick-endsAtDate'));
+
+      expect(screen.getByTestId('date-value-startsAtDate')).toHaveTextContent(
+        new Date(2026, 7, 3).toISOString(),
+      );
+      expect(screen.getByTestId('date-value-endsAtDate')).toHaveTextContent(
+        new Date(2026, 7, 5).toISOString(),
+      );
+    });
   });
 
   describe('edit mode', () => {
