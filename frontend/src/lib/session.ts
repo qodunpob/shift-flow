@@ -10,9 +10,7 @@ export const getJwtMaxAgeSeconds = (token: string): number | undefined => {
     ) as { exp?: number };
 
     if (!exp) return undefined;
-    const maxAge = Math.max(exp - Math.floor(Date.now() / 1000), 0);
-    console.log('SESSION MAX AGE', maxAge);
-    return maxAge;
+    return Math.max(exp - Math.floor(Date.now() / 1000), 0);
   } catch {
     return undefined;
   }
