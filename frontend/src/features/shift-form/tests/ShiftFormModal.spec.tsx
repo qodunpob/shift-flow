@@ -384,6 +384,57 @@ describe('features/shift-form/ShiftFormModal', () => {
     });
   });
 
+  describe('date ordering validation', () => {
+    const fillFormWithInvertedTimes = () => {
+      fireEvent.click(screen.getByText('pick-startsAtDate'));
+      fireEvent.change(screen.getByLabelText('startsAtTime'), {
+        target: { value: '16:00' },
+      });
+      fireEvent.click(screen.getByText('pick-endsAtDate'));
+      fireEvent.change(screen.getByLabelText('endsAtTime'), {
+        target: { value: '08:00' },
+      });
+    };
+
+    it('should show an error and not submit when endsAtTime is before startsAtTime on the same day', async () => {
+      mockedApiFetchFromClient.mockResolvedValue({ id: 'shift-1' });
+      renderModal();
+
+      fillFormWithInvertedTimes();
+      submitForm();
+
+      await waitFor(() =>
+        expect(
+          screen.getByText('ShiftForm.errors.endsBeforeStarts'),
+        ).toBeInTheDocument(),
+      );
+      expect(mockedApiFetchFromClient).not.toHaveBeenCalled();
+    });
+
+    it('should submit successfully once the times are corrected to a valid order', async () => {
+      mockedApiFetchFromClient.mockResolvedValue({ id: 'shift-1' });
+      renderModal();
+
+      fillFormWithInvertedTimes();
+      submitForm();
+      await waitFor(() =>
+        expect(
+          screen.getByText('ShiftForm.errors.endsBeforeStarts'),
+        ).toBeInTheDocument(),
+      );
+
+      fireEvent.change(screen.getByLabelText('endsAtTime'), {
+        target: { value: '20:00' },
+      });
+      submitForm();
+
+      await waitFor(() => expect(mockedApiFetchFromClient).toHaveBeenCalled());
+      expect(
+        screen.queryByText('ShiftForm.errors.endsBeforeStarts'),
+      ).not.toBeInTheDocument();
+    });
+  });
+
   describe('date bounds', () => {
     // We don't check for overlaps with the schedule's other shifts here -
     // only that a shift can't be dated outside its own schedule's range.

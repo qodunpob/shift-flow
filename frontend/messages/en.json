@@ -110,6 +110,7 @@
     "errors": {
       "startsAtRequired": "Please provide a valid start date and time",
       "endsAtRequired": "Please provide a valid end date and time",
+      "endsBeforeStarts": "End must be after the start",
       "conflict": "This shift overlaps with an existing shift or falls outside the schedule"
     }
   },
